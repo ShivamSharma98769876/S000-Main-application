@@ -1,0 +1,112 @@
+[
+  {
+    "id": 6,
+    "config_key": "admin_email",
+    "config_value": "nimblegrowthoptions@gmail.com",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:21.795Z",
+    "updated_at": "2025-12-28T18:23:16.053Z"
+  },
+  {
+    "id": 8,
+    "config_key": "company_address",
+    "config_value": "Belathur Village Road\nKadugodi, Bangalore",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:21.884Z",
+    "updated_at": "2025-12-28T18:23:16.143Z"
+  },
+  {
+    "id": 11,
+    "config_key": "linkedin_url",
+    "config_value": "",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:46.250Z",
+    "updated_at": "2025-12-28T17:55:46.250Z"
+  },
+  {
+    "id": 3,
+    "config_key": "merchant_name",
+    "config_value": "Suryyom",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:54:57.380Z",
+    "updated_at": "2025-12-28T18:22:56.729Z"
+  },
+  {
+    "id": 7,
+    "config_key": "phone_number",
+    "config_value": "+918904002365",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:21.797Z",
+    "updated_at": "2025-12-28T18:23:16.097Z"
+  },
+  {
+    "id": 1,
+    "config_key": "qr_code_url",
+    "config_value": "/uploads/qr-code-1766946168884-64252206.jpeg",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:53:43.509Z",
+    "updated_at": "2025-12-28T18:22:56.710Z"
+  },
+  {
+    "id": 5,
+    "config_key": "support_email",
+    "config_value": "nimblegrowthoptions@gmail.com",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:21.499Z",
+    "updated_at": "2025-12-28T18:23:16.054Z"
+  },
+  {
+    "id": 12,
+    "config_key": "telegram_url",
+    "config_value": "",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:46.272Z",
+    "updated_at": "2025-12-28T17:55:46.272Z"
+  },
+  {
+    "id": 9,
+    "config_key": "twitter_url",
+    "config_value": "",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:46.020Z",
+    "updated_at": "2025-12-28T17:55:46.020Z"
+  },
+  {
+    "id": 2,
+    "config_key": "upi_id",
+    "config_value": "suryyom@ibl",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:54:57.374Z",
+    "updated_at": "2025-12-28T18:22:56.716Z"
+  },
+  {
+    "id": 10,
+    "config_key": "youtube_url",
+    "config_value": "",
+    "config_type": "STRING",
+    "description": null,
+    "is_public": false,
+    "created_at": "2025-12-28T17:55:46.214Z",
+    "updated_at": "2025-12-28T17:55:46.214Z"
+  }
+]

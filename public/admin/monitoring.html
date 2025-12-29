@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring | TradingPro Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .monitoring-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-xl); margin-bottom: var(--spacing-2xl); }
+        .metric-card { background: var(--card-bg); padding: var(--spacing-xl); border-radius: var(--radius-lg); border: 1px solid var(--border-color); }
+        .metric-value { font-size: 2.5rem; font-weight: 700; color: var(--primary-color); margin: var(--spacing-sm) 0; }
+        .metric-label { color: var(--text-secondary); font-size: var(--font-size-sm); }
+        .health-status { display: inline-block; padding: 0.5rem 1rem; border-radius: var(--radius-md); font-weight: 600; }
+        .health-status.healthy { background: #10b981; color: white; }
+        .health-status.degraded { background: #f59e0b; color: white; }
+        .health-status.unhealthy { background: #ef4444; color: white; }
+        .health-status.critical { background: #dc2626; color: white; }
+        .chart-container { height: 300px; margin-top: var(--spacing-lg); }
+        .alert-item { padding: var(--spacing-md); background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); border-left: 4px solid; }
+        .alert-item.high { border-color: #ef4444; }
+        .alert-item.medium { border-color: #f59e0b; }
+        .alert-item.low { border-color: #3b82f6; }
+        .tabs { display: flex; gap: var(--spacing-md); border-bottom: 2px solid var(--border-color); margin-bottom: var(--spacing-xl); }
+        .tab { padding: var(--spacing-md) var(--spacing-lg); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab.active { border-color: var(--primary-color); color: var(--primary-color); font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="orders.html" class="nav-item">📦 Orders</a>
+                <a href="products.html" class="nav-item">🎯 Products</a>
+                <a href="offers.html" class="nav-item">🎁 Offers</a>
+                <a href="testimonials.html" class="nav-item">⭐ Testimonials</a>
+                <a href="config.html" class="nav-item">⚙️ Config</a>
+                <a href="audit.html" class="nav-item">📝 Audit Logs</a>
+                <a href="monitoring.html" class="nav-item active">📡 Monitoring</a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">← Back to Site</a>
+                <button id="logout-btn" class="nav-item logout-btn">🚪 Logout</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>System Monitoring</h1>
+                <button class="btn btn--secondary" onclick="refreshAll()">🔄 Refresh</button>
+            </header>
+
+            <div class="admin-content">
+                <!-- Health Status -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>System Health</h2>
+                        <span id="last-updated">Last updated: --</span>
+                    </div>
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; gap: var(--spacing-lg);">
+                            <span class="health-status" id="health-status">Checking...</span>
+                            <div id="health-details"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Overview -->
+                <div class="monitoring-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Requests</div>
+                        <div class="metric-value" id="total-requests">--</div>
+                        <div class="metric-label" id="requests-per-min">-- req/min</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Errors</div>
+                        <div class="metric-value" id="total-errors" style="color: #ef4444;">--</div>
+                        <div class="metric-label" id="error-rate">Error rate: --%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">System Uptime</div>
+                        <div class="metric-value" id="uptime-hours" style="color: #10b981;">--</div>
+                        <div class="metric-label">hours</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Memory Usage</div>
+                        <div class="metric-value" id="memory-usage" style="color: #f59e0b;">--</div>
+                        <div class="metric-label">MB used</div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('errors')">Errors</div>
+                    <div class="tab" onclick="switchTab('performance')">Performance</div>
+                    <div class="tab" onclick="switchTab('failed-logins')">Failed Logins</div>
+                    <div class="tab" onclick="switchTab('email')">Email Delivery</div>
+                    <div class="tab" onclick="switchTab('alerts')">Alerts</div>
+                </div>
+
+                <!-- Errors Tab -->
+                <div id="errors-tab" class="tab-content active">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Recent Errors</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="errors-list">
+                                <div class="loading">Loading errors...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Tab -->
+                <div id="performance-tab" class="tab-content">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Performance Metrics</h2>
+                        </div>
+                        <div class="card-body">
+                            <h3>Slowest Operations (Last Hour)</h3>
+                            <div id="slowest-operations">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Failed Logins Tab -->
+                <div id="failed-logins-tab" class="tab-content">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Failed Login Attempts</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="failed-logins-stats" style="margin-bottom: 2rem;"></div>
+                            <h3>Recent Failed Attempts</h3>
+                            <div id="failed-logins-list">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Tab -->
+                <div id="email-tab" class="tab-content">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>Email Delivery Monitoring</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="email-stats">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div id="alerts-tab" class="tab-content">
+                    <div class="admin-card">
+                        <div class="card-header">
+                            <h2>System Alerts</h2>
+                        </div>
+                        <div class="card-body">
+                            <div id="alerts-list">
+                                <div class="loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        let currentTab = 'errors';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            loadTabData(tab);
+        }
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadHealthStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/health`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('health-status');
+                statusEl.textContent = data.status.toUpperCase();
+                statusEl.className = 'health-status ' + data.status;
+                
+                // Display health checks
+                let checksHtml = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">';
+                for (const [name, check] of Object.entries(data.checks)) {
+                    checksHtml += `
+                        <div style="padding: 0.75rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                            <strong>${name}:</strong><br>
+                            <span style="color: ${check.status === 'healthy' ? '#10b981' : '#ef4444'};">
+                                ${check.status} - ${check.message}
+                            </span>
+                        </div>
+                    `;
+                }
+                checksHtml += '</div>';
+                document.getElementById('health-details').innerHTML = checksHtml;
+                
+            } catch (error) {
+                console.error('Error loading health status:', error);
+            }
+        }
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/metrics`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                document.getElementById('total-requests').textContent = data.metrics.requests.total.toLocaleString();
+                document.getElementById('requests-per-min').textContent = `${data.metrics.requests.averagePerMinute} req/min`;
+                document.getElementById('total-errors').textContent = data.metrics.errors.total;
+                document.getElementById('error-rate').textContent = `Error rate: ${data.metrics.errors.errorRate}`;
+                document.getElementById('uptime-hours').textContent = data.metrics.uptime.hours;
+                document.getElementById('memory-usage').textContent = (data.metrics.memory.used / (1024 * 1024)).toFixed(0);
+                document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        async function loadErrors() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/errors/recent?limit=20`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                const container = document.getElementById('errors-list');
+                if (data.errors.length === 0) {
+                    container.innerHTML = '<p>No errors found</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.errors.map(err => `
+                    <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.5rem; border-left: 4px solid #ef4444;">
+                        <strong style="color: #ef4444;">${err.error_name || 'Error'}</strong>: ${err.message}<br>
+                        <small style="color: var(--text-secondary);">
+                            ${new Date(err.created_at).toLocaleString()} | 
+                            ${err.context?.url || ''} ${err.context?.method || ''}
+                        </small>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading errors:', error);
+            }
+        }
+
+        async function loadPerformance() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/performance`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                const container = document.getElementById('slowest-operations');
+                if (data.slowestOperations.length === 0) {
+                    container.innerHTML = '<p>No data available</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Operation</th>
+                                <th>Avg Duration</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.slowestOperations.map(op => `
+                                <tr>
+                                    <td>${op.operation}</td>
+                                    <td style="color: ${op.avg_duration > 500 ? '#ef4444' : '#10b981'};">
+                                        ${Math.round(op.avg_duration)}ms
+                                    </td>
+                                    <td>${op.count}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading performance:', error);
+            }
+        }
+
+        async function loadFailedLogins() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/failed-logins`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                // Stats
+                const statsContainer = document.getElementById('failed-logins-stats');
+                statsContainer.innerHTML = `
+                    <div class="monitoring-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Total Attempts (24h)</div>
+                            <div class="metric-value" style="color: #ef4444;">${data.statistics.total}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Unique IPs</div>
+                            <div class="metric-value">${data.statistics.unique_ips}</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Unique Emails</div>
+                            <div class="metric-value">${data.statistics.unique_emails}</div>
+                        </div>
+                    </div>
+                `;
+                
+                // List
+                const listContainer = document.getElementById('failed-logins-list');
+                if (data.failedAttempts.length === 0) {
+                    listContainer.innerHTML = '<p>No failed login attempts</p>';
+                    return;
+                }
+                
+                listContainer.innerHTML = data.failedAttempts.map(attempt => `
+                    <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+                        <strong>${attempt.provider}</strong> login from <strong>${attempt.ip_address}</strong><br>
+                        ${attempt.email ? `Email: ${attempt.email}<br>` : ''}
+                        <small style="color: var(--text-secondary);">
+                            ${new Date(attempt.created_at).toLocaleString()} | ${attempt.reason}
+                        </small>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Error loading failed logins:', error);
+            }
+        }
+
+        async function loadEmailStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/email-delivery`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                const container = document.getElementById('email-stats');
+                
+                // Statistics
+                let statsHtml = '<h3>Email Statistics (Last 24h)</h3><div class="monitoring-grid">';
+                data.statistics.forEach(stat => {
+                    const color = stat.status === 'SENT' ? '#10b981' : stat.status === 'FAILED' ? '#ef4444' : '#f59e0b';
+                    statsHtml += `
+                        <div class="metric-card">
+                            <div class="metric-label">${stat.status}</div>
+                            <div class="metric-value" style="color: ${color};">${stat.count}</div>
+                            ${stat.avg_delivery_time ? `<div class="metric-label">Avg: ${Math.round(stat.avg_delivery_time)}s</div>` : ''}
+                        </div>
+                    `;
+                });
+                statsHtml += '</div>';
+                
+                // Recent failures
+                if (data.recentFailures.length > 0) {
+                    statsHtml += '<h3 style="margin-top: 2rem;">Recent Failures</h3>';
+                    statsHtml += data.recentFailures.map(email => `
+                        <div style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 0.5rem; border-left: 4px solid #ef4444;">
+                            <strong>${email.type}</strong> to ${email.recipient}<br>
+                            <small style="color: var(--text-secondary);">
+                                Retries: ${email.retry_count} | ${email.error_message || 'Unknown error'}
+                            </small>
+                        </div>
+                    `).join('');
+                }
+                
+                container.innerHTML = statsHtml;
+                
+            } catch (error) {
+                console.error('Error loading email stats:', error);
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/alerts?resolved=false`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                const container = document.getElementById('alerts-list');
+                if (data.alerts.length === 0) {
+                    container.innerHTML = '<p>No active alerts</p>';
+                    return;
+                }
+                
+                container.innerHTML = data.alerts.map(alert => `
+                    <div class="alert-item ${alert.severity.toLowerCase()}">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <strong>${alert.alert_type}</strong> - ${alert.severity}<br>
+                                ${alert.message}<br>
+                                <small style="color: var(--text-secondary);">
+                                    ${new Date(alert.created_at).toLocaleString()}
+                                </small>
+                            </div>
+                            <button class="btn btn--sm resolve-alert-btn" data-alert-id="${alert.id}">Resolve</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Attach event listeners to resolve buttons
+                document.querySelectorAll('.resolve-alert-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const alertId = parseInt(this.getAttribute('data-alert-id'));
+                        resolveAlert(alertId);
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        async function resolveAlert(alertId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/monitoring/alerts/${alertId}/resolve`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Failed to resolve alert');
+                
+                alert('Alert resolved');
+                loadAlerts();
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function loadTabData(tab) {
+            switch(tab) {
+                case 'errors':
+                    await loadErrors();
+                    break;
+                case 'performance':
+                    await loadPerformance();
+                    break;
+                case 'failed-logins':
+                    await loadFailedLogins();
+                    break;
+                case 'email':
+                    await loadEmailStats();
+                    break;
+                case 'alerts':
+                    await loadAlerts();
+                    break;
+            }
+        }
+
+        async function refreshAll() {
+            await loadHealthStatus();
+            await loadMetrics();
+            await loadTabData(currentTab);
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                refreshAll();
+                // Auto-refresh every 30 seconds
+                setInterval(refreshAll, 30000);
+            }
+        });
+    </script>
+</body>
+</html>
+

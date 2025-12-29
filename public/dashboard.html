@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container { min-height: 100vh; padding-top: 100px; padding-bottom: 60px; }
+        .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--spacing-2xl); margin-top: var(--spacing-2xl); }
+        .dashboard-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: var(--spacing-xl); }
+        .subscriptions-list { display: flex; flex-direction: column; gap: var(--spacing-md); }
+        .subscriptions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-lg); }
+        .subscriptions-table { width: 100%; border-collapse: collapse; }
+        .subscriptions-table th, .subscriptions-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .subscriptions-table th { background: var(--bg-tertiary); font-weight: 600; color: var(--text-primary); }
+        .subscriptions-table tr:hover { background: var(--bg-tertiary); }
+        .subscription-item { background: var(--bg-tertiary); padding: var(--spacing-lg); border-radius: var(--radius-md); border-left: 4px solid var(--primary-color); transition: transform 0.2s, box-shadow 0.2s; }
+        .subscription-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .subscription-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .view-toggle-btn { background: var(--bg-tertiary); border: 1px solid var(--border-color); padding: 0.5rem 1rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; font-size: 1.2rem; }
+        .view-toggle-btn:hover { background: var(--bg-secondary); }
+        .view-toggle-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .strategy-code { font-weight: 700; color: var(--primary-color); font-size: 1.1rem; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+        .status-active { background: #10b98120; color: #10b981; }
+        .status-expired { background: #ef444420; color: #ef4444; }
+        .status-pending { background: #f59e0b20; color: #f59e0b; }
+        .hidden { display: none !important; }
+        @media (max-width: 1024px) { 
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .subscriptions-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="dashboard.html" class="nav__logo">
+                <span class="logo__icon">📈</span>
+                <span class="logo__text">TradingPro</span>
+            </a>
+            <div class="nav__actions">
+                <a href="products.html" class="btn btn--secondary">Browse Products</a>
+                <a href="cart.html" class="btn btn--secondary">Cart</a>
+                <button id="admin-btn" class="btn btn--outline" style="display: none;">Admin Panel</button>
+                <button id="logout-btn" class="btn btn--outline">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="container">
+            <div class="section__header">
+                <h1 class="section__title">Welcome, <span id="user-name">User</span>!</h1>
+                <p class="section__description">Manage your subscriptions and account</p>
+            </div>
+
+            <div class="dashboard-grid">
+                <div style="grid-column: 1 / -1;">
+                    <div class="dashboard-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="margin: 0;">My Subscriptions</h2>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button id="view-grid-btn" class="view-toggle-btn active" onclick="toggleView('grid')" title="Grid View">
+                                    <span>⊞</span>
+                                </button>
+                                <button id="view-table-btn" class="view-toggle-btn" onclick="toggleView('table')" title="Table View">
+                                    <span>☰</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="subscriptions-list">
+                            <div class="loading">Loading subscriptions...</div>
+                        </div>
+                    </div>
+                </div>
+                    
+                    <div class="dashboard-card" style="margin-top: 2rem;">
+                        <h2 style="margin-bottom: 1.5rem;">Recent Orders</h2>
+                        <div id="orders-list">
+                            <div class="loading">Loading orders...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="dashboard-card">
+                        <h2 style="margin-bottom: 1.5rem;">Quick Actions</h2>
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <a href="products.html" class="btn btn--primary btn--full">Browse Products</a>
+                            <a href="cart.html" class="btn btn--secondary btn--full">View Cart</a>
+                            <a href="testimonials.html" class="btn btn--secondary btn--full">⭐ Submit Testimonial</a>
+                            <button onclick="viewProfile()" class="btn btn--outline btn--full">My Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage or URL
+        function getAuthToken() {
+            // Check URL for token (from OAuth redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromUrl = urlParams.get('token');
+            
+            if (tokenFromUrl) {
+                console.log('=== TOKEN FOUND IN URL ===');
+                console.log('Token length:', tokenFromUrl.length);
+                console.log('Token preview:', tokenFromUrl.substring(0, 50) + '...');
+                
+                // Store token in localStorage
+                localStorage.setItem('authToken', tokenFromUrl);
+                console.log('Token stored in localStorage');
+                
+                // Remove token from URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+                console.log('Token removed from URL');
+                
+                return tokenFromUrl;
+            }
+            
+            // Get token from localStorage
+            const storedToken = localStorage.getItem('authToken');
+            if (storedToken) {
+                console.log('Token retrieved from localStorage');
+            } else {
+                console.log('No token found in URL or localStorage');
+            }
+            
+            return storedToken;
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function loadDashboard() {
+            try {
+                const token = getAuthToken();
+                
+                if (!token) {
+                    console.log('No auth token found, redirecting to login');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                console.log('Loading dashboard with JWT token');
+                
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        // Token expired or invalid, clear it and redirect to login
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load dashboard');
+                }
+                
+                const data = await response.json();
+                console.log('Auth successful:', data);
+                console.log('Profile complete:', data.isProfileComplete);
+                console.log('Profile data:', data.profile);
+                
+                if (!data.isProfileComplete) {
+                    console.log('Profile incomplete, redirecting to registration');
+                    window.location.href = 'register.html';
+                    return;
+                }
+                
+                console.log('Profile is complete, loading dashboard');
+                document.getElementById('user-name').textContent = data.profile?.full_name || 'User';
+                
+                if (data.user.is_admin) {
+                    document.getElementById('admin-btn').style.display = 'block';
+                    document.getElementById('admin-btn').addEventListener('click', () => {
+                        window.location.href = 'admin/dashboard.html';
+                    });
+                }
+                
+                loadSubscriptions();
+                loadOrders();
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadSubscriptions() {
+            try {
+                console.log('Loading subscriptions...');
+                const response = await fetch(`${API_BASE_URL}/subscriptions/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Failed to load subscriptions:', response.status, errorData);
+                    throw new Error(errorData.message || 'Failed to load subscriptions');
+                }
+                
+                const data = await response.json();
+                console.log('Subscriptions loaded:', data);
+                console.log('Number of subscriptions:', data.subscriptions?.length || 0);
+                displaySubscriptions(data.subscriptions || []);
+            } catch (error) {
+                console.error('Error loading subscriptions:', error);
+                const errorMessage = error.message || 'Failed to load subscriptions';
+                document.getElementById('subscriptions-list').innerHTML = 
+                    `<p class="error" style="text-align: center; padding: 2rem; color: var(--danger-color);">
+                        ${errorMessage}<br>
+                        <small>If your profile is complete, please try refreshing the page.</small>
+                    </p>`;
+            }
+        }
+
+        function calculateDaysRemaining(endDate) {
+            const now = new Date();
+            const end = new Date(endDate);
+            const diffTime = end - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays;
+        }
+
+        function getDaysRemainingBadge(status, endDate) {
+            if (status !== 'ACTIVE') return '';
+            
+            const daysRemaining = calculateDaysRemaining(endDate);
+            
+            if (daysRemaining < 0) {
+                return '<span style="color: var(--error-color); font-weight: 600;">⚠️ Expired</span>';
+            } else if (daysRemaining === 0) {
+                return '<span style="color: var(--warning-color); font-weight: 600;">⏰ Expires Today</span>';
+            } else if (daysRemaining <= 7) {
+                return `<span style="color: var(--warning-color); font-weight: 600;">⏰ ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining</span>`;
+            } else if (daysRemaining <= 30) {
+                return `<span style="color: var(--accent-color); font-weight: 600;">✓ ${daysRemaining} days remaining</span>`;
+            } else {
+                return `<span style="color: var(--accent-color); font-weight: 600;">✓ ${daysRemaining} days remaining</span>`;
+            }
+        }
+
+        // Extract strategy code from product name (e.g., "S001" from "S001 - Zero Touch Strangle")
+        function extractStrategyCode(productName) {
+            const match = productName.match(/S(\d+)/i);
+            return match ? `S${match[1].padStart(3, '0')}` : null;
+        }
+
+        // Get status badge class
+        function getStatusBadgeClass(status) {
+            if (status === 'ACTIVE') return 'status-active';
+            if (status === 'EXPIRED') return 'status-expired';
+            return 'status-pending';
+        }
+
+        // Current view mode (grid or table)
+        let currentView = 'grid';
+
+        function toggleView(view) {
+            currentView = view;
+            
+            // Update button states
+            document.getElementById('view-grid-btn').classList.toggle('active', view === 'grid');
+            document.getElementById('view-table-btn').classList.toggle('active', view === 'table');
+            
+            // Re-render subscriptions with new view
+            const subscriptions = window.currentSubscriptions || [];
+            displaySubscriptions(subscriptions);
+        }
+
+        function displaySubscriptions(subscriptions) {
+            const container = document.getElementById('subscriptions-list');
+            window.currentSubscriptions = subscriptions; // Store for view toggle
+            
+            if (!subscriptions || subscriptions.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No active subscriptions. <a href="products.html">Browse products</a> to get started.</p>';
+                return;
+            }
+
+            if (currentView === 'grid') {
+                container.innerHTML = `
+                    <div class="subscriptions-grid">
+                        ${subscriptions.map(sub => {
+                            const strategyCode = extractStrategyCode(sub.product_name);
+                            const daysRemaining = calculateDaysRemaining(sub.end_date);
+                            
+                            return `
+                                <div class="subscription-item">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                        <div>
+                                            ${strategyCode ? `<div class="strategy-code">${strategyCode}</div>` : ''}
+                                            <h3 style="margin: 0.5rem 0 0 0; font-size: 1.1rem;">${sub.product_name}</h3>
+                                        </div>
+                                        <span class="status-badge ${getStatusBadgeClass(sub.status)}">${sub.status}</span>
+                                    </div>
+                                    
+                                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <strong>Valid:</strong> ${new Date(sub.start_date).toLocaleDateString()} - ${new Date(sub.end_date).toLocaleDateString()}
+                                        </div>
+                                        ${sub.status === 'ACTIVE' && daysRemaining > 0 ? `
+                                            <div style="color: var(--primary-color); font-weight: 600;">
+                                                ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    ${sub.status === 'ACTIVE' ? `
+                                        <button 
+                                            class="btn btn-primary" 
+                                            onclick="executeStrategy(${sub.id}, '${sub.product_name.replace(/'/g, "\\'")}')"
+                                            style="width: 100%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; padding: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: var(--radius-sm); cursor: pointer;">
+                                            <span>🚀</span> Execute Strategy
+                                        </button>
+                                    ` : `
+                                        <button 
+                                            class="btn" 
+                                            disabled
+                                            style="width: 100%; background: var(--bg-secondary); color: var(--text-secondary); border: none; padding: 0.75rem; border-radius: var(--radius-sm); cursor: not-allowed;">
+                                            Subscription ${sub.status}
+                                        </button>
+                                    `}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } else {
+                // Table view
+                container.innerHTML = `
+                    <div style="overflow-x: auto;">
+                        <table class="subscriptions-table">
+                            <thead>
+                                <tr>
+                                    <th>Strategy Code</th>
+                                    <th>Product Name</th>
+                                    <th>Status</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Days Remaining</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${subscriptions.map(sub => {
+                                    const strategyCode = extractStrategyCode(sub.product_name);
+                                    const daysRemaining = calculateDaysRemaining(sub.end_date);
+                                    
+                                    return `
+                                        <tr>
+                                            <td>
+                                                ${strategyCode ? `<span class="strategy-code">${strategyCode}</span>` : '-'}
+                                            </td>
+                                            <td><strong>${sub.product_name}</strong></td>
+                                            <td>
+                                                <span class="status-badge ${getStatusBadgeClass(sub.status)}">${sub.status}</span>
+                                            </td>
+                                            <td>${new Date(sub.start_date).toLocaleDateString()}</td>
+                                            <td>${new Date(sub.end_date).toLocaleDateString()}</td>
+                                            <td>
+                                                ${sub.status === 'ACTIVE' && daysRemaining > 0 ? 
+                                                    `<span style="color: var(--primary-color); font-weight: 600;">${daysRemaining}</span>` : 
+                                                    '-'
+                                                }
+                                            </td>
+                                            <td>
+                                                ${sub.status === 'ACTIVE' ? `
+                                                    <button 
+                                                        class="btn btn-primary" 
+                                                        onclick="executeStrategy(${sub.id}, '${sub.product_name.replace(/'/g, "\\'")}')"
+                                                        style="padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem;">
+                                                        🚀 Execute
+                                                    </button>
+                                                ` : `
+                                                    <span style="color: var(--text-secondary);">-</span>
+                                                `}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadOrders() {
+            try {
+                console.log('Loading orders...');
+                const response = await fetch(`${API_BASE_URL}/orders/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Failed to load orders:', response.status, errorData);
+                    throw new Error(errorData.message || 'Failed to load orders');
+                }
+                
+                const data = await response.json();
+                console.log('Orders loaded:', data);
+                displayOrders((data.orders || []).slice(0, 5));  // Show only recent 5
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                document.getElementById('orders-list').innerHTML = 
+                    `<p class="error" style="text-align: center; color: var(--text-secondary);">
+                        ${error.message || 'Failed to load orders'}
+                    </p>`;
+            }
+        }
+
+        function displayOrders(orders) {
+            const container = document.getElementById('orders-list');
+            
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No orders yet</p>';
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                    <strong>Order #${order.id}</strong> - ₹${order.total_amount}<br>
+                    <small style="color: var(--text-secondary);">
+                        Status: ${order.status} | ${new Date(order.created_at).toLocaleDateString()}
+                    </small>
+                </div>
+            `).join('');
+        }
+
+        function viewProfile() {
+            window.location.href = 'profile.html';
+        }
+
+        async function executeStrategy(subscriptionId, productName) {
+            try {
+                // Get JWT token from localStorage
+                const token = getAuthToken();
+                
+                if (!token) {
+                    alert('Authentication required. Please login again.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Show loading indicator
+                showLoading('Launching strategy application...');
+
+                // Call child app launch endpoint with JWT token
+                const response = await fetch(`${API_BASE_URL}/child-app/get-url`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                hideLoading();
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to launch child application');
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.url) {
+                    // Redirect to child app with JWT token in URL
+                    console.log('Redirecting to child app:', data.url);
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('Invalid response from server');
+                }
+
+            } catch (error) {
+                hideLoading();
+                console.error('Error launching child app:', error);
+                alert(`Failed to launch strategy application: ${error.message}\n\nPlease try again or contact support.`);
+            }
+        }
+
+        // Simple notification functions
+        function showLoading(message) {
+            // Create or update loading indicator
+            let loader = document.getElementById('loading-indicator');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'loading-indicator';
+                loader.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--primary-color); color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+                document.body.appendChild(loader);
+            }
+            loader.textContent = message;
+            loader.style.display = 'block';
+        }
+
+        function hideLoading() {
+            const loader = document.getElementById('loading-indicator');
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        }
+
+        function showSuccess(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function showError(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--error-color); color: white; padding: 1rem 1.5rem; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'index.html';
+        });
+
+        loadDashboard();
+    </script>
+</body>
+</html>
+

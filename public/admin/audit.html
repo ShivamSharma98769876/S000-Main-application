@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs | TradingPro Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">
+                    📊 Dashboard
+                </a>
+                <a href="orders.html" class="nav-item">
+                    📦 Orders <span class="badge" id="pending-count">0</span>
+                </a>
+                <a href="products.html" class="nav-item">
+                    🎯 Products
+                </a>
+                <a href="offers.html" class="nav-item">
+                    🎁 Offers
+                </a>
+                <a href="testimonials.html" class="nav-item">
+                    ⭐ Testimonials
+                </a>
+                <a href="config.html" class="nav-item">
+                    ⚙️ Config
+                </a>
+                <a href="audit.html" class="nav-item active">
+                    📝 Audit Logs
+                </a>
+                <a href="monitoring.html" class="nav-item">
+                    📡 Monitoring
+                </a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">
+                    ← Back to Site
+                </a>
+                <button id="logout-btn" class="nav-item logout-btn">
+                    🚪 Logout
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Login Audit Logs</h1>
+            </header>
+
+            <div class="admin-content">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>Recent Activity</h2>
+                        <span id="logs-count">0 records</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="audit-logs">
+                            <div class="loading">Loading audit logs...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadAuditLogs() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/login-audit?pageSize=100`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Failed to load audit logs');
+                
+                const data = await response.json();
+                displayAuditLogs(data.logs);
+                document.getElementById('logs-count').textContent = `${data.pagination.totalCount} records`;
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                document.getElementById('audit-logs').innerHTML = '<p class="error">Failed to load audit logs</p>';
+            }
+        }
+
+        function displayAuditLogs(logs) {
+            const container = document.getElementById('audit-logs');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No audit logs found</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Provider</th>
+                            <th>Event</th>
+                            <th>Status</th>
+                            <th>IP Address</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${logs.map(log => `
+                            <tr>
+                                <td>${log.id}</td>
+                                <td>${log.full_name || '-'}</td>
+                                <td>${log.email || '-'}</td>
+                                <td>${log.provider || '-'}</td>
+                                <td>${log.event_type}</td>
+                                <td>
+                                    <span class="status-badge ${log.status.toLowerCase() === 'success' ? 'approved' : 'rejected'}">
+                                        ${log.status}
+                                    </span>
+                                </td>
+                                <td>${log.ip_address || '-'}</td>
+                                <td>${new Date(log.created_at).toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                loadAuditLogs();
+            }
+        });
+    </script>
+</body>
+</html>
+

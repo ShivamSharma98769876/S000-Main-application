@@ -1,0 +1,815 @@
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+Product: Trading Subscription Web Platform
+Version: 1.0
+Owner: <Your Name>
+Date: <Insert Date>
+
+==================================================
+
+PRODUCT OVERVIEW
+==================================================
+
+The product is a web-based platform that markets and sells trading-related software products and services via subscriptions. It provides a public marketing site (landing page) and an authenticated area where users can register, subscribe to products, manage their profile, and access subscribed offerings.​
+
+Primary UX inspiration and visual direction will follow modern trading SaaS sites similar to Algorooms, with clean layouts, strong typography, and clear CTAs.​
+
+==================================================
+2. GOALS AND OBJECTIVES
+Enable visitors to discover the company, products, and offers and convert them into registered users and subscribers.
+
+Provide a frictionless login using Google and Apple identity providers.
+
+Implement a simple subscription flow: select products, choose subscription duration (month/year), add to cart, pay via offline UPI/QR, upload proof, and wait for admin approval.​
+
+Provide an admin workflow to review pending payment requests and approve or reject subscriptions.
+
+==================================================
+3. USER ROLES
+3.1 Visitor (Unauthenticated)
+
+Can view landing page and public marketing content.
+
+Can navigate to login/registration page.
+
+3.2 Registered User (Authenticated)
+
+Logs in via Google ID or Apple ID only.
+
+Completes one-time registration details and can update them later.
+
+Can view and subscribe to products, manage cart, upload payment proof, and view subscription status.
+
+Can view dashboard and access subscribed products.
+
+3.3 Admin
+
+Has all capabilities of a Registered User plus admin-only pages.
+
+Views and manages pending subscription requests.
+
+Updates subscription status (approve/reject) and manages products and payment QR configuration.
+
+==================================================
+4. FUNCTIONAL REQUIREMENTS
+4.1 Landing Page
+Purpose: Present the brand and offerings and drive sign-ups.​
+
+Content sections (public):
+
+Header with logo, main navigation (Home, Products, Offers, Testimonials, About, Login/Signup).
+
+Hero section with headline, subheadline, primary CTA (“Get Started” → Login/Signup) and secondary CTA (“View Products”).
+
+Products overview: high-level cards describing main products with “Learn more” / “Login to subscribe”.
+
+Offers/Promotions: current deals or discounts (configurable by admin).
+
+Testimonials: short customer testimonials with name and role (admin-managed).
+
+About Us: company overview, mission, and contact info.
+
+Footer: copyright, social links, privacy policy, terms & conditions.
+
+UX / UI Requirements:
+
+Responsive design (desktop, tablet, mobile).
+
+Visual style similar to modern trading platforms and Algorooms aesthetic (clean, high-contrast CTAs).​
+
+Clear, persistent “Login” and “Get Started” buttons.
+
+Landing page should load within ~3 seconds on typical broadband.
+
+4.2 Authentication (Login/Logout)
+Login options:
+
+“Continue with Google”.
+
+“Continue with Apple”.
+
+Behavior:
+
+User clicks a provider button; system redirects to provider’s OAuth flow and receives ID token or authorization code.​
+
+On successful authentication:
+
+If first login: create user record and redirect to Registration page.
+
+If returning user with completed registration: redirect to Dashboard.
+
+On failure: show generic error and allow retry or switch provider.
+
+Data captured from identity provider:
+
+provider_type: GOOGLE / APPLE
+
+provider_user_id
+
+email (if available)
+
+display name (if available)
+
+Logging requirements:
+
+Log every login and logout event with:
+
+user_id (if known), provider, timestamp, IP, user agent, status (SUCCESS/FAILURE/LOGOUT), error code/message (optional).
+
+Logs must be queryable by admin.
+
+4.3 Registration and Profile Management
+Trigger:
+
+First successful login via any provider when profile is incomplete.
+
+Registration page (one-time mandatory fields):
+
+Full Name (mandatory).
+
+Address (mandatory).
+
+Phone Number (mandatory, format validation).
+
+Capital Used for Trading (mandatory numeric).
+
+Optional: Referral code, communication preferences.
+
+Behavior:
+
+All mandatory fields must be completed before user can access products and dashboard.
+
+On submit: server validates and persists; redirect to Dashboard or Products page.
+
+Show success confirmation.
+
+Profile view / edit page:
+
+Accessible as “Profile” / “My Account”.
+
+Editable fields: Full Name, Address, Phone, Capital, optional fields.
+
+Non-editable: login provider type, provider user ID, and primary email (unless future change-email process).
+
+Shows non-editable list of active and past subscriptions.
+
+4.4 Product Catalog and Subscription Setup
+Products listing page (post-login):
+
+Grid or table layout.
+
+For each product: name, short description, category, monthly price, yearly price, “Subscribe” / “Add to Cart” CTA.
+
+Optional filters: category, price, popularity.
+
+Subscription duration selector (per product):
+
+Duration Type dropdown: Month / Year.
+
+Duration Units selector: integer 1–12.
+
+Backend calculation:
+
+For Month: end_date = start_date + (duration_units × 30 days).
+
+For Year: end_date = start_date + (duration_units × 365 days).
+
+Display validity clearly, e.g. “Valid: 06 Dec 2025 – 04 Jan 2026”.
+
+Behavior:
+
+When user sets duration and clicks “Add to Cart”:
+
+System creates/updates cart item with product, duration type, duration units, start and end dates, pricing.
+
+Show notification “Product added to cart”.
+
+4.5 Cart and Checkout
+Cart page:
+
+Shows list of items with: product name, duration type, duration units, start/end dates, price per unit, subtotal.
+
+Shows subtotal, discount (if any), total payable.
+
+User actions:
+
+Update duration (recalculate).
+
+Remove item.
+
+Empty cart.
+
+Proceed to Payment.
+
+Validation:
+
+Cart must have at least one item to proceed.
+
+If product becomes inactive, user must remove it before proceeding.
+
+4.6 Payment Page (QR-based Offline Payment)
+Payment method (Phase 1):
+
+QR code for UPI/bank transfer, configured by admin.
+
+Instructions:
+
+Scan QR using UPI/banking app.
+
+Complete payment and upload screenshot of successful payment.
+
+Payment proof upload:
+
+File upload (JPG, PNG, WEBP; max size configurable).
+
+Optional fields: transaction reference ID, payment date/time.
+
+On submit:
+
+Create SubscriptionOrder with status PENDING.
+
+Associate current cart items as order items.
+
+Clear cart.
+
+Notifications:
+
+Email to user: payment received, status PENDING, summary of products and amount.
+
+Email to admin: new pending subscription, with user and order details.​
+
+Confirmation page:
+
+Show order summary and message “Subscription pending admin approval; email will be sent after decision.”
+
+4.7 Pending Requests (Admin Only)
+Access:
+
+Admin-only menu “Pending Requests”.
+
+Pending Requests list:
+
+Columns: Order ID, user name, email, payment date, total amount, number of products, status, created timestamp.
+
+Filters: by status, date range, user, product.
+
+Search by email, name, or order ID.
+
+Pending Request detail view:
+
+User details (profile).
+
+Payment proof image (preview).
+
+Payment reference, payment date.
+
+List of products with durations and prices.
+
+Actions:
+
+Approve:
+
+Set order status = APPROVED.
+
+Create/activate subscriptions per item using start/end dates from order.
+
+Send approval email to user.
+
+Reject:
+
+Set status = REJECTED.
+
+Optional rejection reason stored and emailed to user.
+
+4.8 Subscriptions Visibility
+Profile/Registration page:
+
+“My Subscriptions” section, read-only: product name, status (ACTIVE/EXPIRED/UPCOMING), start date, end date.
+
+Dashboard page:
+
+Shows active subscriptions with quick access buttons/links.
+
+May show days remaining and “Renew” CTA (Phase 2).
+
+4.9 Logout
+Behavior:
+
+Logout menu item.
+
+On click: clear session, write logout audit entry, and redirect to landing page.
+
+==================================================
+5. NON-FUNCTIONAL REQUIREMENTS
+5.1 Security
+
+Use OAuth 2.0 / OpenID Connect for Google and Apple login.
+
+Do not store any user passwords.
+
+Serve all endpoints over HTTPS.
+
+Implement CSRF protection and secure session management.
+
+Apply server-side validation and basic input sanitization.​
+
+5.2 Performance
+
+Landing page TTFB and load within ~3 seconds on typical broadband.
+
+Authenticated pages should respond within ~1 second for typical operations.
+
+Optimize images (QR, logos, product graphics).
+
+5.3 Scalability
+
+Web/API tier horizontally scalable.
+
+DB designed for tens of thousands of users and orders in Phase 1.​
+
+5.4 Availability
+
+Target uptime: 99.5% in Phase 1.
+
+Monitoring for errors, failed logins, email sending issues.
+
+5.5 Maintainability
+
+Modular architecture separating frontend, backend API, auth integration, subscription/billing module, and admin module.
+
+Use configuration for QR, pricing, contact details instead of hardcoding.
+
+==================================================
+6. DATA MODEL (LOGICAL OVERVIEW)
+Entities:
+
+User
+
+UserProfile
+
+Product
+
+Cart
+
+CartItem
+
+SubscriptionOrder
+
+SubscriptionOrderItem
+
+Subscription
+
+LoginAudit
+
+SystemConfig (for QR code URL, support email, etc.)
+
+(Concrete schema in section 9.3.)
+
+==================================================
+7. UX AND UI GUIDELINES
+Design language inspired by modern trading platforms and Algorooms case study: clean layouts, clear hierarchy, strong CTAs.​
+
+Consistent header and footer.
+
+Mobile-first responsive design.
+
+Well-defined empty states and error/success notifications.
+
+==================================================
+8. ASSUMPTIONS AND OPEN QUESTIONS
+Assumptions:
+
+Only Google and Apple login in Phase 1.
+
+Payments via offline QR; no online gateway integration initially.
+
+Access to actual trading products is out of scope here (links provided later).
+
+Open questions:
+
+Final brand theme (light/dark, colors, logo).
+
+Detailed email templates and whether SMS/WhatsApp alerts are needed.
+
+Primary time zone and locale.
+
+Auto-renewal / reminder behavior for subscriptions in later phases.
+
+==================================================
+9. LOW-LEVEL TECHNICAL DESIGN
+9.1 High-Level Architecture
+
+Frontend SPA or web app calling REST APIs over HTTPS.
+
+Backend REST API (Node.js/Express, FastAPI, Spring Boot, etc.).
+
+Relational DB (PostgreSQL or MySQL).​
+
+OAuth 2.0 / OIDC with Google and Apple.
+
+Object storage for payment proof images.
+
+9.2 REST API DESIGN (BASE: /api/v1)
+9.2.1 Auth & Session
+
+POST /auth/oauth/google
+
+Request: { "idToken": "string" }
+
+Logic: Validate with Google, find or create user, create session token, log login audit.
+
+Response: { "userId": 123, "isProfileComplete": true|false }.
+
+POST /auth/oauth/apple
+
+Same behavior as Google, using Apple token.
+
+POST /auth/logout
+
+Clears session token and logs logout event.
+
+Response: 204 No Content.
+
+GET /auth/me
+
+Returns authenticated user and profile summary:
+
+{ "user": {...}, "profile": {...}, "isAdmin": true|false }.
+
+9.2.2 User Profile
+
+POST /users/me/profile
+
+Creates or completes user profile.
+
+Request body:
+
+fullName, address, phone, capitalUsed, referralCode.
+
+Response: updated profile.
+
+PUT /users/me/profile
+
+Updates profile fields (excluding provider and email).
+
+GET /users/me/profile
+
+Returns profile with list of subscriptions.
+
+9.2.3 Products
+
+GET /products
+
+Query params: status=ACTIVE, page, pageSize.
+
+Returns list of products with pricing.
+
+GET /products/:id
+
+Returns detailed product information.
+
+(Admin future) POST/PUT/DELETE /products
+
+For catalog management.
+
+9.2.4 Cart
+
+GET /cart
+
+Returns current user cart and items.
+
+POST /cart/items
+
+Request body:
+
+productId, durationType (MONTH/YEAR), durationUnits (1–12).
+
+Backend calculates startDate and endDate, unit_price and subtotal, and adds item.
+
+PUT /cart/items/:itemId
+
+Updates durationType/units and recalculates dates/totals.
+
+DELETE /cart/items/:itemId
+
+Removes one item.
+
+DELETE /cart
+
+Empties cart.
+
+9.2.5 Orders & Payment Proof
+
+POST /orders
+
+Creates SubscriptionOrder from current cart.
+
+Request body: optional paymentReference and paymentDate.
+
+Backend: copies cart items to order items, clears cart, sets status PENDING.
+
+Response: { "orderId": 123, "status": "PENDING" }.
+
+POST /orders/:orderId/payment-proof
+
+Multipart upload including file and optional paymentReference/paymentDate.
+
+Backend: uploads file to storage and updates order with payment_proof_url and fields.
+
+GET /orders/me
+
+Lists orders for current user.
+
+GET /orders/me/:orderId
+
+Returns details of specific order.
+
+9.2.6 Subscriptions
+
+GET /subscriptions/me
+
+Returns list of Subscription entities for current user.
+
+(Admin) GET /admin/subscriptions
+
+Admin support tool (future).
+
+9.2.7 Admin – Pending Requests
+
+GET /admin/orders
+
+Query params: status (default PENDING), from, to, user.
+
+Returns filtered order list.
+
+GET /admin/orders/:orderId
+
+Returns full order detail, including user profile and payment proof URL.
+
+POST /admin/orders/:orderId/approve
+
+Approves order, creates subscriptions from order items, sets order status APPROVED, sends email.
+
+POST /admin/orders/:orderId/reject
+
+Request body: { "reason": "string" }.
+
+Sets status REJECTED, stores reason, sends email.
+
+9.2.8 Login Audit
+
+GET /admin/login-audit
+
+Query params: userId, from, to.
+
+Returns login and logout events.
+
+9.3 DATABASE SCHEMA (SQL-STYLE)
+(Engine-agnostic; adapt types to PostgreSQL/MySQL.)
+
+TABLE users (
+id BIGSERIAL PRIMARY KEY,
+provider_type VARCHAR(20) NOT NULL, -- 'GOOGLE' or 'APPLE'
+provider_user_id VARCHAR(255) NOT NULL,
+email VARCHAR(255) NOT NULL,
+is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+UNIQUE (provider_type, provider_user_id),
+UNIQUE (email)
+);
+
+TABLE user_profiles (
+user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+full_name VARCHAR(255) NOT NULL,
+address TEXT NOT NULL,
+phone VARCHAR(50) NOT NULL,
+capital_used NUMERIC(15,2) NOT NULL,
+referral_code VARCHAR(50),
+is_complete BOOLEAN NOT NULL DEFAULT FALSE,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE products (
+id BIGSERIAL PRIMARY KEY,
+name VARCHAR(255) NOT NULL,
+description TEXT,
+category VARCHAR(100),
+monthly_price NUMERIC(10,2) NOT NULL,
+yearly_price NUMERIC(10,2) NOT NULL,
+status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE/INACTIVE
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE carts (
+id BIGSERIAL PRIMARY KEY,
+user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+UNIQUE (user_id)
+);
+
+TABLE cart_items (
+id BIGSERIAL PRIMARY KEY,
+cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
+product_id BIGINT NOT NULL REFERENCES products(id),
+duration_type VARCHAR(10) NOT NULL, -- 'MONTH' or 'YEAR'
+duration_units SMALLINT NOT NULL CHECK (duration_units BETWEEN 1 AND 12),
+start_date DATE NOT NULL,
+end_date DATE NOT NULL,
+unit_price NUMERIC(10,2) NOT NULL,
+subtotal NUMERIC(10,2) NOT NULL,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE subscription_orders (
+id BIGSERIAL PRIMARY KEY,
+user_id BIGINT NOT NULL REFERENCES users(id),
+status VARCHAR(20) NOT NULL, -- PENDING/APPROVED/REJECTED
+total_amount NUMERIC(12,2) NOT NULL,
+payment_proof_url TEXT,
+payment_reference VARCHAR(100),
+payment_date TIMESTAMP,
+rejection_reason TEXT,
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE subscription_order_items (
+id BIGSERIAL PRIMARY KEY,
+order_id BIGINT NOT NULL REFERENCES subscription_orders(id) ON DELETE CASCADE,
+product_id BIGINT NOT NULL REFERENCES products(id),
+duration_type VARCHAR(10) NOT NULL,
+duration_units SMALLINT NOT NULL,
+start_date DATE NOT NULL,
+end_date DATE NOT NULL,
+unit_price NUMERIC(10,2) NOT NULL,
+subtotal NUMERIC(10,2) NOT NULL
+);
+
+TABLE subscriptions (
+id BIGSERIAL PRIMARY KEY,
+user_id BIGINT NOT NULL REFERENCES users(id),
+product_id BIGINT NOT NULL REFERENCES products(id),
+start_date DATE NOT NULL,
+end_date DATE NOT NULL,
+status VARCHAR(20) NOT NULL, -- ACTIVE/EXPIRED/UPCOMING
+source_order_id BIGINT NOT NULL REFERENCES subscription_orders(id),
+created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE login_audit (
+id BIGSERIAL PRIMARY KEY,
+user_id BIGINT REFERENCES users(id),
+provider VARCHAR(20),
+event_type VARCHAR(20) NOT NULL, -- LOGIN/LOGOUT
+status VARCHAR(20) NOT NULL, -- SUCCESS/FAILURE
+error_code VARCHAR(100),
+ip_address VARCHAR(50),
+user_agent TEXT,
+created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+TABLE system_config (
+key VARCHAR(100) PRIMARY KEY,
+value TEXT NOT NULL,
+updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+Recommended indexes (examples):
+
+subscription_orders (status, created_at)
+
+subscriptions (user_id, status)
+
+login_audit (user_id, created_at)
+
+9.4 KEY SEQUENCE DIAGRAMS (TEXTUAL)
+9.4.1 OAuth Login and Registration (First Time)
+
+User -> Frontend: Click “Continue with Google”.
+
+Frontend -> Google OAuth: Start OAuth flow (redirect).
+
+Google -> Frontend: Return ID token.
+
+Frontend -> Backend /auth/oauth/google: Send ID token.
+
+Backend -> Google Token Endpoint: Validate token.
+
+Google -> Backend: Return user info.
+
+Backend:
+
+Find or create user in users table.
+
+Ensure user_profiles row exists (is_complete = false if new).
+
+Insert login_audit row with SUCCESS.
+
+Generate session token.
+
+Backend -> Frontend: { userId, isProfileComplete: false }.
+
+Frontend: Redirect to Registration page.
+
+User -> Frontend: Fills and submits registration form.
+
+Frontend -> Backend /users/me/profile: Send profile data.
+
+Backend: Validate, update user_profiles (is_complete = true).
+
+Backend -> Frontend: Return updated profile.
+
+Frontend: Redirect to Dashboard.
+
+9.4.2 Add Product to Cart and Checkout
+
+User -> Frontend: Select product and duration, click “Add to Cart”.
+
+Frontend -> Backend /cart/items: Send productId, durationType, durationUnits.
+
+Backend:
+
+Determine start_date = today.
+
+Compute end_date = start_date + durationUnits × (30 or 365 days).
+
+Fetch product price, compute unit_price and subtotal.
+
+Insert into cart_items.
+
+Backend -> Frontend: Updated cart.
+
+User -> Frontend: Open Cart and click “Proceed to Payment”.
+
+Frontend -> Backend /orders: POST create order.
+
+Backend:
+
+Load cart for user.
+
+Create subscription_orders row with status = PENDING, total_amount = sum of subtotals.
+
+Insert subscription_order_items from cart_items.
+
+Clear cart.
+
+Backend -> Frontend: { orderId, status: "PENDING" }.
+
+Frontend: Show Payment page with QR and order summary.
+
+User pays via UPI externally and returns.
+
+User -> Frontend: Upload payment screenshot and reference.
+
+Frontend -> Backend /orders/{orderId}/payment-proof: Multipart upload.
+
+Backend:
+
+Store file in object storage.
+
+Update order payment_proof_url, payment_reference, payment_date.
+
+Send emails to user and admin.
+
+Backend -> Frontend: Confirmation.
+
+Frontend: Show “Pending approval” state.
+
+9.4.3 Admin Approval and Subscription Activation
+
+Admin -> Frontend: Open “Pending Requests”.
+
+Frontend -> Backend /admin/orders?status=PENDING: Fetch list.
+
+Backend -> Frontend: Pending orders list.
+
+Admin -> Frontend: Open a specific order.
+
+Frontend -> Backend /admin/orders/{orderId}: Fetch details.
+
+Backend -> Frontend: Order detail + user profile + payment proof URL.
+
+Admin -> Frontend: Click “Approve”.
+
+Frontend -> Backend /admin/orders/{orderId}/approve: Approve command.
+
+Backend:
+
+Check order status is PENDING.
+
+For each subscription_order_item: create subscriptions row with appropriate status.
+
+Update subscription_orders.status = APPROVED.
+
+Send approval email to user.
+
+Backend -> Frontend: Updated order and created subscriptions.
+
+Frontend: Refresh UI; order disappears from pending list.
+
+==================================================

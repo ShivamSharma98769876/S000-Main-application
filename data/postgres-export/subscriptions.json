@@ -1,0 +1,62 @@
+[
+  {
+    "id": 2,
+    "user_id": 2,
+    "product_id": 27,
+    "order_id": 2,
+    "start_date": "2025-12-21T18:30:00.000Z",
+    "end_date": "2026-12-21T18:30:00.000Z",
+    "status": "ACTIVE",
+    "auto_renew": false,
+    "created_at": "2025-12-21T21:50:00.900Z",
+    "updated_at": "2025-12-21T21:50:00.900Z"
+  },
+  {
+    "id": 3,
+    "user_id": 2,
+    "product_id": 28,
+    "order_id": 2,
+    "start_date": "2025-12-21T18:30:00.000Z",
+    "end_date": "2026-01-20T18:30:00.000Z",
+    "status": "ACTIVE",
+    "auto_renew": false,
+    "created_at": "2025-12-21T21:50:00.900Z",
+    "updated_at": "2025-12-21T21:50:00.900Z"
+  },
+  {
+    "id": 4,
+    "user_id": 5,
+    "product_id": 27,
+    "order_id": 4,
+    "start_date": "2025-12-21T18:30:00.000Z",
+    "end_date": "2026-01-20T18:30:00.000Z",
+    "status": "ACTIVE",
+    "auto_renew": false,
+    "created_at": "2025-12-22T08:00:36.103Z",
+    "updated_at": "2025-12-22T08:00:36.103Z"
+  },
+  {
+    "id": 5,
+    "user_id": 5,
+    "product_id": 28,
+    "order_id": 4,
+    "start_date": "2025-12-21T18:30:00.000Z",
+    "end_date": "2026-01-20T18:30:00.000Z",
+    "status": "ACTIVE",
+    "auto_renew": false,
+    "created_at": "2025-12-22T08:00:36.103Z",
+    "updated_at": "2025-12-22T08:00:36.103Z"
+  },
+  {
+    "id": 6,
+    "user_id": 2,
+    "product_id": 29,
+    "order_id": 3,
+    "start_date": "2025-12-21T18:30:00.000Z",
+    "end_date": "2026-01-20T18:30:00.000Z",
+    "status": "ACTIVE",
+    "auto_renew": false,
+    "created_at": "2025-12-23T21:53:01.228Z",
+    "updated_at": "2025-12-23T21:53:01.228Z"
+  }
+]

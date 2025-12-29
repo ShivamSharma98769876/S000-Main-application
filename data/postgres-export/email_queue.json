@@ -1,0 +1,274 @@
+[
+  {
+    "id": 1,
+    "type": "PAYMENT_RECEIVED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "amount": "26200.00",
+      "orderId": "2",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-21T21:40:16.900Z",
+    "sent_at": "2025-12-23T21:57:43.791Z",
+    "updated_at": "2025-12-23T21:57:43.791Z"
+  },
+  {
+    "id": 2,
+    "type": "ADMIN_NEW_ORDER",
+    "recipient": "nimblegrowthoptions@gmail.com",
+    "data": {
+      "amount": "26200.00",
+      "orderId": "2",
+      "userName": "Shivam Sharma",
+      "itemCount": "2",
+      "userEmail": "shivam.sharma3276@gmail.com"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-21T21:40:17.233Z",
+    "sent_at": "2025-12-23T21:57:47.705Z",
+    "updated_at": "2025-12-23T21:57:47.705Z"
+  },
+  {
+    "id": 3,
+    "type": "ORDER_APPROVED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "orderId": "2",
+      "userName": "Shivam Sharma",
+      "subscriptions": [
+        {
+          "endDate": "2026-12-21T18:30:00.000Z",
+          "startDate": "2025-12-21T18:30:00.000Z",
+          "productName": "S002-Zero Touch Strangle(Customized)"
+        },
+        {
+          "endDate": "2026-01-20T18:30:00.000Z",
+          "startDate": "2025-12-21T18:30:00.000Z",
+          "productName": "S001-Zero Touch Strangle"
+        }
+      ]
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-21T21:50:00.967Z",
+    "sent_at": "2025-12-23T21:57:51.459Z",
+    "updated_at": "2025-12-23T21:57:51.459Z"
+  },
+  {
+    "id": 4,
+    "type": "PAYMENT_RECEIVED",
+    "recipient": "pmdivakar7@gmail.com",
+    "data": {
+      "amount": "4400.00",
+      "orderId": "4",
+      "userName": "Divakara"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-22T07:38:26.731Z",
+    "sent_at": "2025-12-23T21:57:55.535Z",
+    "updated_at": "2025-12-23T21:57:55.535Z"
+  },
+  {
+    "id": 5,
+    "type": "ADMIN_NEW_ORDER",
+    "recipient": "nimblegrowthoptions@gmail.com",
+    "data": {
+      "amount": "4400.00",
+      "orderId": "4",
+      "userName": "Divakara",
+      "itemCount": "2",
+      "userEmail": "pmdivakar7@gmail.com"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-22T07:38:27.025Z",
+    "sent_at": "2025-12-23T21:57:59.125Z",
+    "updated_at": "2025-12-23T21:57:59.125Z"
+  },
+  {
+    "id": 6,
+    "type": "ORDER_APPROVED",
+    "recipient": "pmdivakar7@gmail.com",
+    "data": {
+      "orderId": "4",
+      "userName": "Divakara",
+      "subscriptions": [
+        {
+          "endDate": "2026-01-20T18:30:00.000Z",
+          "startDate": "2025-12-21T18:30:00.000Z",
+          "productName": "S002-Zero Touch Strangle(Customized)"
+        },
+        {
+          "endDate": "2026-01-20T18:30:00.000Z",
+          "startDate": "2025-12-21T18:30:00.000Z",
+          "productName": "S001-Zero Touch Strangle"
+        }
+      ]
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-22T08:00:36.171Z",
+    "sent_at": "2025-12-23T21:58:02.740Z",
+    "updated_at": "2025-12-23T21:58:02.740Z"
+  },
+  {
+    "id": 7,
+    "type": "ORDER_APPROVED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "orderId": "3",
+      "userName": "Shivam Sharma",
+      "subscriptions": [
+        {
+          "endDate": "2026-01-20T18:30:00.000Z",
+          "startDate": "2025-12-21T18:30:00.000Z",
+          "productName": "S003- Fibonacci Retracement"
+        }
+      ]
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-23T21:53:01.261Z",
+    "sent_at": "2025-12-23T21:58:06.679Z",
+    "updated_at": "2025-12-23T21:58:06.679Z"
+  },
+  {
+    "id": 8,
+    "type": "PAYMENT_RECEIVED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "amount": "199.00",
+      "orderId": "5",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T17:08:46.430Z",
+    "sent_at": "2025-12-28T17:08:51.756Z",
+    "updated_at": "2025-12-28T17:08:51.756Z"
+  },
+  {
+    "id": 9,
+    "type": "ADMIN_NEW_ORDER",
+    "recipient": "nimblegrowthoptions@gmail.com",
+    "data": {
+      "amount": "199.00",
+      "orderId": "5",
+      "userName": "Shivam Sharma",
+      "itemCount": "1",
+      "userEmail": "shivam.sharma3276@gmail.com"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T17:08:47.801Z",
+    "sent_at": "2025-12-28T17:08:57.280Z",
+    "updated_at": "2025-12-28T17:08:57.280Z"
+  },
+  {
+    "id": 10,
+    "type": "ORDER_REJECTED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "reason": "q",
+      "orderId": "9",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T18:23:38.231Z",
+    "sent_at": "2025-12-28T18:23:41.195Z",
+    "updated_at": "2025-12-28T18:23:41.195Z"
+  },
+  {
+    "id": 11,
+    "type": "ORDER_REJECTED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "reason": "q",
+      "orderId": "8",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T18:23:45.275Z",
+    "sent_at": "2025-12-28T18:23:48.055Z",
+    "updated_at": "2025-12-28T18:23:48.055Z"
+  },
+  {
+    "id": 12,
+    "type": "ORDER_REJECTED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "reason": "q",
+      "orderId": "7",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T18:23:52.273Z",
+    "sent_at": "2025-12-28T18:23:54.999Z",
+    "updated_at": "2025-12-28T18:23:54.999Z"
+  },
+  {
+    "id": 13,
+    "type": "ORDER_REJECTED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "reason": "q",
+      "orderId": "6",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T18:24:00.573Z",
+    "sent_at": "2025-12-28T18:24:03.479Z",
+    "updated_at": "2025-12-28T18:24:03.479Z"
+  },
+  {
+    "id": 14,
+    "type": "ORDER_REJECTED",
+    "recipient": "shivam.sharma3276@gmail.com",
+    "data": {
+      "reason": "q",
+      "orderId": "5",
+      "userName": "Shivam Sharma"
+    },
+    "priority": "HIGH",
+    "status": "SENT",
+    "retry_count": 0,
+    "error_message": null,
+    "created_at": "2025-12-28T18:24:10.501Z",
+    "sent_at": "2025-12-28T18:24:13.209Z",
+    "updated_at": "2025-12-28T18:24:13.209Z"
+  }
+]

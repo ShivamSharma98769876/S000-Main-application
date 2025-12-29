@@ -1,0 +1,110 @@
+[
+  {
+    "id": 2,
+    "user_id": 2,
+    "status": "APPROVED",
+    "total_amount": "26200.00",
+    "payment_proof_url": "/uploads/payment-1766353216848-908084065.jpg",
+    "payment_reference": "43243434234",
+    "payment_date": "2025-12-22T06:42:00.000Z",
+    "rejection_reason": null,
+    "created_at": "2025-12-21T21:35:58.616Z",
+    "updated_at": "2025-12-21T21:50:00.900Z"
+  },
+  {
+    "id": 3,
+    "user_id": 2,
+    "status": "APPROVED",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": null,
+    "created_at": "2025-12-22T03:02:50.986Z",
+    "updated_at": "2025-12-23T21:53:01.228Z"
+  },
+  {
+    "id": 4,
+    "user_id": 5,
+    "status": "APPROVED",
+    "total_amount": "4400.00",
+    "payment_proof_url": "/uploads/payment-1766389106675-903354854.png",
+    "payment_reference": "34553454354",
+    "payment_date": "2025-12-22T08:52:00.000Z",
+    "rejection_reason": null,
+    "created_at": "2025-12-22T07:37:40.559Z",
+    "updated_at": "2025-12-22T08:00:36.103Z"
+  },
+  {
+    "id": 5,
+    "user_id": 2,
+    "status": "REJECTED",
+    "total_amount": "199.00",
+    "payment_proof_url": "/uploads/payment-1766941726256-377269623.png",
+    "payment_reference": "34553454354",
+    "payment_date": null,
+    "rejection_reason": "q",
+    "created_at": "2025-12-28T17:03:01.703Z",
+    "updated_at": "2025-12-28T18:24:10.497Z"
+  },
+  {
+    "id": 6,
+    "user_id": 2,
+    "status": "REJECTED",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": "q",
+    "created_at": "2025-12-28T17:58:17.259Z",
+    "updated_at": "2025-12-28T18:24:00.569Z"
+  },
+  {
+    "id": 7,
+    "user_id": 2,
+    "status": "REJECTED",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": "q",
+    "created_at": "2025-12-28T17:58:51.833Z",
+    "updated_at": "2025-12-28T18:23:52.269Z"
+  },
+  {
+    "id": 8,
+    "user_id": 2,
+    "status": "REJECTED",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": "q",
+    "created_at": "2025-12-28T17:59:46.563Z",
+    "updated_at": "2025-12-28T18:23:45.271Z"
+  },
+  {
+    "id": 9,
+    "user_id": 2,
+    "status": "REJECTED",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": "q",
+    "created_at": "2025-12-28T18:21:32.644Z",
+    "updated_at": "2025-12-28T18:23:38.227Z"
+  },
+  {
+    "id": 10,
+    "user_id": 2,
+    "status": "PENDING",
+    "total_amount": "199.00",
+    "payment_proof_url": null,
+    "payment_reference": null,
+    "payment_date": null,
+    "rejection_reason": null,
+    "created_at": "2025-12-28T18:24:58.961Z",
+    "updated_at": "2025-12-28T18:24:58.961Z"
+  }
+]

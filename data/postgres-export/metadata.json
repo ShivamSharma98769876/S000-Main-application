@@ -1,0 +1,24 @@
+{
+  "exportDate": "2025-12-29T14:18:14.226Z",
+  "totalRows": 3934,
+  "tables": [
+    "users",
+    "user_profiles",
+    "products",
+    "carts",
+    "cart_items",
+    "subscription_orders",
+    "subscription_order_items",
+    "subscriptions",
+    "login_audit",
+    "system_config",
+    "session",
+    "offers",
+    "testimonials",
+    "email_queue",
+    "error_logs",
+    "performance_metrics",
+    "failed_login_attempts",
+    "system_alerts"
+  ]
+}

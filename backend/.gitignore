@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Logs
+logs/
+*.log
+
+# Uploads
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+dist/
+build/
+
+# Testing
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# JWT Keys - NEVER COMMIT
+config/keys/private.pem
+config/keys/*.pem
+
+#MD files 
+*.md

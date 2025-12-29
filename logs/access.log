@@ -1,0 +1,50 @@
+{"environment":"development","level":"info","message":"Creating app_access_audit table...","service":"tradingpro-api","timestamp":"2025-12-27 22:46:20"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-27 22:46:20"}
+{"environment":"development","level":"info","message":"✓ app_access_audit table created successfully","service":"tradingpro-api","timestamp":"2025-12-27 22:46:20"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-28 23:42:46"}
+{"environment":"development","level":"info","message":"✓ Testimonials table updated for user submissions","service":"tradingpro-api","timestamp":"2025-12-28 23:42:46"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-28 23:47:19"}
+{"environment":"development","level":"info","message":"✓ Testimonials table updated for user submissions","service":"tradingpro-api","timestamp":"2025-12-28 23:47:19"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-28 23:47:53"}
+{"environment":"development","level":"info","message":"✓ Testimonials table updated for user submissions","service":"tradingpro-api","timestamp":"2025-12-28 23:47:53"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-28 23:48:31"}
+{"environment":"development","level":"info","message":"✓ Testimonials table updated for user submissions","service":"tradingpro-api","timestamp":"2025-12-28 23:48:31"}
+{"environment":"development","level":"info","message":"Database connection established","service":"tradingpro-api","timestamp":"2025-12-28 23:50:18"}
+{"environment":"development","level":"info","message":"✓ Testimonials table updated for user submissions","service":"tradingpro-api","timestamp":"2025-12-28 23:50:18"}
+{"environment":"development","level":"info","message":"Starting PostgreSQL data export...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:12"}
+{"environment":"development","level":"info","message":"Exporting users...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:12"}
+{"environment":"development","level":"info","message":"✓ Exported 5 rows from users","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting user_profiles...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 5 rows from user_profiles","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting products...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 3 rows from products","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting carts...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 3 rows from carts","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting cart_items...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 0 rows from cart_items","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting subscription_orders...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 9 rows from subscription_orders","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting subscription_order_items...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 11 rows from subscription_order_items","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting subscriptions...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 5 rows from subscriptions","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting login_audit...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 238 rows from login_audit","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting system_config...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 11 rows from system_config","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting session...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 29 rows from session","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting offers...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 0 rows from offers","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting testimonials...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 1 rows from testimonials","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting email_queue...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 14 rows from email_queue","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting error_logs...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 10 rows from error_logs","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"Exporting performance_metrics...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:13"}
+{"environment":"development","level":"info","message":"✓ Exported 3587 rows from performance_metrics","service":"tradingpro-api","timestamp":"2025-12-29 19:48:14"}
+{"environment":"development","level":"info","message":"Exporting failed_login_attempts...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:14"}
+{"environment":"development","level":"info","message":"✓ Exported 3 rows from failed_login_attempts","service":"tradingpro-api","timestamp":"2025-12-29 19:48:14"}
+{"environment":"development","level":"info","message":"Exporting system_alerts...","service":"tradingpro-api","timestamp":"2025-12-29 19:48:14"}
+{"environment":"development","level":"info","message":"✓ Exported 0 rows from system_alerts","service":"tradingpro-api","timestamp":"2025-12-29 19:48:14"}

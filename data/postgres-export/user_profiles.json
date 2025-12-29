@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "full_name": "Admin User",
+    "phone": "+918904002365",
+    "address": "Bangalore, Karnataka, India",
+    "capital_used": "0.00",
+    "referral_code": null,
+    "communication_preferences": {
+      "sms": false,
+      "email": true
+    },
+    "profile_completed": true,
+    "created_at": "2025-12-07T12:48:28.408Z",
+    "updated_at": "2025-12-07T12:48:28.408Z",
+    "zerodha_client_id": null
+  },
+  {
+    "id": 2,
+    "user_id": 2,
+    "full_name": "Shivam Sharma",
+    "phone": "+919718847679",
+    "address": "Belathur Village Road Kadugdi Bangalore",
+    "capital_used": "1000000.00",
+    "referral_code": null,
+    "communication_preferences": {
+      "sms": false,
+      "email": true
+    },
+    "profile_completed": true,
+    "created_at": "2025-12-21T20:29:42.339Z",
+    "updated_at": "2025-12-21T20:29:42.339Z",
+    "zerodha_client_id": "UK9090"
+  },
+  {
+    "id": 4,
+    "user_id": 4,
+    "full_name": "NimbleGrowth Options",
+    "phone": "+918904002365",
+    "address": "Belathur Village Road Kadugdi Bangalore",
+    "capital_used": "1199999000.00",
+    "referral_code": null,
+    "communication_preferences": {
+      "sms": false,
+      "email": true
+    },
+    "profile_completed": true,
+    "created_at": "2025-12-21T20:53:39.295Z",
+    "updated_at": "2025-12-21T20:53:39.295Z",
+    "zerodha_client_id": "UK9089"
+  },
+  {
+    "id": 5,
+    "user_id": 5,
+    "full_name": "Divakara",
+    "phone": "+917411222638",
+    "address": "Bangalore",
+    "capital_used": "1000000.00",
+    "referral_code": null,
+    "communication_preferences": {
+      "sms": false,
+      "email": true
+    },
+    "profile_completed": true,
+    "created_at": "2025-12-22T07:35:51.232Z",
+    "updated_at": "2025-12-22T07:36:45.085Z",
+    "zerodha_client_id": "MZ2764"
+  },
+  {
+    "id": 6,
+    "user_id": 6,
+    "full_name": null,
+    "phone": null,
+    "address": null,
+    "capital_used": null,
+    "referral_code": null,
+    "communication_preferences": {
+      "sms": false,
+      "email": true
+    },
+    "profile_completed": false,
+    "created_at": "2025-12-28T06:39:45.506Z",
+    "updated_at": "2025-12-28T06:39:45.506Z",
+    "zerodha_client_id": null
+  }
+]

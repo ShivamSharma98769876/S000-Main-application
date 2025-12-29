@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Registration | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .form-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-xl);
+        }
+        .form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-2xl);
+            max-width: 600px;
+            width: 100%;
+        }
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .form-label.required::after {
+            content: ' *';
+            color: var(--danger-color);
+        }
+        .form-input {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            transition: border-color var(--transition-fast);
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .form-input.error {
+            border-color: var(--danger-color);
+        }
+        .form-error {
+            color: var(--danger-color);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-xs);
+        }
+        .form-hint {
+            color: var(--text-tertiary);
+            font-size: var(--font-size-sm);
+            margin-top: var(--spacing-xs);
+        }
+        .alert {
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger-color);
+            color: var(--danger-color);
+        }
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <div class="form-card">
+            <div class="auth-header">
+                <a href="index.html" class="auth-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro</span>
+                </a>
+                <h1 class="auth-title">Complete Your Profile</h1>
+                <p class="auth-subtitle">Please provide the following information to continue</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <form id="registration-form">
+                <div class="form-group">
+                    <label for="fullName" class="form-label required">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" class="form-input" required>
+                    <div class="form-error" id="fullName-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address" class="form-label required">Address</label>
+                    <textarea id="address" name="address" class="form-input" rows="3" required></textarea>
+                    <div class="form-error" id="address-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone" class="form-label required">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" class="form-input" placeholder="+91 98765 43210" required>
+                    <div class="form-hint">Format: +91 XXXXX XXXXX</div>
+                    <div class="form-error" id="phone-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="capitalUsed" class="form-label required">Capital Used for Trading (₹)</label>
+                    <input type="number" id="capitalUsed" name="capitalUsed" class="form-input" min="0" step="1000" required>
+                    <div class="form-hint">Enter the amount of capital you use for trading</div>
+                    <div class="form-error" id="capitalUsed-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="zerodhaClientId" class="form-label required">Zerodha Client ID</label>
+                    <input type="text" id="zerodhaClientId" name="zerodhaClientId" class="form-input" required>
+                    <div class="form-hint">Enter your Zerodha trading account client ID</div>
+                    <div class="form-error" id="zerodhaClientId-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="referralCode" class="form-label">Referral Code (Optional)</label>
+                    <input type="text" id="referralCode" name="referralCode" class="form-input">
+                    <div class="form-hint">Enter referral code if you have one</div>
+                </div>
+
+                <button type="submit" class="btn btn--primary btn--full btn--large" id="submit-btn">
+                    Complete Registration
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        const form = document.getElementById('registration-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const alertContainer = document.getElementById('alert-container');
+
+        // Get JWT token from localStorage or URL
+        function getAuthToken() {
+            // Check URL for token (from OAuth redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromUrl = urlParams.get('token');
+            
+            if (tokenFromUrl) {
+                console.log('=== TOKEN FOUND IN URL ===');
+                console.log('Token length:', tokenFromUrl.length);
+                console.log('Token preview:', tokenFromUrl.substring(0, 50) + '...');
+                
+                // Store token in localStorage
+                localStorage.setItem('authToken', tokenFromUrl);
+                console.log('Token stored in localStorage');
+                
+                // Remove token from URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
+                console.log('Token removed from URL');
+                
+                return tokenFromUrl;
+            }
+            
+            // Get token from localStorage
+            const storedToken = localStorage.getItem('authToken');
+            if (storedToken) {
+                console.log('Token retrieved from localStorage');
+            } else {
+                console.log('No token found in URL or localStorage');
+            }
+            
+            return storedToken;
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Check if user is authenticated
+        async function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to verify authentication');
+                }
+                
+                const data = await response.json();
+                
+                // If profile is already complete, redirect to dashboard
+                if (data.isProfileComplete) {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Show alert
+        function showAlert(message, type = 'error') {
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Clear field error
+        function clearError(fieldName) {
+            const input = document.getElementById(fieldName);
+            const error = document.getElementById(`${fieldName}-error`);
+            input.classList.remove('error');
+            error.textContent = '';
+        }
+
+        // Show field error
+        function showError(fieldName, message) {
+            const input = document.getElementById(fieldName);
+            const error = document.getElementById(`${fieldName}-error`);
+            input.classList.add('error');
+            error.textContent = message;
+        }
+
+        // Clear all errors
+        function clearAllErrors() {
+            const inputs = form.querySelectorAll('.form-input');
+            inputs.forEach(input => {
+                input.classList.remove('error');
+            });
+            const errors = form.querySelectorAll('.form-error');
+            errors.forEach(error => {
+                error.textContent = '';
+            });
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            clearAllErrors();
+            alertContainer.innerHTML = '';
+            
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                capitalUsed: parseFloat(document.getElementById('capitalUsed').value),
+                zerodhaClientId: document.getElementById('zerodhaClientId').value.trim(),
+                referralCode: document.getElementById('referralCode').value.trim() || undefined
+            };
+            
+            // Client-side validation
+            let hasError = false;
+            
+            if (formData.fullName.length < 2) {
+                showError('fullName', 'Full name must be at least 2 characters');
+                hasError = true;
+            }
+            
+            if (formData.address.length < 5) {
+                showError('address', 'Address must be at least 5 characters');
+                hasError = true;
+            }
+            
+            if (!/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/.test(formData.phone)) {
+                showError('phone', 'Invalid phone number format');
+                hasError = true;
+            }
+            
+            if (formData.capitalUsed < 0) {
+                showError('capitalUsed', 'Capital must be a positive number');
+                hasError = true;
+            }
+            
+            if (formData.zerodhaClientId.length < 2) {
+                showError('zerodhaClientId', 'Zerodha Client ID must be at least 2 characters');
+                hasError = true;
+            }
+            
+            if (hasError) {
+                return;
+            }
+            
+            // Submit to API
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/me/profile`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Show detailed validation errors
+                    if (data.details && Array.isArray(data.details)) {
+                        let errorMessages = data.details.map(err => `${err.path}: ${err.msg}`).join('<br>');
+                        showAlert(errorMessages, 'error');
+                    } else {
+                        showAlert(data.message || 'Failed to submit profile', 'error');
+                    }
+                    throw new Error(data.message || 'Failed to submit profile');
+                }
+                
+                showAlert('Profile completed successfully! Redirecting...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert(error.message || 'Failed to complete registration. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Complete Registration';
+            }
+        });
+
+        // Clear errors on input
+        form.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', () => {
+                clearError(input.id);
+            });
+        });
+
+        // Check authentication on load
+        checkAuth();
+    </script>
+</body>
+</html>
+

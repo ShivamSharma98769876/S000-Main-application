@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testimonials Management | TradingPro Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="orders.html" class="nav-item">📦 Orders</a>
+                <a href="products.html" class="nav-item">🎯 Products</a>
+                <a href="offers.html" class="nav-item">🎁 Offers</a>
+                <a href="testimonials.html" class="nav-item active">⭐ Testimonials</a>
+                <a href="config.html" class="nav-item">⚙️ Config</a>
+                <a href="audit.html" class="nav-item">📝 Audit Logs</a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">← Back to Site</a>
+                <button id="logout-btn" class="nav-item logout-btn">🚪 Logout</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Testimonials Management</h1>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <select id="status-filter" class="form-input" style="width: auto; padding: 0.5rem 1rem;">
+                        <option value="">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                    <button class="btn btn--primary" id="add-testimonial-btn">+ Add Testimonial</button>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>All Testimonials</h2>
+                        <span id="testimonials-count">0 testimonials</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="testimonials-list">
+                            <div class="loading">Loading testimonials...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Testimonial Modal -->
+    <div id="testimonial-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" id="close-testimonial-modal-btn">&times;</span>
+            <h2 id="modal-title">Add Testimonial</h2>
+            <form id="testimonial-form" class="admin-form">
+                <input type="hidden" id="testimonial-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Author Name*</label>
+                        <input type="text" id="author-name" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Author Initials*</label>
+                        <input type="text" id="author-initials" class="form-input" maxlength="10" placeholder="RK" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Author Role*</label>
+                    <input type="text" id="author-role" class="form-input" placeholder="Full-time Trader" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Testimonial Content*</label>
+                    <textarea id="testimonial-content" class="form-input" rows="4" required></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Rating (1-5)*</label>
+                        <select id="testimonial-rating" class="form-input" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+                            <option value="4">⭐⭐⭐⭐ (4)</option>
+                            <option value="3">⭐⭐⭐ (3)</option>
+                            <option value="2">⭐⭐ (2)</option>
+                            <option value="1">⭐ (1)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" id="testimonial-order" class="form-input" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="testimonial-status" class="form-input">
+                        <option value="PENDING">Pending</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full">Save Testimonial</button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; }
+        .modal-content { background: var(--card-bg); margin: 50px auto; padding: var(--spacing-2xl); border-radius: var(--radius-xl); max-width: 700px; position: relative; }
+        .modal-close { position: absolute; right: 20px; top: 20px; font-size: 28px; cursor: pointer; }
+    </style>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadTestimonials() {
+            try {
+                const statusFilter = document.getElementById('status-filter').value;
+                const url = statusFilter 
+                    ? `${API_BASE_URL}/content/admin/testimonials?status=${statusFilter}`
+                    : `${API_BASE_URL}/content/admin/testimonials`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Failed to load testimonials');
+                
+                const data = await response.json();
+                displayTestimonials(data.testimonials);
+                
+                const pendingCount = data.testimonials.filter(t => t.status === 'PENDING').length;
+                const totalCount = data.testimonials.length;
+                document.getElementById('testimonials-count').textContent = `${totalCount} testimonials${pendingCount > 0 ? ` (${pendingCount} pending)` : ''}`;
+            } catch (error) {
+                console.error('Error loading testimonials:', error);
+                document.getElementById('testimonials-list').innerHTML = '<p class="error">Failed to load testimonials</p>';
+            }
+        }
+
+        function displayTestimonials(testimonials) {
+            const container = document.getElementById('testimonials-list');
+            
+            if (!testimonials || testimonials.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No testimonials found</p>';
+                return;
+            }
+
+            // Separate pending and other testimonials
+            const pendingTestimonials = testimonials.filter(t => t.status === 'PENDING');
+            const otherTestimonials = testimonials.filter(t => t.status !== 'PENDING');
+            
+            let html = '';
+            
+            // Show pending testimonials first with special styling
+            if (pendingTestimonials.length > 0) {
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: #f59e0b; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                            ⏳ Pending Review (${pendingTestimonials.length})
+                        </h3>
+                        <div style="background: #f59e0b10; border: 2px solid #f59e0b; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+                            ${pendingTestimonials.map(testimonial => `
+                                <div style="background: var(--card-bg); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; border-left: 4px solid #f59e0b;">
+                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                        <div>
+                                            <strong>${testimonial.author_name}</strong> (${testimonial.author_initials})
+                                            ${testimonial.user_email ? `<br><small style="color: var(--text-secondary);">Submitted by: ${testimonial.user_email}</small>` : ''}
+                                        </div>
+                                        <span class="status-badge pending">PENDING</span>
+                                    </div>
+                                    <p style="margin: 0.5rem 0; color: var(--text-primary);">${testimonial.content}</p>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                                        <div>
+                                            <span style="color: var(--text-secondary);">${testimonial.author_role}</span>
+                                            <span style="margin-left: 1rem;">${'⭐'.repeat(testimonial.rating)}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <button class="btn btn--primary btn-sm approve-testimonial-btn" data-testimonial-id="${testimonial.id}">✅ Approve</button>
+                                            <button class="btn btn--outline btn-sm reject-testimonial-btn" data-testimonial-id="${testimonial.id}">❌ Reject</button>
+                                            <button class="btn btn--secondary btn-sm edit-testimonial-btn" data-testimonial='${JSON.stringify(testimonial).replace(/'/g, "&#39;")}'>Edit</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Show other testimonials in table
+            if (otherTestimonials.length > 0) {
+                html += `
+                    <h3 style="margin-bottom: 1rem; ${pendingTestimonials.length > 0 ? 'margin-top: 2rem;' : ''}">All Testimonials</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Author</th>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Rating</th>
+                                <th>Content Preview</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${otherTestimonials.map(testimonial => `
+                                <tr>
+                                    <td>${testimonial.display_order}</td>
+                                    <td><strong>${testimonial.author_name}</strong> (${testimonial.author_initials})</td>
+                                    <td><small style="color: var(--text-secondary);">${testimonial.user_email || '-'}</small></td>
+                                    <td>${testimonial.author_role}</td>
+                                    <td>${'⭐'.repeat(testimonial.rating)}</td>
+                                    <td><small>${testimonial.content.substring(0, 60)}...</small></td>
+                                    <td><span class="status-badge ${testimonial.status.toLowerCase()}">${testimonial.status}</span></td>
+                                    <td>
+                                        <button class="btn btn--secondary btn-sm edit-testimonial-btn" data-testimonial='${JSON.stringify(testimonial).replace(/'/g, "&#39;")}'>Edit</button>
+                                        <button class="btn btn--outline btn-sm delete-testimonial-btn" data-testimonial-id="${testimonial.id}">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            if (testimonials.length === 0) {
+                html = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No testimonials found</p>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function openTestimonialModal(testimonial = null) {
+            document.getElementById('testimonial-modal').style.display = 'block';
+            document.getElementById('modal-title').textContent = testimonial ? 'Edit Testimonial' : 'Add Testimonial';
+            
+            if (testimonial) {
+                document.getElementById('testimonial-id').value = testimonial.id;
+                document.getElementById('author-name').value = testimonial.author_name;
+                document.getElementById('author-initials').value = testimonial.author_initials;
+                document.getElementById('author-role').value = testimonial.author_role;
+                document.getElementById('testimonial-content').value = testimonial.content;
+                document.getElementById('testimonial-rating').value = testimonial.rating;
+                document.getElementById('testimonial-order').value = testimonial.display_order;
+                document.getElementById('testimonial-status').value = testimonial.status;
+            } else {
+                document.getElementById('testimonial-form').reset();
+                document.getElementById('testimonial-id').value = '';
+            }
+        }
+
+        function editTestimonial(testimonial) {
+            openTestimonialModal(testimonial);
+        }
+
+        function closeTestimonialModal() {
+            document.getElementById('testimonial-modal').style.display = 'none';
+        }
+
+        document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const testimonialId = document.getElementById('testimonial-id').value;
+            const testimonialData = {
+                authorName: document.getElementById('author-name').value,
+                authorInitials: document.getElementById('author-initials').value,
+                authorRole: document.getElementById('author-role').value,
+                content: document.getElementById('testimonial-content').value,
+                rating: parseInt(document.getElementById('testimonial-rating').value),
+                displayOrder: parseInt(document.getElementById('testimonial-order').value),
+                status: document.getElementById('testimonial-status').value
+            };
+            
+            try {
+                const url = testimonialId ? `${API_BASE_URL}/content/admin/testimonials/${testimonialId}` : `${API_BASE_URL}/content/admin/testimonials`;
+                const method = testimonialId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(testimonialData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert(testimonialId ? 'Testimonial updated successfully!' : 'Testimonial created successfully!');
+                closeTestimonialModal();
+                loadTestimonials();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        async function approveTestimonial(testimonialId) {
+            const displayOrder = prompt('Enter display order (optional, press Cancel for default):');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/testimonials/${testimonialId}/approve`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ 
+                        displayOrder: displayOrder ? parseInt(displayOrder) : null 
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert('Testimonial approved successfully!');
+                loadTestimonials();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function rejectTestimonial(testimonialId) {
+            if (!confirm('Reject this testimonial? It will be marked as inactive.')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/testimonials/${testimonialId}/reject`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert('Testimonial rejected');
+                loadTestimonials();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteTestimonial(testimonialId) {
+            if (!confirm('Delete this testimonial?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/testimonials/${testimonialId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert('Testimonial deleted successfully!');
+                loadTestimonials();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Attach event listeners
+        document.getElementById('add-testimonial-btn').addEventListener('click', () => openTestimonialModal());
+        document.getElementById('close-testimonial-modal-btn').addEventListener('click', closeTestimonialModal);
+        
+        // Close modal when clicking outside
+        document.getElementById('testimonial-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'testimonial-modal') {
+                closeTestimonialModal();
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        // Attach event listeners after displaying testimonials
+        const originalDisplayTestimonials = displayTestimonials;
+        displayTestimonials = function(testimonials) {
+            originalDisplayTestimonials(testimonials);
+            
+                // Attach event listeners to action buttons
+                document.querySelectorAll('.edit-testimonial-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        try {
+                            const testimonialData = JSON.parse(this.getAttribute('data-testimonial').replace(/&#39;/g, "'"));
+                            editTestimonial(testimonialData);
+                        } catch (error) {
+                            console.error('Error parsing testimonial data:', error);
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.delete-testimonial-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const testimonialId = parseInt(this.getAttribute('data-testimonial-id'));
+                        deleteTestimonial(testimonialId);
+                    });
+                });
+                
+                // Approve testimonial buttons
+                document.querySelectorAll('.approve-testimonial-btn').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const testimonialId = parseInt(this.getAttribute('data-testimonial-id'));
+                        await approveTestimonial(testimonialId);
+                    });
+                });
+                
+                // Reject testimonial buttons
+                document.querySelectorAll('.reject-testimonial-btn').forEach(button => {
+                    button.addEventListener('click', async function() {
+                        const testimonialId = parseInt(this.getAttribute('data-testimonial-id'));
+                        await rejectTestimonial(testimonialId);
+                    });
+                });
+        };
+
+        // Status filter change handler
+        document.getElementById('status-filter').addEventListener('change', loadTestimonials);
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                loadTestimonials();
+            }
+        });
+    </script>
+</body>
+</html>
+

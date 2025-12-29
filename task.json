@@ -1,0 +1,1075 @@
+{
+  "project": "Trading Subscription Web Platform",
+  "version": "1.0",
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Landing Page Development",
+      "description": "Create public-facing marketing site with responsive design inspired by modern trading platforms",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "1.1",
+          "title": "Header Component",
+          "description": "Build header with logo, navigation (Home, Products, Offers, Testimonials, About, Login/Signup)",
+          "status": "completed"
+        },
+        {
+          "id": "1.2",
+          "title": "Hero Section",
+          "description": "Create hero section with headline, subheadline, primary CTA (Get Started) and secondary CTA (View Products)",
+          "status": "completed"
+        },
+        {
+          "id": "1.3",
+          "title": "Products Overview Section",
+          "description": "Display product cards with descriptions and CTAs (Learn more / Login to subscribe)",
+          "status": "completed"
+        },
+        {
+          "id": "1.4",
+          "title": "Offers/Promotions Section",
+          "description": "Create section for current deals and discounts (admin-configurable)",
+          "status": "completed"
+        },
+        {
+          "id": "1.5",
+          "title": "Testimonials Section",
+          "description": "Build testimonials display with customer name and role (admin-managed)",
+          "status": "completed"
+        },
+        {
+          "id": "1.6",
+          "title": "About Us Section",
+          "description": "Create company overview, mission, and contact info section",
+          "status": "completed"
+        },
+        {
+          "id": "1.7",
+          "title": "Footer Component",
+          "description": "Build footer with copyright, social links, privacy policy, terms & conditions",
+          "status": "completed"
+        },
+        {
+          "id": "1.8",
+          "title": "Responsive Design Implementation",
+          "description": "Ensure responsive design works on desktop, tablet, and mobile devices",
+          "status": "completed"
+        },
+        {
+          "id": "1.9",
+          "title": "Performance Optimization",
+          "description": "Optimize landing page to load within ~3 seconds on typical broadband",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Authentication System",
+      "description": "Implement OAuth-based authentication with Google and Apple identity providers",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "2.1",
+          "title": "Google OAuth Integration",
+          "description": "Implement 'Continue with Google' OAuth flow with token validation",
+          "status": "completed"
+        },
+        {
+          "id": "2.2",
+          "title": "Apple OAuth Integration",
+          "description": "Implement 'Continue with Apple' OAuth flow with token validation",
+          "status": "completed"
+        },
+        {
+          "id": "2.3",
+          "title": "User Creation Logic",
+          "description": "Create user record on first login and redirect to registration if needed",
+          "status": "completed"
+        },
+        {
+          "id": "2.4",
+          "title": "Session Management",
+          "description": "Implement secure session token generation and management",
+          "status": "completed"
+        },
+        {
+          "id": "2.5",
+          "title": "Login Audit Logging",
+          "description": "Log every login/logout event with user_id, provider, timestamp, IP, user agent, status",
+          "status": "completed"
+        },
+        {
+          "id": "2.6",
+          "title": "Logout Functionality",
+          "description": "Implement logout with session clearing and audit logging",
+          "status": "completed"
+        },
+        {
+          "id": "2.7",
+          "title": "Error Handling",
+          "description": "Implement error handling for failed authentication attempts",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "User Registration and Profile Management",
+      "description": "Build one-time registration flow and profile management features",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "3.1",
+          "title": "Registration Form",
+          "description": "Create registration form with mandatory fields: Full Name, Address, Phone, Capital Used for Trading",
+          "status": "completed"
+        },
+        {
+          "id": "3.2",
+          "title": "Form Validation",
+          "description": "Implement client and server-side validation for all registration fields",
+          "status": "completed"
+        },
+        {
+          "id": "3.3",
+          "title": "Optional Fields",
+          "description": "Add optional fields: Referral code, communication preferences",
+          "status": "completed"
+        },
+        {
+          "id": "3.4",
+          "title": "Profile Completion Check",
+          "description": "Implement logic to check profile completion before allowing dashboard access",
+          "status": "completed"
+        },
+        {
+          "id": "3.5",
+          "title": "Profile View/Edit Page",
+          "description": "Create profile page with editable fields and subscription history",
+          "status": "completed"
+        },
+        {
+          "id": "3.6",
+          "title": "Profile Update API",
+          "description": "Implement API endpoint for updating user profile information",
+          "status": "completed"
+        },
+        {
+          "id": "3.7",
+          "title": "Subscription Display",
+          "description": "Show non-editable list of active and past subscriptions on profile page",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Product Catalog System",
+      "description": "Build product listing and subscription duration selection features",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "4.1",
+          "title": "Products Listing Page",
+          "description": "Create grid/table layout showing products with name, description, category, pricing",
+          "status": "completed"
+        },
+        {
+          "id": "4.2",
+          "title": "Product Filters",
+          "description": "Implement filters for category, price, and popularity",
+          "status": "completed"
+        },
+        {
+          "id": "4.3",
+          "title": "Duration Selector",
+          "description": "Build duration type dropdown (Month/Year) and units selector (1-12)",
+          "status": "completed"
+        },
+        {
+          "id": "4.4",
+          "title": "Date Calculation Logic",
+          "description": "Implement backend calculation for start_date and end_date based on duration",
+          "status": "completed"
+        },
+        {
+          "id": "4.5",
+          "title": "Validity Display",
+          "description": "Display subscription validity dates clearly (e.g., 'Valid: 06 Dec 2025 – 04 Jan 2026')",
+          "status": "completed"
+        },
+        {
+          "id": "4.6",
+          "title": "Add to Cart Functionality",
+          "description": "Implement 'Add to Cart' with product, duration, dates, and pricing",
+          "status": "completed"
+        },
+        {
+          "id": "4.7",
+          "title": "Product Detail View",
+          "description": "Create detailed product information page",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Shopping Cart System",
+      "description": "Implement cart management with item updates and checkout flow",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "5.1",
+          "title": "Cart Page UI",
+          "description": "Create cart page showing items with product name, duration, dates, pricing, subtotal",
+          "status": "completed"
+        },
+        {
+          "id": "5.2",
+          "title": "Cart Calculations",
+          "description": "Implement subtotal, discount, and total payable calculations",
+          "status": "completed"
+        },
+        {
+          "id": "5.3",
+          "title": "Update Cart Item",
+          "description": "Allow users to update duration and recalculate pricing",
+          "status": "completed"
+        },
+        {
+          "id": "5.4",
+          "title": "Remove Cart Item",
+          "description": "Implement functionality to remove individual items from cart",
+          "status": "completed"
+        },
+        {
+          "id": "5.5",
+          "title": "Empty Cart",
+          "description": "Add functionality to clear entire cart",
+          "status": "completed"
+        },
+        {
+          "id": "5.6",
+          "title": "Cart Validation",
+          "description": "Validate cart has at least one item and all products are active before checkout",
+          "status": "completed"
+        },
+        {
+          "id": "5.7",
+          "title": "Proceed to Payment",
+          "description": "Implement checkout flow to payment page",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Payment System (QR-based)",
+      "description": "Implement offline payment via QR code with proof upload",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "6.1",
+          "title": "Payment Page UI",
+          "description": "Create payment page displaying QR code and instructions",
+          "status": "completed"
+        },
+        {
+          "id": "6.2",
+          "title": "QR Code Configuration",
+          "description": "Implement admin-configurable QR code for UPI/bank transfer",
+          "status": "completed"
+        },
+        {
+          "id": "6.3",
+          "title": "Payment Proof Upload",
+          "description": "Build file upload for payment screenshot (JPG, PNG, WEBP with size limits)",
+          "status": "completed"
+        },
+        {
+          "id": "6.4",
+          "title": "Payment Reference Fields",
+          "description": "Add optional fields for transaction reference ID and payment date/time",
+          "status": "completed"
+        },
+        {
+          "id": "6.5",
+          "title": "Order Creation",
+          "description": "Create SubscriptionOrder with status PENDING on payment proof submission",
+          "status": "completed"
+        },
+        {
+          "id": "6.6",
+          "title": "Cart to Order Migration",
+          "description": "Copy cart items to order items and clear cart after order creation",
+          "status": "completed"
+        },
+        {
+          "id": "6.7",
+          "title": "User Notification Email",
+          "description": "Send email to user confirming payment received with order summary",
+          "status": "completed"
+        },
+        {
+          "id": "6.8",
+          "title": "Admin Notification Email",
+          "description": "Send email to admin about new pending subscription with details",
+          "status": "completed"
+        },
+        {
+          "id": "6.9",
+          "title": "Confirmation Page",
+          "description": "Display order summary and pending approval message",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Admin Panel - Pending Requests",
+      "description": "Build admin interface for reviewing and approving/rejecting subscription orders",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "7.1",
+          "title": "Admin Menu Access",
+          "description": "Create admin-only menu item for 'Pending Requests'",
+          "status": "completed"
+        },
+        {
+          "id": "7.2",
+          "title": "Pending Requests List",
+          "description": "Display table with Order ID, user name, email, payment date, amount, products count, status",
+          "status": "completed"
+        },
+        {
+          "id": "7.3",
+          "title": "List Filters",
+          "description": "Implement filters by status, date range, user, and product",
+          "status": "completed"
+        },
+        {
+          "id": "7.4",
+          "title": "Search Functionality",
+          "description": "Add search by email, name, or order ID",
+          "status": "completed"
+        },
+        {
+          "id": "7.5",
+          "title": "Order Detail View",
+          "description": "Create detailed view showing user profile, payment proof, products list",
+          "status": "completed"
+        },
+        {
+          "id": "7.6",
+          "title": "Payment Proof Preview",
+          "description": "Display payment proof image with preview functionality",
+          "status": "completed"
+        },
+        {
+          "id": "7.7",
+          "title": "Approve Order Logic",
+          "description": "Implement approve action: set status APPROVED, create subscriptions, send email",
+          "status": "completed"
+        },
+        {
+          "id": "7.8",
+          "title": "Reject Order Logic",
+          "description": "Implement reject action: set status REJECTED, store reason, send email",
+          "status": "completed"
+        },
+        {
+          "id": "7.9",
+          "title": "Subscription Activation",
+          "description": "Create/activate subscriptions per order item with correct start/end dates",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "Dashboard and Subscriptions",
+      "description": "Build user dashboard showing active subscriptions and quick access",
+      "priority": "medium",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "8.1",
+          "title": "Dashboard Layout",
+          "description": "Create dashboard page layout with subscription overview",
+          "status": "completed"
+        },
+        {
+          "id": "8.2",
+          "title": "Active Subscriptions Display",
+          "description": "Show active subscriptions with product name, status, dates",
+          "status": "completed"
+        },
+        {
+          "id": "8.3",
+          "title": "Quick Access Links",
+          "description": "Add quick access buttons/links to subscribed products",
+          "status": "completed"
+        },
+        {
+          "id": "8.4",
+          "title": "Days Remaining Indicator",
+          "description": "Display days remaining for active subscriptions",
+          "status": "completed"
+        },
+        {
+          "id": "8.5",
+          "title": "Subscription Status Labels",
+          "description": "Show status labels: ACTIVE/EXPIRED/UPCOMING",
+          "status": "completed"
+        },
+        {
+          "id": "8.6",
+          "title": "My Subscriptions Section",
+          "description": "Create read-only subscriptions list on profile page",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "title": "Database Design and Implementation",
+      "description": "Design and implement complete database schema with all required tables",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "9.1",
+          "title": "Users Table",
+          "description": "Create users table with provider_type, provider_user_id, email, is_admin",
+          "status": "completed"
+        },
+        {
+          "id": "9.2",
+          "title": "User Profiles Table",
+          "description": "Create user_profiles table with full_name, address, phone, capital_used, referral_code",
+          "status": "completed"
+        },
+        {
+          "id": "9.3",
+          "title": "Products Table",
+          "description": "Create products table with name, description, category, pricing, status",
+          "status": "completed"
+        },
+        {
+          "id": "9.4",
+          "title": "Carts and Cart Items Tables",
+          "description": "Create carts and cart_items tables with duration and pricing fields",
+          "status": "completed"
+        },
+        {
+          "id": "9.5",
+          "title": "Subscription Orders Tables",
+          "description": "Create subscription_orders and subscription_order_items tables",
+          "status": "completed"
+        },
+        {
+          "id": "9.6",
+          "title": "Subscriptions Table",
+          "description": "Create subscriptions table with user_id, product_id, dates, status",
+          "status": "completed"
+        },
+        {
+          "id": "9.7",
+          "title": "Login Audit Table",
+          "description": "Create login_audit table for tracking login/logout events",
+          "status": "completed"
+        },
+        {
+          "id": "9.8",
+          "title": "System Config Table",
+          "description": "Create system_config table for storing configuration key-value pairs",
+          "status": "completed"
+        },
+        {
+          "id": "9.9",
+          "title": "Database Indexes",
+          "description": "Create recommended indexes for performance optimization",
+          "status": "completed"
+        },
+        {
+          "id": "9.10",
+          "title": "Database Migrations",
+          "description": "Set up database migration system for version control",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "title": "REST API Development",
+      "description": "Build complete REST API with all required endpoints",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "10.1",
+          "title": "Auth Endpoints",
+          "description": "Implement POST /auth/oauth/google, /auth/oauth/apple, /auth/logout, GET /auth/me",
+          "status": "completed"
+        },
+        {
+          "id": "10.2",
+          "title": "Profile Endpoints",
+          "description": "Implement POST /users/me/profile, PUT /users/me/profile, GET /users/me/profile",
+          "status": "completed"
+        },
+        {
+          "id": "10.3",
+          "title": "Products Endpoints",
+          "description": "Implement GET /products, GET /products/:id",
+          "status": "completed"
+        },
+        {
+          "id": "10.4",
+          "title": "Cart Endpoints",
+          "description": "Implement GET /cart, POST /cart/items, PUT /cart/items/:itemId, DELETE /cart/items/:itemId, DELETE /cart",
+          "status": "completed"
+        },
+        {
+          "id": "10.5",
+          "title": "Orders Endpoints",
+          "description": "Implement POST /orders, POST /orders/:orderId/payment-proof, GET /orders/me, GET /orders/me/:orderId",
+          "status": "completed"
+        },
+        {
+          "id": "10.6",
+          "title": "Subscriptions Endpoints",
+          "description": "Implement GET /subscriptions/me, GET /admin/subscriptions",
+          "status": "completed"
+        },
+        {
+          "id": "10.7",
+          "title": "Admin Orders Endpoints",
+          "description": "Implement GET /admin/orders, GET /admin/orders/:orderId, POST /admin/orders/:orderId/approve, POST /admin/orders/:orderId/reject",
+          "status": "completed"
+        },
+        {
+          "id": "10.8",
+          "title": "Login Audit Endpoint",
+          "description": "Implement GET /admin/login-audit with query parameters",
+          "status": "completed"
+        },
+        {
+          "id": "10.9",
+          "title": "API Validation Middleware",
+          "description": "Implement request validation and sanitization middleware",
+          "status": "completed"
+        },
+        {
+          "id": "10.10",
+          "title": "API Error Handling",
+          "description": "Implement consistent error handling and response formatting",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "title": "Security Implementation",
+      "description": "Implement security measures including OAuth, HTTPS, CSRF protection",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "11.1",
+          "title": "OAuth 2.0 / OpenID Connect",
+          "description": "Implement OAuth 2.0 / OpenID Connect for Google and Apple",
+          "status": "completed"
+        },
+        {
+          "id": "11.2",
+          "title": "HTTPS Configuration",
+          "description": "Configure HTTPS for all endpoints",
+          "status": "completed"
+        },
+        {
+          "id": "11.3",
+          "title": "CSRF Protection",
+          "description": "Implement CSRF protection for all state-changing operations",
+          "status": "completed"
+        },
+        {
+          "id": "11.4",
+          "title": "Session Security",
+          "description": "Implement secure session management with httpOnly cookies",
+          "status": "completed"
+        },
+        {
+          "id": "11.5",
+          "title": "Input Sanitization",
+          "description": "Apply server-side validation and input sanitization",
+          "status": "completed"
+        },
+        {
+          "id": "11.6",
+          "title": "Rate Limiting",
+          "description": "Implement rate limiting for API endpoints",
+          "status": "completed"
+        },
+        {
+          "id": "11.7",
+          "title": "Security Headers",
+          "description": "Configure security headers (CSP, X-Frame-Options, etc.)",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "title": "File Storage and Management",
+      "description": "Implement object storage for payment proof images",
+      "priority": "medium",
+      "status": "pending",
+      "sub_tasks": [
+        {
+          "id": "12.1",
+          "title": "Object Storage Setup",
+          "description": "Set up object storage service (S3, Azure Blob, or similar)",
+          "status": "pending"
+        },
+        {
+          "id": "12.2",
+          "title": "File Upload Handler",
+          "description": "Implement secure file upload handler with validation",
+          "status": "pending"
+        },
+        {
+          "id": "12.3",
+          "title": "File Type Validation",
+          "description": "Validate file types (JPG, PNG, WEBP only)",
+          "status": "pending"
+        },
+        {
+          "id": "12.4",
+          "title": "File Size Limits",
+          "description": "Implement configurable file size limits",
+          "status": "pending"
+        },
+        {
+          "id": "12.5",
+          "title": "Image Optimization",
+          "description": "Optimize uploaded images for storage and display",
+          "status": "pending"
+        },
+        {
+          "id": "12.6",
+          "title": "Secure File Access",
+          "description": "Implement secure file access with signed URLs or authentication",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "title": "Email Notification System",
+      "description": "Implement email notifications for users and admins",
+      "priority": "medium",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "13.1",
+          "title": "Email Service Integration",
+          "description": "Integrate email service provider (SendGrid, AWS SES, etc.)",
+          "status": "completed"
+        },
+        {
+          "id": "13.2",
+          "title": "Email Templates",
+          "description": "Create email templates for all notification types",
+          "status": "completed"
+        },
+        {
+          "id": "13.3",
+          "title": "Payment Received Email",
+          "description": "Implement email to user confirming payment received",
+          "status": "completed"
+        },
+        {
+          "id": "13.4",
+          "title": "Admin Alert Email",
+          "description": "Implement email to admin about new pending subscriptions",
+          "status": "completed"
+        },
+        {
+          "id": "13.5",
+          "title": "Approval Email",
+          "description": "Implement email to user when subscription is approved",
+          "status": "completed"
+        },
+        {
+          "id": "13.6",
+          "title": "Rejection Email",
+          "description": "Implement email to user when subscription is rejected with reason",
+          "status": "completed"
+        },
+        {
+          "id": "13.7",
+          "title": "Email Queue System",
+          "description": "Implement email queue for reliable delivery",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "title": "Admin Product Management",
+      "description": "Build admin interface for managing products catalog",
+      "priority": "medium",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "14.1",
+          "title": "Products List Admin View",
+          "description": "Create admin view for listing all products",
+          "status": "completed"
+        },
+        {
+          "id": "14.2",
+          "title": "Add Product Form",
+          "description": "Build form for adding new products with all fields",
+          "status": "completed"
+        },
+        {
+          "id": "14.3",
+          "title": "Edit Product Form",
+          "description": "Build form for editing existing products",
+          "status": "completed"
+        },
+        {
+          "id": "14.4",
+          "title": "Product Status Toggle",
+          "description": "Implement functionality to activate/deactivate products",
+          "status": "completed"
+        },
+        {
+          "id": "14.5",
+          "title": "Delete Product",
+          "description": "Implement product deletion with safety checks",
+          "status": "completed"
+        },
+        {
+          "id": "14.6",
+          "title": "Product API Endpoints",
+          "description": "Implement POST/PUT/DELETE /products endpoints for admin",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "15",
+      "title": "Admin Content Management",
+      "description": "Build admin interface for managing landing page content",
+      "priority": "low",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "15.1",
+          "title": "Offers Management",
+          "description": "Create admin interface for managing offers/promotions",
+          "status": "completed"
+        },
+        {
+          "id": "15.2",
+          "title": "Testimonials Management",
+          "description": "Create admin interface for managing customer testimonials",
+          "status": "completed"
+        },
+        {
+          "id": "15.3",
+          "title": "System Config Management",
+          "description": "Create admin interface for managing system configuration (QR code, contact info)",
+          "status": "completed"
+        },
+        {
+          "id": "15.4",
+          "title": "About Us Content Editor",
+          "description": "Create admin interface for editing About Us content",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "title": "Testing and Quality Assurance",
+      "description": "Implement comprehensive testing for all components",
+      "priority": "high",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "16.1",
+          "title": "Unit Tests - Backend",
+          "description": "Write unit tests for all backend services and utilities",
+          "status": "completed"
+        },
+        {
+          "id": "16.2",
+          "title": "Unit Tests - Frontend",
+          "description": "Write unit tests for frontend components and utilities",
+          "status": "completed"
+        },
+        {
+          "id": "16.3",
+          "title": "Integration Tests - API",
+          "description": "Write integration tests for all API endpoints",
+          "status": "completed"
+        },
+        {
+          "id": "16.4",
+          "title": "Integration Tests - OAuth",
+          "description": "Test OAuth flows with Google and Apple",
+          "status": "completed"
+        },
+        {
+          "id": "16.5",
+          "title": "End-to-End Tests",
+          "description": "Write E2E tests for critical user flows",
+          "status": "completed"
+        },
+        {
+          "id": "16.6",
+          "title": "Security Testing",
+          "description": "Perform security testing and vulnerability scanning",
+          "status": "completed"
+        },
+        {
+          "id": "16.7",
+          "title": "Performance Testing",
+          "description": "Test performance and load handling",
+          "status": "completed"
+        },
+        {
+          "id": "16.8",
+          "title": "Cross-browser Testing",
+          "description": "Test on multiple browsers and devices",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "17",
+      "title": "Monitoring and Logging",
+      "description": "Implement monitoring, logging, and error tracking",
+      "priority": "medium",
+      "status": "completed",
+      "sub_tasks": [
+        {
+          "id": "17.1",
+          "title": "Application Logging",
+          "description": "Implement structured logging for all application events",
+          "status": "completed"
+        },
+        {
+          "id": "17.2",
+          "title": "Error Tracking",
+          "description": "Integrate error tracking service (Sentry, etc.)",
+          "status": "completed"
+        },
+        {
+          "id": "17.3",
+          "title": "Performance Monitoring",
+          "description": "Set up performance monitoring and APM",
+          "status": "completed"
+        },
+        {
+          "id": "17.4",
+          "title": "Uptime Monitoring",
+          "description": "Configure uptime monitoring for 99.5% target",
+          "status": "completed"
+        },
+        {
+          "id": "17.5",
+          "title": "Failed Login Alerts",
+          "description": "Set up alerts for failed login attempts",
+          "status": "completed"
+        },
+        {
+          "id": "17.6",
+          "title": "Email Delivery Monitoring",
+          "description": "Monitor email sending success/failure",
+          "status": "completed"
+        },
+        {
+          "id": "17.7",
+          "title": "Admin Dashboard",
+          "description": "Create admin dashboard for viewing logs and metrics",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "18",
+      "title": "Deployment and DevOps",
+      "description": "Set up deployment pipeline and infrastructure",
+      "priority": "high",
+      "status": "pending",
+      "sub_tasks": [
+        {
+          "id": "18.1",
+          "title": "Environment Configuration",
+          "description": "Set up development, staging, and production environments",
+          "status": "pending"
+        },
+        {
+          "id": "18.2",
+          "title": "CI/CD Pipeline",
+          "description": "Configure continuous integration and deployment pipeline",
+          "status": "pending"
+        },
+        {
+          "id": "18.3",
+          "title": "Database Hosting",
+          "description": "Set up PostgreSQL/MySQL database hosting",
+          "status": "pending"
+        },
+        {
+          "id": "18.4",
+          "title": "Web Server Deployment",
+          "description": "Deploy web application to hosting platform",
+          "status": "pending"
+        },
+        {
+          "id": "18.5",
+          "title": "Domain and SSL",
+          "description": "Configure domain name and SSL certificates",
+          "status": "pending"
+        },
+        {
+          "id": "18.6",
+          "title": "Backup Strategy",
+          "description": "Implement automated database and file backups",
+          "status": "pending"
+        },
+        {
+          "id": "18.7",
+          "title": "Scaling Configuration",
+          "description": "Configure horizontal scaling for web/API tier",
+          "status": "pending"
+        },
+        {
+          "id": "18.8",
+          "title": "Deployment Documentation",
+          "description": "Document deployment procedures and runbooks",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "19",
+      "title": "Documentation",
+      "description": "Create comprehensive documentation for the platform",
+      "priority": "low",
+      "status": "pending",
+      "sub_tasks": [
+        {
+          "id": "19.1",
+          "title": "API Documentation",
+          "description": "Create comprehensive API documentation (OpenAPI/Swagger)",
+          "status": "pending"
+        },
+        {
+          "id": "19.2",
+          "title": "User Guide",
+          "description": "Write user guide for customers",
+          "status": "pending"
+        },
+        {
+          "id": "19.3",
+          "title": "Admin Guide",
+          "description": "Write admin guide for managing the platform",
+          "status": "pending"
+        },
+        {
+          "id": "19.4",
+          "title": "Developer Documentation",
+          "description": "Create developer documentation for codebase",
+          "status": "pending"
+        },
+        {
+          "id": "19.5",
+          "title": "Architecture Documentation",
+          "description": "Document system architecture and design decisions",
+          "status": "pending"
+        },
+        {
+          "id": "19.6",
+          "title": "Privacy Policy",
+          "description": "Draft privacy policy document",
+          "status": "pending"
+        },
+        {
+          "id": "19.7",
+          "title": "Terms and Conditions",
+          "description": "Draft terms and conditions document",
+          "status": "pending"
+        }
+      ]
+    },
+    {
+      "id": "20",
+      "title": "Performance Optimization",
+      "description": "Optimize application performance across all areas",
+      "priority": "medium",
+      "status": "pending",
+      "sub_tasks": [
+        {
+          "id": "20.1",
+          "title": "Frontend Bundle Optimization",
+          "description": "Optimize JavaScript bundle size and loading",
+          "status": "pending"
+        },
+        {
+          "id": "20.2",
+          "title": "Image Optimization",
+          "description": "Optimize all images (QR, logos, product graphics)",
+          "status": "pending"
+        },
+        {
+          "id": "20.3",
+          "title": "Database Query Optimization",
+          "description": "Optimize database queries and add necessary indexes",
+          "status": "pending"
+        },
+        {
+          "id": "20.4",
+          "title": "Caching Strategy",
+          "description": "Implement caching for static content and API responses",
+          "status": "pending"
+        },
+        {
+          "id": "20.5",
+          "title": "CDN Integration",
+          "description": "Set up CDN for static assets",
+          "status": "pending"
+        },
+        {
+          "id": "20.6",
+          "title": "API Response Time Optimization",
+          "description": "Ensure API responses within ~1 second target",
+          "status": "pending"
+        },
+        {
+          "id": "20.7",
+          "title": "Lazy Loading",
+          "description": "Implement lazy loading for images and components",
+          "status": "pending"
+        }
+      ]
+    }
+  ]
+}
+

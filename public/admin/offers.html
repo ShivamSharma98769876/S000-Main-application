@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offers Management | TradingPro Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="orders.html" class="nav-item">📦 Orders</a>
+                <a href="products.html" class="nav-item">🎯 Products</a>
+                <a href="offers.html" class="nav-item active">🎁 Offers</a>
+                <a href="testimonials.html" class="nav-item">⭐ Testimonials</a>
+                <a href="config.html" class="nav-item">⚙️ Config</a>
+                <a href="audit.html" class="nav-item">📝 Audit Logs</a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">← Back to Site</a>
+                <button id="logout-btn" class="nav-item logout-btn">🚪 Logout</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Offers Management</h1>
+                <button class="btn btn--primary" id="add-offer-btn">+ Add Offer</button>
+            </header>
+
+            <div class="admin-content">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>All Offers</h2>
+                        <span id="offers-count">0 offers</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="offers-list">
+                            <div class="loading">Loading offers...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Offer Modal -->
+    <div id="offer-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="modal-close" id="close-offer-modal-btn">&times;</span>
+            <h2 id="modal-title">Add Offer</h2>
+            <form id="offer-form" class="admin-form">
+                <input type="hidden" id="offer-id">
+                <div class="form-group">
+                    <label class="form-label">Title*</label>
+                    <input type="text" id="offer-title" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description*</label>
+                    <textarea id="offer-description" class="form-input" rows="3" required></textarea>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Discount Text*</label>
+                        <input type="text" id="offer-discount" class="form-input" placeholder="40% OFF" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Badge Text</label>
+                        <input type="text" id="offer-badge" class="form-input" placeholder="🎉 New Year Sale">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Validity Text</label>
+                    <input type="text" id="offer-validity" class="form-input" placeholder="Valid until: Dec 31, 2025">
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">CTA Text</label>
+                        <input type="text" id="offer-cta" class="form-input" placeholder="Claim Offer">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CTA Link</label>
+                        <input type="text" id="offer-link" class="form-input" placeholder="/products.html">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Display Order</label>
+                        <input type="number" id="offer-order" class="form-input" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="offer-status" class="form-input">
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn--primary btn--full">Save Offer</button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); overflow-y: auto; }
+        .modal-content { background: var(--card-bg); margin: 50px auto; padding: var(--spacing-2xl); border-radius: var(--radius-xl); max-width: 700px; position: relative; }
+        .modal-close { position: absolute; right: 20px; top: 20px; font-size: 28px; cursor: pointer; }
+    </style>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadOffers() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/offers`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) throw new Error('Failed to load offers');
+                
+                const data = await response.json();
+                displayOffers(data.offers);
+                document.getElementById('offers-count').textContent = `${data.offers.length} offers`;
+                
+                // Attach event listeners to action buttons
+                document.querySelectorAll('.edit-offer-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        try {
+                            const offerData = JSON.parse(this.getAttribute('data-offer').replace(/&#39;/g, "'"));
+                            editOffer(offerData);
+                        } catch (error) {
+                            console.error('Error parsing offer data:', error);
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.delete-offer-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const offerId = parseInt(this.getAttribute('data-offer-id'));
+                        deleteOffer(offerId);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading offers:', error);
+                document.getElementById('offers-list').innerHTML = '<p class="error">Failed to load offers</p>';
+            }
+        }
+
+        function displayOffers(offers) {
+            const container = document.getElementById('offers-list');
+            
+            if (!offers || offers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No offers found</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Title</th>
+                            <th>Discount</th>
+                            <th>Badge</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${offers.map(offer => `
+                            <tr>
+                                <td>${offer.display_order}</td>
+                                <td><strong>${offer.title}</strong></td>
+                                <td>${offer.discount_text}</td>
+                                <td>${offer.badge_text || '-'}</td>
+                                <td><span class="status-badge ${offer.status.toLowerCase()}">${offer.status}</span></td>
+                                <td>
+                                    <button class="btn btn--secondary btn-sm edit-offer-btn" data-offer='${JSON.stringify(offer).replace(/'/g, "&#39;")}'>Edit</button>
+                                    <button class="btn btn--outline btn-sm delete-offer-btn" data-offer-id="${offer.id}">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function openOfferModal(offer = null) {
+            document.getElementById('offer-modal').style.display = 'block';
+            document.getElementById('modal-title').textContent = offer ? 'Edit Offer' : 'Add Offer';
+            
+            if (offer) {
+                document.getElementById('offer-id').value = offer.id;
+                document.getElementById('offer-title').value = offer.title;
+                document.getElementById('offer-description').value = offer.description;
+                document.getElementById('offer-discount').value = offer.discount_text;
+                document.getElementById('offer-badge').value = offer.badge_text || '';
+                document.getElementById('offer-validity').value = offer.validity_text || '';
+                document.getElementById('offer-cta').value = offer.cta_text || '';
+                document.getElementById('offer-link').value = offer.cta_link || '';
+                document.getElementById('offer-order').value = offer.display_order;
+                document.getElementById('offer-status').value = offer.status;
+            } else {
+                document.getElementById('offer-form').reset();
+                document.getElementById('offer-id').value = '';
+            }
+        }
+
+        function editOffer(offer) {
+            openOfferModal(offer);
+        }
+
+        function closeOfferModal() {
+            document.getElementById('offer-modal').style.display = 'none';
+        }
+
+        document.getElementById('offer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const offerId = document.getElementById('offer-id').value;
+            const offerData = {
+                title: document.getElementById('offer-title').value,
+                description: document.getElementById('offer-description').value,
+                discountText: document.getElementById('offer-discount').value,
+                badgeText: document.getElementById('offer-badge').value,
+                validityText: document.getElementById('offer-validity').value,
+                ctaText: document.getElementById('offer-cta').value,
+                ctaLink: document.getElementById('offer-link').value,
+                displayOrder: parseInt(document.getElementById('offer-order').value),
+                status: document.getElementById('offer-status').value
+            };
+            
+            try {
+                const url = offerId ? `${API_BASE_URL}/content/admin/offers/${offerId}` : `${API_BASE_URL}/content/admin/offers`;
+                const method = offerId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(offerData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert(offerId ? 'Offer updated successfully!' : 'Offer created successfully!');
+                closeOfferModal();
+                loadOffers();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        async function deleteOffer(offerId) {
+            if (!confirm('Delete this offer?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/offers/${offerId}`, {
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message);
+                }
+                
+                alert('Offer deleted successfully!');
+                loadOffers();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        // Attach event listeners
+        document.getElementById('add-offer-btn').addEventListener('click', () => openOfferModal());
+        document.getElementById('close-offer-modal-btn').addEventListener('click', closeOfferModal);
+        
+        // Close modal when clicking outside
+        document.getElementById('offer-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'offer-modal') {
+                closeOfferModal();
+            }
+        });
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                loadOffers();
+            }
+        });
+    </script>
+</body>
+</html>
+

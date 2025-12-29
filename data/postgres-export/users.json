@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "provider_type": "GOOGLE",
+    "provider_user_id": "admin-manual",
+    "email": "hi@gmail.com",
+    "is_admin": false,
+    "is_active": true,
+    "created_at": "2025-12-07T12:44:44.408Z",
+    "updated_at": "2025-12-07T12:44:44.408Z"
+  },
+  {
+    "id": 2,
+    "provider_type": "GOOGLE",
+    "provider_user_id": "106572934000369612330",
+    "email": "shivam.sharma3276@gmail.com",
+    "is_admin": false,
+    "is_active": true,
+    "created_at": "2025-12-21T20:05:11.576Z",
+    "updated_at": "2025-12-29T13:50:25.785Z"
+  },
+  {
+    "id": 4,
+    "provider_type": "GOOGLE",
+    "provider_user_id": "100156957764906422979",
+    "email": "nimblegrowthoptions@gmail.com",
+    "is_admin": true,
+    "is_active": true,
+    "created_at": "2025-12-21T20:49:37.205Z",
+    "updated_at": "2025-12-29T13:54:39.036Z"
+  },
+  {
+    "id": 5,
+    "provider_type": "GOOGLE",
+    "provider_user_id": "112644325454622434870",
+    "email": "pmdivakar7@gmail.com",
+    "is_admin": false,
+    "is_active": true,
+    "created_at": "2025-12-22T07:35:51.205Z",
+    "updated_at": "2025-12-22T08:00:54.634Z"
+  },
+  {
+    "id": 6,
+    "provider_type": "GOOGLE",
+    "provider_user_id": "114832802563702161906",
+    "email": "pritishivam@gmail.com",
+    "is_admin": false,
+    "is_active": true,
+    "created_at": "2025-12-28T06:39:45.496Z",
+    "updated_at": "2025-12-28T06:42:57.261Z"
+  }
+]

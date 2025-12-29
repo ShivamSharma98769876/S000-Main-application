@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .checkout-container { min-height: 100vh; padding-top: 100px; padding-bottom: 60px; }
+        .checkout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-3xl); margin-top: var(--spacing-2xl); }
+        .checkout-section { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--spacing-2xl); }
+        .section-title { font-size: var(--font-size-2xl); font-weight: 700; margin-bottom: var(--spacing-lg); }
+        .payment-steps { display: flex; flex-direction: column; gap: var(--spacing-lg); margin-bottom: var(--spacing-2xl); }
+        .step { display: flex; align-items: start; gap: var(--spacing-md); }
+        .step-number { width: 32px; height: 32px; background: var(--gradient-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+        .qr-container { text-align: center; padding: var(--spacing-2xl); background: white; border-radius: var(--radius-lg); margin: var(--spacing-xl) 0; }
+        .qr-code { width: 250px; height: 250px; margin: 0 auto; }
+        .upi-details { background: var(--bg-tertiary); padding: var(--spacing-lg); border-radius: var(--radius-md); margin-top: var(--spacing-md); }
+        .order-item { border-bottom: 1px solid var(--border-color); padding: var(--spacing-md) 0; }
+        .order-item:last-child { border-bottom: none; }
+        .form-group { margin-bottom: var(--spacing-lg); }
+        .form-label { display: block; margin-bottom: var(--spacing-sm); font-weight: 600; }
+        .form-input { width: 100%; padding: var(--spacing-md); background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); }
+        .datetime-input-wrapper { position: relative; }
+        .datetime-input-wrapper input[type="datetime-local"] { 
+            width: 100%; 
+            padding: var(--spacing-md) 45px var(--spacing-md) var(--spacing-md); 
+            background: var(--bg-tertiary); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-md); 
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+            cursor: pointer;
+        }
+        .datetime-input-wrapper input[type="datetime-local"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .datetime-input-wrapper::after {
+            content: '📅';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            font-size: 18px;
+        }
+        .file-upload { border: 2px dashed var(--border-color); padding: var(--spacing-xl); text-align: center; border-radius: var(--radius-md); cursor: pointer; transition: all var(--transition-base); }
+        .file-upload:hover { border-color: var(--primary-color); background: rgba(59, 130, 246, 0.05); }
+        .file-upload.has-file { border-color: var(--accent-color); background: rgba(16, 185, 129, 0.05); }
+        @media (max-width: 1024px) { .checkout-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="dashboard.html" class="nav__logo">
+                <span class="logo__icon">📈</span>
+                <span class="logo__text">TradingPro</span>
+            </a>
+            <div class="nav__actions">
+                <a href="cart.html" class="btn btn--secondary">← Back to Cart</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="checkout-container">
+        <div class="container">
+            <div class="section__header">
+                <h1 class="section__title">Payment</h1>
+                <p class="section__description">Complete your payment to activate subscriptions</p>
+            </div>
+
+            <div class="checkout-grid">
+                <!-- Payment Instructions -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Payment Instructions</h2>
+                    
+                    <div class="payment-steps">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div>
+                                <h4>Scan QR Code</h4>
+                                <p style="color: var(--text-secondary); font-size: var(--font-size-sm);">
+                                    Use any UPI app to scan the QR code or use the UPI ID below
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div>
+                                <h4>Make Payment</h4>
+                                <p style="color: var(--text-secondary); font-size: var(--font-size-sm);">
+                                    Enter the exact amount shown in your order summary
+                                </p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div>
+                                <h4>Upload Proof</h4>
+                                <p style="color: var(--text-secondary); font-size: var(--font-size-sm);">
+                                    Take a screenshot of the successful payment and upload below
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="qr-container">
+                        <h3 style="margin-bottom: 20px; color: #000;">Scan to Pay</h3>
+                        <div class="qr-code" id="qr-code-container">
+                            <!-- QR Code will be loaded dynamically -->
+                            <div id="qr-loading" style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">
+                                Loading QR code...
+                            </div>
+                            <img id="qr-code-image" src="" alt="Payment QR Code" style="display: none; width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <div class="upi-details" id="upi-details">
+                            <strong>UPI ID:</strong> <span id="upi-id">Loading...</span><br>
+                            <strong>Merchant:</strong> <span id="merchant-name">Loading...</span>
+                        </div>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <form id="payment-form">
+                        <div class="form-group">
+                            <label class="form-label">Payment Screenshot *</label>
+                            <div class="file-upload" id="file-upload">
+                                <div id="upload-text">
+                                    📎 Click to upload screenshot<br>
+                                    <small style="color: var(--text-tertiary);">JPG, PNG, or WEBP (Max 5MB)</small>
+                                </div>
+                                <input type="file" id="payment-proof" accept="image/jpeg,image/jpg,image/png,image/webp" style="display: none;" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="payment-reference">Transaction Reference (Optional)</label>
+                            <input type="text" id="payment-reference" class="form-input" placeholder="e.g., UTR123456789">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="payment-date">Payment Date & Time (Optional)</label>
+                            <div class="datetime-input-wrapper">
+                                <input type="datetime-local" id="payment-date" class="form-input" min="2020-01-01T00:00" max="2099-12-31T23:59">
+                            </div>
+                            <small style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-top: 5px; display: block;">
+                                Click the calendar icon to select date and time
+                            </small>
+                        </div>
+
+                        <button type="submit" class="btn btn--primary btn--full btn--large">
+                            Submit Payment Proof
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="checkout-section">
+                    <h2 class="section-title">Order Summary</h2>
+                    <div id="order-summary">
+                        <div class="loading">Loading order...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        let orderId = null;
+        let selectedFile = null;
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Get headers for file upload (without Content-Type, browser will set it with boundary)
+        function getAuthHeadersForUpload() {
+            const token = getAuthToken();
+            const headers = {};
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Check authentication on page load
+        async function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    throw new Error('Failed to verify authentication');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        // File upload handling
+        const paymentProofInput = document.getElementById('payment-proof');
+        const fileUploadDiv = document.getElementById('file-upload');
+        
+        if (paymentProofInput) {
+            paymentProofInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    selectedFile = file;
+                    if (fileUploadDiv) {
+                        fileUploadDiv.classList.add('has-file');
+                        const uploadText = document.getElementById('upload-text');
+                        if (uploadText) {
+                            uploadText.innerHTML = `
+                                ✅ ${file.name}<br>
+                                <small style="color: var(--accent-color);">File selected (${(file.size / 1024).toFixed(0)} KB)</small>
+                            `;
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Fix inline onclick handler for file upload (CSP compliant)
+        if (fileUploadDiv && paymentProofInput) {
+            fileUploadDiv.addEventListener('click', () => {
+                paymentProofInput.click();
+            });
+        }
+
+        async function createOrder() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to create order');
+                }
+                
+                const data = await response.json();
+                orderId = data.order.orderId;
+                
+                // Load order details
+                await loadOrderSummary();
+            } catch (error) {
+                console.error('Error creating order:', error);
+                alert('Error: ' + error.message);
+                window.location.href = 'cart.html';
+            }
+        }
+
+        async function loadOrderSummary() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/orders/me/${orderId}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load order');
+                }
+                
+                const data = await response.json();
+                displayOrderSummary(data);
+            } catch (error) {
+                console.error('Error loading order:', error);
+                document.getElementById('order-summary').innerHTML = `<p class="error">Failed to load order: ${error.message}</p>`;
+            }
+        }
+
+        function displayOrderSummary(data) {
+            const summary = document.getElementById('order-summary');
+            summary.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p><strong>Order ID:</strong> #${data.order.id}</p>
+                    <p><strong>Status:</strong> <span style="color: var(--accent-color);">${data.order.status}</span></p>
+                    <p><strong>Date:</strong> ${new Date(data.order.created_at).toLocaleString()}</p>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px;">Items:</h4>
+                    ${data.items.map(item => `
+                        <div class="order-item">
+                            <strong>${item.product_name}</strong><br>
+                            <small style="color: var(--text-secondary);">
+                                ${item.duration_units} ${item.duration_type === 'MONTH' ? 'Month(s)' : 'Year(s)'} | 
+                                ${new Date(item.start_date).toLocaleDateString()} - ${new Date(item.end_date).toLocaleDateString()}
+                            </small>
+                            <div style="text-align: right; margin-top: 5px;">₹${item.subtotal}</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="border-top: 2px solid var(--border-color); padding-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Subtotal:</span>
+                        <span>₹${data.order.total_amount}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: var(--font-size-xl); font-weight: 700; color: var(--primary-color);">
+                        <span>Total Payable:</span>
+                        <span>₹${data.order.total_amount}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Handle form submission
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!selectedFile) {
+                alert('Please upload payment proof');
+                return;
+            }
+            
+            if (!orderId) {
+                alert('Order not created. Please try again.');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('paymentProof', selectedFile);
+                formData.append('paymentReference', document.getElementById('payment-reference').value);
+                formData.append('paymentDate', document.getElementById('payment-date').value);
+                
+                const response = await fetch(`${API_BASE_URL}/orders/${orderId}/payment-proof`, {
+                    method: 'POST',
+                    headers: getAuthHeadersForUpload(),
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Failed to upload payment proof');
+                }
+                
+                alert('Payment proof submitted successfully! Your order is pending admin approval.');
+                window.location.href = 'dashboard.html';
+                
+            } catch (error) {
+                console.error('Error submitting payment:', error);
+                alert('Error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Payment Proof';
+            }
+        });
+
+        // Set default payment date/time to current date/time
+        function setDefaultPaymentDateTime() {
+            const paymentDateInput = document.getElementById('payment-date');
+            if (paymentDateInput) {
+                // Get current date/time in local timezone
+                const now = new Date();
+                // Format as YYYY-MM-DDTHH:mm for datetime-local input
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const defaultValue = `${year}-${month}-${day}T${hours}:${minutes}`;
+                paymentDateInput.value = defaultValue;
+            }
+        }
+
+        // Load payment configuration
+        async function loadPaymentConfig() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/config`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load payment config');
+                }
+                
+                const data = await response.json();
+                const config = data.config || {};
+                
+                // Display QR code
+                const qrCodeImage = document.getElementById('qr-code-image');
+                const qrLoading = document.getElementById('qr-loading');
+                const qrCodeContainer = document.getElementById('qr-code-container');
+                
+                if (config.qr_code_url) {
+                    // Build full URL for QR code
+                    const qrUrl = config.qr_code_url.startsWith('http') 
+                        ? config.qr_code_url 
+                        : `${API_BASE_URL.replace('/api/v1', '')}${config.qr_code_url}`;
+                    
+                    qrCodeImage.src = qrUrl;
+                    qrCodeImage.style.display = 'block';
+                    qrLoading.style.display = 'none';
+                    qrCodeImage.onerror = () => {
+                        qrLoading.textContent = 'QR code not available';
+                        qrCodeImage.style.display = 'none';
+                    };
+                } else {
+                    qrLoading.textContent = 'QR code not configured';
+                }
+                
+                // Display UPI ID
+                const upiIdElement = document.getElementById('upi-id');
+                if (config.upi_id) {
+                    upiIdElement.textContent = config.upi_id;
+                } else {
+                    upiIdElement.textContent = 'Not configured';
+                    upiIdElement.style.color = 'var(--text-secondary)';
+                }
+                
+                // Display Merchant Name
+                const merchantNameElement = document.getElementById('merchant-name');
+                if (config.merchant_name) {
+                    merchantNameElement.textContent = config.merchant_name;
+                } else {
+                    merchantNameElement.textContent = 'TradingPro India';
+                    merchantNameElement.style.color = 'var(--text-secondary)';
+                }
+                
+            } catch (error) {
+                console.error('Error loading payment config:', error);
+                // Show default/fallback values
+                document.getElementById('upi-id').textContent = 'Not available';
+                document.getElementById('merchant-name').textContent = 'TradingPro India';
+                document.getElementById('qr-loading').textContent = 'QR code not available';
+            }
+        }
+
+        // Initialize page
+        (async () => {
+            const isAuthenticated = await checkAuth();
+            if (isAuthenticated) {
+                setDefaultPaymentDateTime();
+                loadPaymentConfig(); // Load payment configuration
+                createOrder();
+            }
+        })();
+    </script>
+</body>
+</html>
+

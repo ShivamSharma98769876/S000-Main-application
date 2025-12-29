@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | TradingPro</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item active">
+                    📊 Dashboard
+                </a>
+                <a href="orders.html" class="nav-item">
+                    📦 Orders <span class="badge" id="pending-count">0</span>
+                </a>
+                <a href="products.html" class="nav-item">
+                    🎯 Products
+                </a>
+                <a href="insights.html" class="nav-item">
+                    📊 Market Insights
+                </a>
+                <a href="offers.html" class="nav-item">
+                    🎁 Offers
+                </a>
+                <a href="testimonials.html" class="nav-item">
+                    ⭐ Testimonials
+                </a>
+                <a href="config.html" class="nav-item">
+                    ⚙️ Config
+                </a>
+                <a href="audit.html" class="nav-item">
+                    📝 Audit Logs
+                </a>
+                <a href="monitoring.html" class="nav-item">
+                    📡 Monitoring
+                </a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">
+                    ← Back to Site
+                </a>
+                <button id="logout-btn" class="nav-item logout-btn">
+                    🚪 Logout
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <div class="admin-user">
+                    <span id="admin-name">Admin</span>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📦</div>
+                        <div class="stat-info">
+                            <h3 id="pending-orders">0</h3>
+                            <p>Pending Orders</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <h3 id="approved-orders">0</h3>
+                            <p>Approved Today</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3 id="total-users">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-info">
+                            <h3 id="total-revenue">₹0</h3>
+                            <p>Total Revenue</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>Recent Pending Orders</h2>
+                        <a href="orders.html" class="btn btn--secondary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="recent-orders">
+                            <div class="loading">Loading orders...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <h2>Quick Actions</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-actions">
+                            <a href="orders.html" class="action-btn">
+                                <span class="action-icon">📦</span>
+                                <span>Review Orders</span>
+                            </a>
+                            <a href="products.html" class="action-btn">
+                                <span class="action-icon">➕</span>
+                                <span>Add Product</span>
+                            </a>
+                            <a href="audit.html" class="action-btn">
+                                <span class="action-icon">📝</span>
+                                <span>View Logs</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                
+                if (document.getElementById('admin-name')) {
+                    document.getElementById('admin-name').textContent = data.profile?.full_name || data.user.email;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadDashboardStats() {
+            try {
+                // Load pending orders
+                const ordersResponse = await fetch(`${API_BASE_URL}/admin/orders?status=PENDING&pageSize=5`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (ordersResponse.ok) {
+                    const ordersData = await ordersResponse.json();
+                    document.getElementById('pending-orders').textContent = ordersData.pagination.totalCount;
+                    document.getElementById('pending-count').textContent = ordersData.pagination.totalCount;
+                    displayRecentOrders(ordersData.orders);
+                }
+
+                // Note: Additional stats would require new endpoints or aggregation
+                // For now, showing placeholder values
+                document.getElementById('approved-orders').textContent = '-';
+                document.getElementById('total-users').textContent = '-';
+                document.getElementById('total-revenue').textContent = '₹-';
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function displayRecentOrders(orders) {
+            const container = document.getElementById('recent-orders');
+            
+            if (!orders || orders.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No pending orders</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orders.map(order => `
+                            <tr>
+                                <td>#${order.id}</td>
+                                <td>${order.full_name || order.email}</td>
+                                <td>₹${order.total_amount}</td>
+                                <td>${new Date(order.created_at).toLocaleString()}</td>
+                                <td>
+                                    <a href="orders.html?id=${order.id}" class="btn btn--primary btn-sm">Review</a>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                loadDashboardStats();
+            }
+        });
+    </script>
+</body>
+</html>
+

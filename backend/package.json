@@ -1,0 +1,78 @@
+{
+  "name": "tradingpro-backend",
+  "version": "1.0.0",
+  "description": "Trading Subscription Platform Backend API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:migrate": "node scripts/migrate-complete.js",
+    "db:migrate:old": "node scripts/migrate.js",
+    "db:migrate:content": "node scripts/migrate-content.js",
+    "db:migrate:testimonials": "node scripts/migrate-testimonials-user-submission.js",
+    "db:migrate:email-queue": "node scripts/migrate-email-queue.js",
+    "db:migrate:monitoring": "node scripts/migrate-monitoring.js",
+    "db:migrate:sqlite": "node scripts/migrate-sqlite-schema.js",
+    "db:export:postgres": "node scripts/export-postgres-data.js",
+    "db:import:sqlite": "node scripts/import-sqlite-data.js",
+    "db:verify:sqlite": "node scripts/verify-sqlite-migration.js",
+    "db:seed": "node scripts/seed.js",
+    "test": "jest --runInBand",
+    "test:unit": "jest tests/unit --runInBand",
+    "test:integration": "jest tests/integration --runInBand",
+    "test:e2e": "jest tests/e2e --runInBand",
+    "test:security": "jest tests/security --runInBand",
+    "test:performance": "jest tests/performance --runInBand",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage --runInBand"
+  },
+  "keywords": [
+    "trading",
+    "subscription",
+    "oauth",
+    "api"
+  ],
+  "author": "TradingPro",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^12.5.0",
+    "connect-pg-simple": "^9.0.1",
+    "connect-sqlite3": "^0.9.16",
+    "cookie-signature": "^1.2.2",
+    "cors": "^2.8.5",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-rate-limit": "^7.1.5",
+    "express-session": "^1.17.3",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.3",
+    "kiteconnect": "^5.1.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^7.0.11",
+    "passport": "^0.7.0",
+    "passport-apple": "^2.0.2",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.11.3",
+    "python-shell": "^5.0.0",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "type": "commonjs"
+}

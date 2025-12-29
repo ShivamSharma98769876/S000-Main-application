@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Testimonial | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .testimonials-container {
+            min-height: 100vh;
+            padding-top: 100px;
+            padding-bottom: 60px;
+        }
+        
+        .testimonials-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .testimonials-header {
+            text-align: center;
+            margin-bottom: var(--spacing-2xl);
+        }
+        
+        .testimonials-header h1 {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+        
+        .testimonials-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-label.required::after {
+            content: ' *';
+            color: #ef4444;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+        
+        .form-help {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .rating-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .rating-option {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .rating-option:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+        }
+        
+        .rating-option input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-option.selected {
+            background: rgba(var(--primary-color-rgb), 0.1);
+            border-color: var(--primary-color);
+        }
+        
+        .rating-stars {
+            font-size: 1.2rem;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: var(--spacing-xl);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 1rem;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn--primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+        
+        .btn--primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+        }
+        
+        .btn--primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn--secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn--secondary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .btn--full {
+            width: 100%;
+        }
+        
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-message {
+            background: #3b82f6;
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .my-testimonials {
+            margin-top: var(--spacing-2xl);
+            padding-top: var(--spacing-2xl);
+            border-top: 2px solid var(--border-color);
+        }
+        
+        .testimonial-item {
+            background: var(--bg-tertiary);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-md);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .testimonial-item.pending {
+            border-left-color: #f59e0b;
+        }
+        
+        .testimonial-item.active {
+            border-left-color: #10b981;
+        }
+        
+        .testimonial-item.inactive {
+            border-left-color: #ef4444;
+        }
+        
+        .testimonial-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-pending {
+            background: #f59e0b20;
+            color: #f59e0b;
+        }
+        
+        .status-active {
+            background: #10b98120;
+            color: #10b981;
+        }
+        
+        .status-inactive {
+            background: #ef444420;
+            color: #ef4444;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="dashboard.html" class="nav__logo">
+                <span class="logo__icon">📈</span>
+                <span class="logo__text">TradingPro</span>
+            </a>
+            <div class="nav__actions">
+                <a href="dashboard.html" class="btn btn--secondary">Dashboard</a>
+                <a href="products.html" class="btn btn--secondary">Products</a>
+                <button id="logout-btn" class="btn btn--outline">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="testimonials-container">
+        <div class="container">
+            <div class="testimonials-card">
+                <div class="testimonials-header">
+                    <h1>⭐ Share Your Experience</h1>
+                    <p>Help others discover TradingPro by sharing your success story</p>
+                </div>
+
+                <div id="message-container"></div>
+
+                <form id="testimonial-form">
+                    <div class="form-group">
+                        <label class="form-label required" for="author-name">Your Name</label>
+                        <input type="text" id="author-name" name="authorName" class="form-input" required placeholder="Enter your full name">
+                        <div class="form-help">This will be displayed with your testimonial</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="author-role">Your Role / Trading Style</label>
+                        <input type="text" id="author-role" name="authorRole" class="form-input" placeholder="e.g., Day Trader, Options Trader, Swing Trader">
+                        <div class="form-help">Optional: Describe your trading style or role</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required" for="content">Your Testimonial</label>
+                        <textarea id="content" name="content" class="form-textarea" required placeholder="Share your experience with TradingPro... How has it helped your trading? What features do you love?"></textarea>
+                        <div class="form-help">Be specific and honest about your experience</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label required">Rating</label>
+                        <div class="rating-group">
+                            <label class="rating-option" data-rating="5">
+                                <input type="radio" name="rating" value="5" checked>
+                                <span class="rating-stars">⭐⭐⭐⭐⭐</span>
+                                <span>5 Stars</span>
+                            </label>
+                            <label class="rating-option" data-rating="4">
+                                <input type="radio" name="rating" value="4">
+                                <span class="rating-stars">⭐⭐⭐⭐</span>
+                                <span>4 Stars</span>
+                            </label>
+                            <label class="rating-option" data-rating="3">
+                                <input type="radio" name="rating" value="3">
+                                <span class="rating-stars">⭐⭐⭐</span>
+                                <span>3 Stars</span>
+                            </label>
+                            <label class="rating-option" data-rating="2">
+                                <input type="radio" name="rating" value="2">
+                                <span class="rating-stars">⭐⭐</span>
+                                <span>2 Stars</span>
+                            </label>
+                            <label class="rating-option" data-rating="1">
+                                <input type="radio" name="rating" value="1">
+                                <span class="rating-stars">⭐</span>
+                                <span>1 Star</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="info-message">
+                        <strong>📝 Note:</strong> Your testimonial will be reviewed by our admin team before being published on the website. This helps us maintain quality and authenticity.
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="dashboard.html" class="btn btn--secondary">Cancel</a>
+                        <button type="submit" class="btn btn--primary btn--full" id="submit-btn">
+                            <span id="submit-text">Submit Testimonial</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="my-testimonials">
+                    <h2 style="margin-bottom: var(--spacing-lg);">My Submitted Testimonials</h2>
+                    <div id="my-testimonials-list">
+                        <div class="loading">Loading your testimonials...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Check authentication
+        async function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        // Show message
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('message-container');
+            const messageClass = type === 'success' ? 'success-message' : 'error-message';
+            const icon = type === 'success' ? '✅' : '❌';
+            
+            container.innerHTML = `<div class="${messageClass}">${icon} ${message}</div>`;
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Set button loading state
+        function setButtonLoading(isLoading) {
+            const button = document.getElementById('submit-btn');
+            const textSpan = document.getElementById('submit-text');
+            
+            if (isLoading) {
+                button.disabled = true;
+                textSpan.innerHTML = '<span class="loading-spinner"></span>Submitting...';
+            } else {
+                button.disabled = false;
+                textSpan.textContent = 'Submit Testimonial';
+            }
+        }
+
+        // Rating selection handler
+        document.querySelectorAll('.rating-option').forEach(option => {
+            option.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                document.querySelector(`input[name="rating"][value="${rating}"]`).checked = true;
+                
+                // Update visual selection
+                document.querySelectorAll('.rating-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+            });
+        });
+
+        // Set initial selected rating
+        document.querySelector('.rating-option[data-rating="5"]').classList.add('selected');
+
+        // Form submission
+        document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setButtonLoading(true);
+            
+            try {
+                const formData = {
+                    authorName: document.getElementById('author-name').value.trim(),
+                    authorRole: document.getElementById('author-role').value.trim(),
+                    content: document.getElementById('content').value.trim(),
+                    rating: parseInt(document.querySelector('input[name="rating"]:checked').value)
+                };
+
+                // Validation
+                if (!formData.authorName || !formData.content) {
+                    showMessage('Please fill in all required fields', 'error');
+                    setButtonLoading(false);
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/content/testimonials`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to submit testimonial');
+                }
+
+                const data = await response.json();
+                showMessage(data.message || 'Testimonial submitted successfully!', 'success');
+                
+                // Reset form
+                document.getElementById('testimonial-form').reset();
+                document.querySelector('.rating-option[data-rating="5"]').classList.add('selected');
+                
+                // Reload user testimonials
+                loadMyTestimonials();
+            } catch (error) {
+                console.error('Error submitting testimonial:', error);
+                showMessage(error.message || 'Failed to submit testimonial. Please try again.', 'error');
+            } finally {
+                setButtonLoading(false);
+            }
+        });
+
+        // Load user's testimonials
+        async function loadMyTestimonials() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/testimonials/my`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load testimonials');
+                }
+
+                const data = await response.json();
+                displayMyTestimonials(data.testimonials);
+            } catch (error) {
+                console.error('Error loading testimonials:', error);
+                document.getElementById('my-testimonials-list').innerHTML = 
+                    '<p style="color: var(--text-secondary);">Failed to load your testimonials</p>';
+            }
+        }
+
+        function displayMyTestimonials(testimonials) {
+            const container = document.getElementById('my-testimonials-list');
+            
+            if (!testimonials || testimonials.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">You haven\'t submitted any testimonials yet.</p>';
+                return;
+            }
+
+            container.innerHTML = testimonials.map(testimonial => {
+                const statusClass = testimonial.status.toLowerCase();
+                const statusText = {
+                    'pending': 'Pending Review',
+                    'active': 'Published',
+                    'inactive': 'Rejected'
+                };
+                
+                return `
+                    <div class="testimonial-item ${statusClass}">
+                        <span class="testimonial-status status-${statusClass}">${statusText[statusClass] || testimonial.status}</span>
+                        <p style="margin: 0.5rem 0; color: var(--text-primary);">${testimonial.content}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <div>
+                                <strong>${testimonial.author_name}</strong>
+                                ${testimonial.author_role ? `<span style="color: var(--text-secondary);"> - ${testimonial.author_role}</span>` : ''}
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                                ${'⭐'.repeat(testimonial.rating)} | ${new Date(testimonial.created_at).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html';
+        });
+
+        // Initialize
+        checkAuth().then(isAuthenticated => {
+            if (isAuthenticated) {
+                loadMyTestimonials();
+            }
+        });
+    </script>
+</body>
+</html>
+

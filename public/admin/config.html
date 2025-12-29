@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Configuration | TradingPro Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .config-container {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .config-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .config-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .config-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .config-card-icon {
+            font-size: 1.5rem;
+        }
+        
+        .config-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .form-help {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .qr-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-tertiary);
+        }
+        
+        .qr-upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.05);
+        }
+        
+        .qr-upload-area.dragover {
+            border-color: var(--primary-color);
+            background: rgba(var(--primary-color-rgb), 0.1);
+        }
+        
+        .qr-upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+        
+        .qr-upload-text {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        .qr-upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .qr-preview {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        
+        .qr-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: var(--radius-md);
+            border: 2px solid var(--border-color);
+            padding: 0.5rem;
+            background: white;
+        }
+        
+        .qr-preview-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 0.95rem;
+        }
+        
+        .btn--primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+        }
+        
+        .btn--primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.3);
+        }
+        
+        .btn--primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn--secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn--secondary:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .btn--danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn--danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">TradingPro Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="orders.html" class="nav-item">📦 Orders</a>
+                <a href="products.html" class="nav-item">🎯 Products</a>
+                <a href="offers.html" class="nav-item">🎁 Offers</a>
+                <a href="testimonials.html" class="nav-item">⭐ Testimonials</a>
+                <a href="config.html" class="nav-item active">⚙️ Config</a>
+                <a href="audit.html" class="nav-item">📝 Audit Logs</a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">← Back to Site</a>
+                <button id="logout-btn" class="nav-item logout-btn">🚪 Logout</button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>System Configuration</h1>
+            </header>
+
+            <div class="admin-content">
+                <div id="message-container"></div>
+                
+                <div class="config-container">
+                    <!-- Payment Configuration -->
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <span class="config-card-icon">💳</span>
+                            <h2 class="config-card-title">Payment Configuration</h2>
+                        </div>
+                        <form id="payment-config-form" class="admin-form">
+                            <div class="form-group">
+                                <label class="form-label">QR Code</label>
+                                <div id="qr-upload-area" class="qr-upload-area">
+                                    <div class="qr-upload-icon">📷</div>
+                                    <div class="qr-upload-text">Click to upload or drag and drop</div>
+                                    <div class="qr-upload-hint">PNG, JPG, WEBP up to 5MB</div>
+                                    <input type="file" id="qr-code-file" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                                </div>
+                                <div id="qr-preview" class="qr-preview hidden">
+                                    <img id="qr-preview-img" src="" alt="QR Code Preview">
+                                    <div class="qr-preview-actions">
+                                        <button type="button" class="btn btn--secondary btn-sm" id="change-qr-btn">Change Image</button>
+                                        <button type="button" class="btn btn--danger btn-sm" id="remove-qr-btn">Remove</button>
+                                    </div>
+                                </div>
+                                <div class="form-help">Upload a QR code image for payment processing</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">UPI ID</label>
+                                <input type="text" id="upi_id" class="form-input" placeholder="tradingpro@upi">
+                                <div class="form-help">Your UPI payment ID</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Merchant Name</label>
+                                <input type="text" id="merchant_name" class="form-input" placeholder="TradingPro India">
+                                <div class="form-help">Name displayed on payment receipts</div>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="payment-save-btn">
+                                <span id="payment-save-text">Save Payment Config</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <span class="config-card-icon">📞</span>
+                            <h2 class="config-card-title">Contact Information</h2>
+                        </div>
+                        <form id="contact-config-form" class="admin-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Support Email</label>
+                                    <input type="email" id="support_email" class="form-input" placeholder="support@tradingpro.com">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Admin Email</label>
+                                    <input type="email" id="admin_email" class="form-input" placeholder="admin@tradingpro.com">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" id="phone_number" class="form-input" placeholder="+91 88888 88888">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Address</label>
+                                <textarea id="company_address" class="form-textarea" rows="2" placeholder="Enter company address"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="contact-save-btn">
+                                <span id="contact-save-text">Save Contact Info</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Company Information -->
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <span class="config-card-icon">🏢</span>
+                            <h2 class="config-card-title">Company Information</h2>
+                        </div>
+                        <form id="company-config-form" class="admin-form">
+                            <div class="form-group">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" id="company_name" class="form-input" placeholder="TradingPro">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Company Tagline</label>
+                                <input type="text" id="company_tagline" class="form-input" placeholder="Professional Trading Solutions">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">About Us Text</label>
+                                <textarea id="about_text" class="form-textarea" rows="6" placeholder="Enter about us text"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Mission Statement</label>
+                                <textarea id="mission_statement" class="form-textarea" rows="2" placeholder="Enter mission statement"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Vision Statement</label>
+                                <textarea id="vision_statement" class="form-textarea" rows="2" placeholder="Enter vision statement"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="company-save-btn">
+                                <span id="company-save-text">Save Company Info</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Social Media Links -->
+                    <div class="config-card">
+                        <div class="config-card-header">
+                            <span class="config-card-icon">🔗</span>
+                            <h2 class="config-card-title">Social Media Links</h2>
+                        </div>
+                        <form id="social-config-form" class="admin-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="form-label">Twitter URL</label>
+                                    <input type="url" id="twitter_url" class="form-input" placeholder="https://twitter.com/tradingpro">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">LinkedIn URL</label>
+                                    <input type="url" id="linkedin_url" class="form-input" placeholder="https://linkedin.com/company/tradingpro">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">YouTube URL</label>
+                                    <input type="url" id="youtube_url" class="form-input" placeholder="https://youtube.com/@tradingpro">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Telegram URL</label>
+                                    <input type="url" id="telegram_url" class="form-input" placeholder="https://t.me/tradingpro">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="social-save-btn">
+                                <span id="social-save-text">Save Social Links</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Get authorization headers for file upload
+        function getAuthHeadersForUpload() {
+            const token = getAuthToken();
+            const headers = {};
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Show message
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('message-container');
+            const messageClass = type === 'success' ? 'success-message' : 'error-message';
+            const icon = type === 'success' ? '✅' : '❌';
+            
+            container.innerHTML = `<div class="${messageClass}">${icon} ${message}</div>`;
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Set button loading state
+        function setButtonLoading(buttonId, isLoading) {
+            const button = document.getElementById(buttonId);
+            const textSpan = document.getElementById(buttonId.replace('-btn', '-save-text'));
+            
+            if (isLoading) {
+                button.disabled = true;
+                if (textSpan) {
+                    textSpan.innerHTML = '<span class="loading-spinner"></span>Saving...';
+                }
+            } else {
+                button.disabled = false;
+                if (textSpan) {
+                    const originalText = button.textContent.replace('Saving...', '').trim();
+                    textSpan.textContent = originalText || 'Save';
+                }
+            }
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error('Admin auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/config`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load config');
+                }
+                
+                const data = await response.json();
+                
+                // Populate form fields
+                if (data.config && Array.isArray(data.config)) {
+                    data.config.forEach(item => {
+                        const field = document.getElementById(item.key);
+                        if (field) {
+                            field.value = item.value || '';
+                            
+                            // Handle QR code preview
+                            if (item.key === 'qr_code_url' && item.value) {
+                                showQRPreview(item.value);
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+                showMessage('Failed to load configuration. Please refresh the page.', 'error');
+            }
+        }
+
+        async function saveConfig(key, value) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/content/admin/config/${key}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ value })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `Failed to update ${key}`);
+                }
+                
+                return true;
+            } catch (error) {
+                console.error(`Error saving ${key}:`, error);
+                throw error;
+            }
+        }
+
+        // QR Code Upload
+        function showQRPreview(url) {
+            const preview = document.getElementById('qr-preview');
+            const previewImg = document.getElementById('qr-preview-img');
+            const uploadArea = document.getElementById('qr-upload-area');
+            
+            if (url) {
+                previewImg.src = url.startsWith('http') ? url : `${API_BASE_URL.replace('/api/v1', '')}${url}`;
+                preview.classList.remove('hidden');
+                uploadArea.style.display = 'none';
+            } else {
+                preview.classList.add('hidden');
+                uploadArea.style.display = 'block';
+            }
+        }
+
+        async function uploadQRCode(file) {
+            try {
+                const formData = new FormData();
+                formData.append('qr_code', file);
+                
+                const response = await fetch(`${API_BASE_URL}/content/admin/config/qr-code/upload`, {
+                    method: 'POST',
+                    headers: getAuthHeadersForUpload(),
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || 'Failed to upload QR code');
+                }
+                
+                const data = await response.json();
+                showQRPreview(data.url);
+                return data.url;
+            } catch (error) {
+                console.error('Error uploading QR code:', error);
+                throw error;
+            }
+        }
+
+        // QR Code file input handlers
+        document.getElementById('qr-code-file').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    setButtonLoading('payment-save-btn', true);
+                    await uploadQRCode(file);
+                    showMessage('QR code uploaded successfully!', 'success');
+                } catch (error) {
+                    showMessage(error.message || 'Failed to upload QR code', 'error');
+                } finally {
+                    setButtonLoading('payment-save-btn', false);
+                }
+            }
+        });
+
+        document.getElementById('qr-upload-area').addEventListener('click', () => {
+            document.getElementById('qr-code-file').click();
+        });
+
+        document.getElementById('change-qr-btn').addEventListener('click', () => {
+            document.getElementById('qr-code-file').click();
+        });
+
+        document.getElementById('remove-qr-btn').addEventListener('click', async () => {
+            if (confirm('Remove QR code?')) {
+                try {
+                    await saveConfig('qr_code_url', '');
+                    showQRPreview('');
+                    showMessage('QR code removed successfully!', 'success');
+                } catch (error) {
+                    showMessage(error.message || 'Failed to remove QR code', 'error');
+                }
+            }
+        });
+
+        // Drag and drop for QR code
+        const uploadArea = document.getElementById('qr-upload-area');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                try {
+                    setButtonLoading('payment-save-btn', true);
+                    await uploadQRCode(file);
+                    showMessage('QR code uploaded successfully!', 'success');
+                } catch (error) {
+                    showMessage(error.message || 'Failed to upload QR code', 'error');
+                } finally {
+                    setButtonLoading('payment-save-btn', false);
+                }
+            }
+        });
+
+        // Payment config form
+        document.getElementById('payment-config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setButtonLoading('payment-save-btn', true);
+            
+            try {
+                const promises = [];
+                
+                // Only save UPI ID and merchant name if QR code is already uploaded
+                const qrUrl = document.getElementById('qr-preview').classList.contains('hidden') 
+                    ? null 
+                    : document.getElementById('qr-preview-img').src;
+                
+                if (qrUrl) {
+                    // Extract path from full URL if needed
+                    const urlPath = qrUrl.includes('/uploads/') 
+                        ? qrUrl.substring(qrUrl.indexOf('/uploads/'))
+                        : qrUrl;
+                    promises.push(saveConfig('qr_code_url', urlPath));
+                }
+                
+                promises.push(saveConfig('upi_id', document.getElementById('upi_id').value));
+                promises.push(saveConfig('merchant_name', document.getElementById('merchant_name').value));
+                
+                await Promise.all(promises);
+                showMessage('Payment configuration saved successfully!', 'success');
+            } catch (error) {
+                showMessage(error.message || 'Failed to save payment configuration', 'error');
+            } finally {
+                setButtonLoading('payment-save-btn', false);
+            }
+        });
+
+        // Contact config form
+        document.getElementById('contact-config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setButtonLoading('contact-save-btn', true);
+            
+            try {
+                await Promise.all([
+                    saveConfig('support_email', document.getElementById('support_email').value),
+                    saveConfig('admin_email', document.getElementById('admin_email').value),
+                    saveConfig('phone_number', document.getElementById('phone_number').value),
+                    saveConfig('company_address', document.getElementById('company_address').value)
+                ]);
+                showMessage('Contact information saved successfully!', 'success');
+            } catch (error) {
+                showMessage(error.message || 'Failed to save contact information', 'error');
+            } finally {
+                setButtonLoading('contact-save-btn', false);
+            }
+        });
+
+        // Company config form
+        document.getElementById('company-config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setButtonLoading('company-save-btn', true);
+            
+            try {
+                await Promise.all([
+                    saveConfig('company_name', document.getElementById('company_name').value),
+                    saveConfig('company_tagline', document.getElementById('company_tagline').value),
+                    saveConfig('about_text', document.getElementById('about_text').value),
+                    saveConfig('mission_statement', document.getElementById('mission_statement').value),
+                    saveConfig('vision_statement', document.getElementById('vision_statement').value)
+                ]);
+                showMessage('Company information saved successfully!', 'success');
+            } catch (error) {
+                showMessage(error.message || 'Failed to save company information', 'error');
+            } finally {
+                setButtonLoading('company-save-btn', false);
+            }
+        });
+
+        // Social config form
+        document.getElementById('social-config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setButtonLoading('social-save-btn', true);
+            
+            try {
+                await Promise.all([
+                    saveConfig('twitter_url', document.getElementById('twitter_url').value),
+                    saveConfig('linkedin_url', document.getElementById('linkedin_url').value),
+                    saveConfig('youtube_url', document.getElementById('youtube_url').value),
+                    saveConfig('telegram_url', document.getElementById('telegram_url').value)
+                ]);
+                showMessage('Social media links saved successfully!', 'success');
+            } catch (error) {
+                showMessage(error.message || 'Failed to save social media links', 'error');
+            } finally {
+                setButtonLoading('social-save-btn', false);
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = '../index.html';
+        });
+
+        checkAdminAuth().then(isAdmin => {
+            if (isAdmin) {
+                loadConfig();
+            }
+        });
+    </script>
+</body>
+</html>

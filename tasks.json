@@ -1,0 +1,923 @@
+{
+  "project": "Trading Subscription Web Platform",
+  "version": "1.0",
+  "lastUpdated": "",
+  "tasks": [
+    {
+      "id": "T001",
+      "name": "Project Setup & Infrastructure",
+      "status": "pending",
+      "description": "Set up development environment, project structure, and core infrastructure",
+      "subTasks": [
+        {
+          "id": "T001-S001",
+          "name": "Initialize project repository and folder structure",
+          "status": "pending",
+          "description": "Create project structure for frontend, backend, and database"
+        },
+        {
+          "id": "T001-S002",
+          "name": "Set up backend framework (Node.js/Express, FastAPI, or Spring Boot)",
+          "status": "pending",
+          "description": "Choose and configure backend framework with basic server setup"
+        },
+        {
+          "id": "T001-S003",
+          "name": "Set up frontend framework (React, Vue, or Angular)",
+          "status": "pending",
+          "description": "Initialize frontend SPA with routing and state management"
+        },
+        {
+          "id": "T001-S004",
+          "name": "Configure database (PostgreSQL or MySQL)",
+          "status": "pending",
+          "description": "Set up database connection and migration system"
+        },
+        {
+          "id": "T001-S005",
+          "name": "Set up object storage for payment proof images",
+          "status": "pending",
+          "description": "Configure AWS S3, Azure Blob, or similar for file storage"
+        },
+        {
+          "id": "T001-S006",
+          "name": "Configure environment variables and configuration management",
+          "status": "pending",
+          "description": "Set up .env files and config system for QR codes, emails, etc."
+        },
+        {
+          "id": "T001-S007",
+          "name": "Set up HTTPS and security middleware",
+          "status": "pending",
+          "description": "Configure SSL/TLS, CSRF protection, and secure session management"
+        }
+      ]
+    },
+    {
+      "id": "T002",
+      "name": "Database Schema & Models",
+      "status": "pending",
+      "description": "Create database schema and data models based on PRD specifications",
+      "subTasks": [
+        {
+          "id": "T002-S001",
+          "name": "Create users table with provider authentication fields",
+          "status": "pending",
+          "description": "Implement users table with provider_type, provider_user_id, email, is_admin"
+        },
+        {
+          "id": "T002-S002",
+          "name": "Create user_profiles table",
+          "status": "pending",
+          "description": "Implement user_profiles with full_name, address, phone, capital_used, referral_code"
+        },
+        {
+          "id": "T002-S003",
+          "name": "Create products table",
+          "status": "pending",
+          "description": "Implement products table with name, description, category, monthly_price, yearly_price, status"
+        },
+        {
+          "id": "T002-S004",
+          "name": "Create carts and cart_items tables",
+          "status": "pending",
+          "description": "Implement cart system with duration_type, duration_units, start_date, end_date, pricing"
+        },
+        {
+          "id": "T002-S005",
+          "name": "Create subscription_orders and subscription_order_items tables",
+          "status": "pending",
+          "description": "Implement order tables with status, payment_proof_url, payment_reference, rejection_reason"
+        },
+        {
+          "id": "T002-S006",
+          "name": "Create subscriptions table",
+          "status": "pending",
+          "description": "Implement subscriptions table with start_date, end_date, status, source_order_id"
+        },
+        {
+          "id": "T002-S007",
+          "name": "Create login_audit table",
+          "status": "pending",
+          "description": "Implement audit logging table for login/logout events"
+        },
+        {
+          "id": "T002-S008",
+          "name": "Create system_config table",
+          "status": "pending",
+          "description": "Implement configuration table for QR codes, support email, etc."
+        },
+        {
+          "id": "T002-S009",
+          "name": "Create database indexes for performance",
+          "status": "pending",
+          "description": "Add indexes on subscription_orders (status, created_at), subscriptions (user_id, status), login_audit (user_id, created_at)"
+        },
+        {
+          "id": "T002-S010",
+          "name": "Create database models/ORM entities",
+          "status": "pending",
+          "description": "Implement ORM models or data access layer for all tables"
+        }
+      ]
+    },
+    {
+      "id": "T003",
+      "name": "Authentication System (OAuth)",
+      "status": "pending",
+      "description": "Implement OAuth 2.0/OpenID Connect authentication with Google and Apple",
+      "subTasks": [
+        {
+          "id": "T003-S001",
+          "name": "Set up Google OAuth integration",
+          "status": "pending",
+          "description": "Configure Google OAuth client, implement token validation"
+        },
+        {
+          "id": "T003-S002",
+          "name": "Set up Apple OAuth integration",
+          "status": "pending",
+          "description": "Configure Apple Sign In, implement token validation"
+        },
+        {
+          "id": "T003-S003",
+          "name": "Implement POST /auth/oauth/google endpoint",
+          "status": "pending",
+          "description": "Create endpoint to handle Google ID token, validate, find/create user, create session"
+        },
+        {
+          "id": "T003-S004",
+          "name": "Implement POST /auth/oauth/apple endpoint",
+          "status": "pending",
+          "description": "Create endpoint to handle Apple token, validate, find/create user, create session"
+        },
+        {
+          "id": "T003-S005",
+          "name": "Implement POST /auth/logout endpoint",
+          "status": "pending",
+          "description": "Create logout endpoint that clears session and logs logout event"
+        },
+        {
+          "id": "T003-S006",
+          "name": "Implement GET /auth/me endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return authenticated user, profile, and admin status"
+        },
+        {
+          "id": "T003-S007",
+          "name": "Implement session management",
+          "status": "pending",
+          "description": "Create secure session token generation and validation system"
+        },
+        {
+          "id": "T003-S008",
+          "name": "Create login audit logging functionality",
+          "status": "pending",
+          "description": "Log all login/logout events with user_id, provider, timestamp, IP, user_agent, status"
+        },
+        {
+          "id": "T003-S009",
+          "name": "Build frontend OAuth login UI",
+          "status": "pending",
+          "description": "Create login page with 'Continue with Google' and 'Continue with Apple' buttons"
+        },
+        {
+          "id": "T003-S010",
+          "name": "Implement OAuth redirect flow handling",
+          "status": "pending",
+          "description": "Handle OAuth callbacks, token exchange, and redirect logic based on profile completion"
+        }
+      ]
+    },
+    {
+      "id": "T004",
+      "name": "Landing Page",
+      "status": "pending",
+      "description": "Create public marketing landing page with modern trading platform aesthetic",
+      "subTasks": [
+        {
+          "id": "T004-S001",
+          "name": "Design and implement header with logo and navigation",
+          "status": "pending",
+          "description": "Create header with logo, navigation (Home, Products, Offers, Testimonials, About, Login/Signup)"
+        },
+        {
+          "id": "T004-S002",
+          "name": "Create hero section with CTAs",
+          "status": "pending",
+          "description": "Implement hero with headline, subheadline, primary CTA (Get Started), secondary CTA (View Products)"
+        },
+        {
+          "id": "T004-S003",
+          "name": "Build products overview section",
+          "status": "pending",
+          "description": "Create product cards with descriptions and 'Learn more' / 'Login to subscribe' CTAs"
+        },
+        {
+          "id": "T004-S004",
+          "name": "Create offers/promotions section",
+          "status": "pending",
+          "description": "Build configurable offers section (admin-managed)"
+        },
+        {
+          "id": "T004-S005",
+          "name": "Build testimonials section",
+          "status": "pending",
+          "description": "Create testimonials display with name, role (admin-managed)"
+        },
+        {
+          "id": "T004-S006",
+          "name": "Create About Us section",
+          "status": "pending",
+          "description": "Implement company overview, mission, and contact info"
+        },
+        {
+          "id": "T004-S007",
+          "name": "Build footer with links and policies",
+          "status": "pending",
+          "description": "Create footer with copyright, social links, privacy policy, terms & conditions"
+        },
+        {
+          "id": "T004-S008",
+          "name": "Implement responsive design (mobile, tablet, desktop)",
+          "status": "pending",
+          "description": "Ensure landing page is fully responsive with mobile-first approach"
+        },
+        {
+          "id": "T004-S009",
+          "name": "Optimize landing page performance (<3s load time)",
+          "status": "pending",
+          "description": "Optimize images, code splitting, lazy loading for fast page load"
+        },
+        {
+          "id": "T004-S010",
+          "name": "Apply modern trading platform UI styling",
+          "status": "pending",
+          "description": "Implement clean layouts, strong typography, high-contrast CTAs inspired by Algorooms"
+        }
+      ]
+    },
+    {
+      "id": "T005",
+      "name": "User Registration & Profile Management",
+      "status": "pending",
+      "description": "Implement user registration flow and profile management features",
+      "subTasks": [
+        {
+          "id": "T005-S001",
+          "name": "Create registration page UI",
+          "status": "pending",
+          "description": "Build registration form with mandatory fields: Full Name, Address, Phone, Capital Used for Trading"
+        },
+        {
+          "id": "T005-S002",
+          "name": "Implement phone number format validation",
+          "status": "pending",
+          "description": "Add client and server-side validation for phone number format"
+        },
+        {
+          "id": "T005-S003",
+          "name": "Implement POST /users/me/profile endpoint",
+          "status": "pending",
+          "description": "Create endpoint to create/complete user profile with validation"
+        },
+        {
+          "id": "T005-S004",
+          "name": "Implement PUT /users/me/profile endpoint",
+          "status": "pending",
+          "description": "Create endpoint to update profile fields (excluding provider and email)"
+        },
+        {
+          "id": "T005-S005",
+          "name": "Implement GET /users/me/profile endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return profile with list of subscriptions"
+        },
+        {
+          "id": "T005-S006",
+          "name": "Build profile view/edit page UI",
+          "status": "pending",
+          "description": "Create profile page showing editable and non-editable fields, active/past subscriptions"
+        },
+        {
+          "id": "T005-S007",
+          "name": "Implement profile completion check and redirect logic",
+          "status": "pending",
+          "description": "Ensure users with incomplete profiles are redirected to registration before accessing products"
+        },
+        {
+          "id": "T005-S008",
+          "name": "Add referral code and communication preferences fields",
+          "status": "pending",
+          "description": "Implement optional referral code and communication preference fields"
+        }
+      ]
+    },
+    {
+      "id": "T006",
+      "name": "Product Catalog",
+      "status": "pending",
+      "description": "Implement product listing and management system",
+      "subTasks": [
+        {
+          "id": "T006-S001",
+          "name": "Implement GET /products endpoint",
+          "status": "pending",
+          "description": "Create endpoint to list products with query params: status, page, pageSize"
+        },
+        {
+          "id": "T006-S002",
+          "name": "Implement GET /products/:id endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return detailed product information"
+        },
+        {
+          "id": "T006-S003",
+          "name": "Build products listing page UI",
+          "status": "pending",
+          "description": "Create grid/table layout showing product name, description, category, monthly/yearly prices"
+        },
+        {
+          "id": "T006-S004",
+          "name": "Implement product filters (category, price, popularity)",
+          "status": "pending",
+          "description": "Add filtering functionality on products page"
+        },
+        {
+          "id": "T006-S005",
+          "name": "Create subscription duration selector component",
+          "status": "pending",
+          "description": "Build UI for duration type (Month/Year) and duration units (1-12) selection"
+        },
+        {
+          "id": "T006-S006",
+          "name": "Implement duration calculation logic",
+          "status": "pending",
+          "description": "Calculate start_date and end_date based on duration_type and duration_units (30 days for month, 365 for year)"
+        },
+        {
+          "id": "T006-S007",
+          "name": "Add 'Add to Cart' functionality",
+          "status": "pending",
+          "description": "Implement add to cart action with product, duration, and pricing"
+        },
+        {
+          "id": "T006-S008",
+          "name": "Create product detail view page",
+          "status": "pending",
+          "description": "Build detailed product page with full description and subscription options"
+        }
+      ]
+    },
+    {
+      "id": "T007",
+      "name": "Shopping Cart",
+      "status": "pending",
+      "description": "Implement shopping cart functionality with item management",
+      "subTasks": [
+        {
+          "id": "T007-S001",
+          "name": "Implement GET /cart endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return current user's cart and items"
+        },
+        {
+          "id": "T007-S002",
+          "name": "Implement POST /cart/items endpoint",
+          "status": "pending",
+          "description": "Create endpoint to add item to cart with productId, durationType, durationUnits, calculate dates and pricing"
+        },
+        {
+          "id": "T007-S003",
+          "name": "Implement PUT /cart/items/:itemId endpoint",
+          "status": "pending",
+          "description": "Create endpoint to update cart item duration and recalculate dates/totals"
+        },
+        {
+          "id": "T007-S004",
+          "name": "Implement DELETE /cart/items/:itemId endpoint",
+          "status": "pending",
+          "description": "Create endpoint to remove individual cart item"
+        },
+        {
+          "id": "T007-S005",
+          "name": "Implement DELETE /cart endpoint",
+          "status": "pending",
+          "description": "Create endpoint to empty entire cart"
+        },
+        {
+          "id": "T007-S006",
+          "name": "Build cart page UI",
+          "status": "pending",
+          "description": "Create cart page showing items with product name, duration, dates, prices, subtotal, discount, total"
+        },
+        {
+          "id": "T007-S007",
+          "name": "Implement cart item update functionality",
+          "status": "pending",
+          "description": "Allow users to update duration and remove items from cart UI"
+        },
+        {
+          "id": "T007-S008",
+          "name": "Implement cart validation logic",
+          "status": "pending",
+          "description": "Validate cart has items, check for inactive products before checkout"
+        },
+        {
+          "id": "T007-S009",
+          "name": "Add 'Proceed to Payment' button and flow",
+          "status": "pending",
+          "description": "Implement checkout initiation from cart page"
+        }
+      ]
+    },
+    {
+      "id": "T008",
+      "name": "Payment & Order Processing",
+      "status": "pending",
+      "description": "Implement QR-based offline payment flow and order creation",
+      "subTasks": [
+        {
+          "id": "T008-S001",
+          "name": "Implement POST /orders endpoint",
+          "status": "pending",
+          "description": "Create endpoint to create SubscriptionOrder from cart, copy items, clear cart, set status PENDING"
+        },
+        {
+          "id": "T008-S002",
+          "name": "Build payment page UI with QR code display",
+          "status": "pending",
+          "description": "Create payment page showing QR code (from system_config), order summary, upload form"
+        },
+        {
+          "id": "T008-S003",
+          "name": "Implement payment proof file upload",
+          "status": "pending",
+          "description": "Create file upload component supporting JPG, PNG, WEBP with configurable max size"
+        },
+        {
+          "id": "T008-S004",
+          "name": "Implement POST /orders/:orderId/payment-proof endpoint",
+          "status": "pending",
+          "description": "Create endpoint for multipart upload, store file in object storage, update order with payment_proof_url"
+        },
+        {
+          "id": "T008-S005",
+          "name": "Add payment reference and payment date fields",
+          "status": "pending",
+          "description": "Implement optional transaction reference ID and payment date/time fields"
+        },
+        {
+          "id": "T008-S006",
+          "name": "Build order confirmation page",
+          "status": "pending",
+          "description": "Create confirmation page showing order summary and 'Pending admin approval' message"
+        },
+        {
+          "id": "T008-S007",
+          "name": "Implement GET /orders/me endpoint",
+          "status": "pending",
+          "description": "Create endpoint to list orders for current user"
+        },
+        {
+          "id": "T008-S008",
+          "name": "Implement GET /orders/me/:orderId endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return specific order details"
+        },
+        {
+          "id": "T008-S009",
+          "name": "Build user orders history page",
+          "status": "pending",
+          "description": "Create UI to display user's order history with status and details"
+        },
+        {
+          "id": "T008-S010",
+          "name": "Configure QR code in system_config",
+          "status": "pending",
+          "description": "Set up admin configuration for QR code URL/image"
+        }
+      ]
+    },
+    {
+      "id": "T009",
+      "name": "Subscription Management",
+      "status": "pending",
+      "description": "Implement subscription viewing and management features",
+      "subTasks": [
+        {
+          "id": "T009-S001",
+          "name": "Implement GET /subscriptions/me endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return list of subscriptions for current user"
+        },
+        {
+          "id": "T009-S002",
+          "name": "Build 'My Subscriptions' section in profile",
+          "status": "pending",
+          "description": "Create read-only section showing product name, status (ACTIVE/EXPIRED/UPCOMING), start/end dates"
+        },
+        {
+          "id": "T009-S003",
+          "name": "Create dashboard page with active subscriptions",
+          "status": "pending",
+          "description": "Build dashboard showing active subscriptions with quick access buttons/links"
+        },
+        {
+          "id": "T009-S004",
+          "name": "Implement subscription status calculation logic",
+          "status": "pending",
+          "description": "Create logic to determine subscription status (ACTIVE/EXPIRED/UPCOMING) based on current date and start/end dates"
+        },
+        {
+          "id": "T009-S005",
+          "name": "Add days remaining display (Phase 2 preparation)",
+          "status": "pending",
+          "description": "Display days remaining for active subscriptions and 'Renew' CTA placeholder"
+        },
+        {
+          "id": "T009-S006",
+          "name": "Implement subscription activation on order approval",
+          "status": "pending",
+          "description": "Create subscriptions from order items when admin approves order"
+        }
+      ]
+    },
+    {
+      "id": "T010",
+      "name": "Admin Dashboard & Pending Requests",
+      "status": "pending",
+      "description": "Implement admin-only features for managing pending orders and subscriptions",
+      "subTasks": [
+        {
+          "id": "T010-S001",
+          "name": "Implement admin role check middleware",
+          "status": "pending",
+          "description": "Create middleware to verify user has is_admin = true for admin endpoints"
+        },
+        {
+          "id": "T010-S002",
+          "name": "Implement GET /admin/orders endpoint",
+          "status": "pending",
+          "description": "Create endpoint to list orders with filters: status (default PENDING), from, to, user"
+        },
+        {
+          "id": "T010-S003",
+          "name": "Implement GET /admin/orders/:orderId endpoint",
+          "status": "pending",
+          "description": "Create endpoint to return full order detail including user profile and payment proof URL"
+        },
+        {
+          "id": "T010-S004",
+          "name": "Build pending requests list page",
+          "status": "pending",
+          "description": "Create admin UI showing orders with columns: Order ID, user name, email, payment date, total amount, products count, status, timestamp"
+        },
+        {
+          "id": "T010-S005",
+          "name": "Implement filters and search for pending requests",
+          "status": "pending",
+          "description": "Add filters by status, date range, user, product and search by email, name, order ID"
+        },
+        {
+          "id": "T010-S006",
+          "name": "Build pending request detail view page",
+          "status": "pending",
+          "description": "Create detail page showing user details, payment proof image preview, payment reference, products list"
+        },
+        {
+          "id": "T010-S007",
+          "name": "Implement POST /admin/orders/:orderId/approve endpoint",
+          "status": "pending",
+          "description": "Create endpoint to approve order, create subscriptions from order items, set status APPROVED, send email"
+        },
+        {
+          "id": "T010-S008",
+          "name": "Implement POST /admin/orders/:orderId/reject endpoint",
+          "status": "pending",
+          "description": "Create endpoint to reject order with reason, set status REJECTED, store reason, send email"
+        },
+        {
+          "id": "T010-S009",
+          "name": "Build approve/reject UI actions",
+          "status": "pending",
+          "description": "Create approve and reject buttons with optional reason input for rejection"
+        },
+        {
+          "id": "T010-S010",
+          "name": "Implement GET /admin/login-audit endpoint",
+          "status": "pending",
+          "description": "Create endpoint to query login/logout events with filters: userId, from, to"
+        },
+        {
+          "id": "T010-S011",
+          "name": "Build login audit log viewer UI",
+          "status": "pending",
+          "description": "Create admin UI to view and filter login audit logs"
+        },
+        {
+          "id": "T010-S012",
+          "name": "Add admin navigation and menu",
+          "status": "pending",
+          "description": "Create admin-only navigation items for pending requests and audit logs"
+        }
+      ]
+    },
+    {
+      "id": "T011",
+      "name": "Email Notifications",
+      "status": "pending",
+      "description": "Implement email notification system for order and subscription events",
+      "subTasks": [
+        {
+          "id": "T011-S001",
+          "name": "Set up email service integration (SendGrid, AWS SES, etc.)",
+          "status": "pending",
+          "description": "Configure email service provider and SMTP settings"
+        },
+        {
+          "id": "T011-S002",
+          "name": "Create email template for payment received (user)",
+          "status": "pending",
+          "description": "Design and implement email template notifying user of payment received with PENDING status and order summary"
+        },
+        {
+          "id": "T011-S003",
+          "name": "Create email template for new pending subscription (admin)",
+          "status": "pending",
+          "description": "Design and implement email template notifying admin of new pending subscription with user and order details"
+        },
+        {
+          "id": "T011-S004",
+          "name": "Create email template for order approval (user)",
+          "status": "pending",
+          "description": "Design and implement email template notifying user of approved subscription"
+        },
+        {
+          "id": "T011-S005",
+          "name": "Create email template for order rejection (user)",
+          "status": "pending",
+          "description": "Design and implement email template notifying user of rejected order with reason"
+        },
+        {
+          "id": "T011-S006",
+          "name": "Implement email sending on payment proof upload",
+          "status": "pending",
+          "description": "Send emails to user and admin when payment proof is uploaded"
+        },
+        {
+          "id": "T011-S007",
+          "name": "Implement email sending on order approval",
+          "status": "pending",
+          "description": "Send approval email to user when admin approves order"
+        },
+        {
+          "id": "T011-S008",
+          "name": "Implement email sending on order rejection",
+          "status": "pending",
+          "description": "Send rejection email to user when admin rejects order"
+        },
+        {
+          "id": "T011-S009",
+          "name": "Add email error handling and logging",
+          "status": "pending",
+          "description": "Implement error handling for email failures and logging for monitoring"
+        }
+      ]
+    },
+    {
+      "id": "T012",
+      "name": "Security & Performance",
+      "status": "pending",
+      "description": "Implement security measures and performance optimizations",
+      "subTasks": [
+        {
+          "id": "T012-S001",
+          "name": "Implement CSRF protection",
+          "status": "pending",
+          "description": "Add CSRF tokens and validation for state-changing requests"
+        },
+        {
+          "id": "T012-S002",
+          "name": "Implement server-side input validation and sanitization",
+          "status": "pending",
+          "description": "Add validation and sanitization for all user inputs"
+        },
+        {
+          "id": "T012-S003",
+          "name": "Implement rate limiting",
+          "status": "pending",
+          "description": "Add rate limiting for API endpoints to prevent abuse"
+        },
+        {
+          "id": "T012-S004",
+          "name": "Optimize database queries",
+          "status": "pending",
+          "description": "Review and optimize queries, add missing indexes, use query optimization techniques"
+        },
+        {
+          "id": "T012-S005",
+          "name": "Optimize images (QR codes, logos, product graphics)",
+          "status": "pending",
+          "description": "Compress and optimize images for web delivery"
+        },
+        {
+          "id": "T012-S006",
+          "name": "Implement caching strategy",
+          "status": "pending",
+          "description": "Add caching for products, system config, and other frequently accessed data"
+        },
+        {
+          "id": "T012-S007",
+          "name": "Set up error monitoring and logging",
+          "status": "pending",
+          "description": "Configure error tracking (Sentry, etc.) and structured logging"
+        },
+        {
+          "id": "T012-S008",
+          "name": "Implement API response time monitoring",
+          "status": "pending",
+          "description": "Add monitoring to ensure authenticated pages respond within ~1 second"
+        }
+      ]
+    },
+    {
+      "id": "T013",
+      "name": "Testing & Quality Assurance",
+      "status": "pending",
+      "description": "Implement testing strategy and quality assurance measures",
+      "subTasks": [
+        {
+          "id": "T013-S001",
+          "name": "Write unit tests for backend API endpoints",
+          "status": "pending",
+          "description": "Create unit tests for all API endpoints with various scenarios"
+        },
+        {
+          "id": "T013-S002",
+          "name": "Write unit tests for business logic",
+          "status": "pending",
+          "description": "Test subscription calculations, cart logic, order processing, etc."
+        },
+        {
+          "id": "T013-S003",
+          "name": "Write integration tests for OAuth flows",
+          "status": "pending",
+          "description": "Test Google and Apple OAuth authentication flows"
+        },
+        {
+          "id": "T013-S004",
+          "name": "Write integration tests for order and subscription flows",
+          "status": "pending",
+          "description": "Test complete flows from cart to order to approval to subscription activation"
+        },
+        {
+          "id": "T013-S005",
+          "name": "Write frontend component tests",
+          "status": "pending",
+          "description": "Create tests for React/Vue components and user interactions"
+        },
+        {
+          "id": "T013-S006",
+          "name": "Perform end-to-end testing",
+          "status": "pending",
+          "description": "Test complete user journeys: registration, product selection, payment, approval"
+        },
+        {
+          "id": "T013-S007",
+          "name": "Perform security testing",
+          "status": "pending",
+          "description": "Test for SQL injection, XSS, CSRF vulnerabilities, OAuth security"
+        },
+        {
+          "id": "T013-S008",
+          "name": "Perform performance testing",
+          "status": "pending",
+          "description": "Test page load times, API response times, database query performance"
+        },
+        {
+          "id": "T013-S009",
+          "name": "Perform cross-browser and device testing",
+          "status": "pending",
+          "description": "Test on different browsers (Chrome, Firefox, Safari) and devices (mobile, tablet, desktop)"
+        }
+      ]
+    },
+    {
+      "id": "T014",
+      "name": "Deployment & DevOps",
+      "status": "pending",
+      "description": "Set up deployment pipeline and production infrastructure",
+      "subTasks": [
+        {
+          "id": "T014-S001",
+          "name": "Set up production database",
+          "status": "pending",
+          "description": "Configure production database instance with backups and monitoring"
+        },
+        {
+          "id": "T014-S002",
+          "name": "Configure production environment variables",
+          "status": "pending",
+          "description": "Set up production OAuth credentials, email service, object storage, etc."
+        },
+        {
+          "id": "T014-S003",
+          "name": "Set up CI/CD pipeline",
+          "status": "pending",
+          "description": "Configure automated testing and deployment pipeline"
+        },
+        {
+          "id": "T014-S004",
+          "name": "Deploy backend API to production",
+          "status": "pending",
+          "description": "Deploy backend to cloud platform (AWS, Azure, GCP) with horizontal scaling capability"
+        },
+        {
+          "id": "T014-S005",
+          "name": "Deploy frontend to production",
+          "status": "pending",
+          "description": "Deploy frontend SPA to CDN or hosting service"
+        },
+        {
+          "id": "T014-S006",
+          "name": "Set up monitoring and alerting",
+          "status": "pending",
+          "description": "Configure uptime monitoring, error alerts, performance monitoring for 99.5% uptime target"
+        },
+        {
+          "id": "T014-S007",
+          "name": "Set up database backups",
+          "status": "pending",
+          "description": "Configure automated database backups and recovery procedures"
+        },
+        {
+          "id": "T014-S008",
+          "name": "Configure SSL certificates",
+          "status": "pending",
+          "description": "Set up HTTPS with valid SSL certificates for all endpoints"
+        },
+        {
+          "id": "T014-S009",
+          "name": "Create deployment documentation",
+          "status": "pending",
+          "description": "Document deployment process, rollback procedures, and operational runbooks"
+        }
+      ]
+    },
+    {
+      "id": "T015",
+      "name": "Documentation & Handoff",
+      "status": "pending",
+      "description": "Create comprehensive documentation for the project",
+      "subTasks": [
+        {
+          "id": "T015-S001",
+          "name": "Create API documentation",
+          "status": "pending",
+          "description": "Document all API endpoints with request/response examples (Swagger/OpenAPI)"
+        },
+        {
+          "id": "T015-S002",
+          "name": "Create database schema documentation",
+          "status": "pending",
+          "description": "Document database schema, relationships, and data flow"
+        },
+        {
+          "id": "T015-S003",
+          "name": "Create user guide",
+          "status": "pending",
+          "description": "Document user workflows: registration, subscription, payment, etc."
+        },
+        {
+          "id": "T015-S004",
+          "name": "Create admin guide",
+          "status": "pending",
+          "description": "Document admin workflows: reviewing orders, approving/rejecting, managing products"
+        },
+        {
+          "id": "T015-S005",
+          "name": "Create developer setup guide",
+          "status": "pending",
+          "description": "Document how to set up development environment, run locally, contribute"
+        },
+        {
+          "id": "T015-S006",
+          "name": "Create README with project overview",
+          "status": "pending",
+          "description": "Create comprehensive README with project description, tech stack, quick start"
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "totalTasks": 15,
+    "totalSubTasks": 0,
+    "completedTasks": 0,
+    "completedSubTasks": 0,
+    "inProgressTasks": 0,
+    "inProgressSubTasks": 0,
+    "pendingTasks": 15,
+    "pendingSubTasks": 0
+  }
+}

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Trading Subscription Platform - Access premium trading software and services">
+    <title>Trading Pro | Premium Trading Software & Services</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="#" class="nav__logo">
+                <span class="logo__icon">📈</span>
+                <span class="logo__text">TradingPro</span>
+            </a>
+
+            <div class="nav__menu" id="nav-menu">
+                <ul class="nav__list">
+                    <li class="nav__item"><a href="#home" class="nav__link active">Home</a></li>
+                    <li class="nav__item"><a href="#products" class="nav__link">Products</a></li>
+                    <li class="nav__item"><a href="#offers" class="nav__link">Offers</a></li>
+                    <li class="nav__item"><a href="#testimonials" class="nav__link">Testimonials</a></li>
+                    <li class="nav__item"><a href="#about" class="nav__link">About</a></li>
+                </ul>
+
+                <div class="nav__close" id="nav-close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="nav__actions" id="nav-actions">
+                <!-- Will be populated by JavaScript based on auth status -->
+                <a href="login.html" class="btn btn--secondary" id="login-btn">Login</a>
+                <a href="signup.html" class="btn btn--primary" id="signup-btn">Get Started</a>
+            </div>
+
+            <div class="nav__toggle" id="nav-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main">
+        <!-- Hero Section -->
+        <section class="hero section" id="home">
+            <div class="hero__container container">
+                <div class="hero__content">
+                    <div class="hero__badge">
+                        <span class="badge">🚀 Professional Trading Solutions</span>
+                    </div>
+                    <h1 class="hero__title">
+                        Elevate Your Trading
+                        <span class="hero__title--gradient">To The Next Level</span>
+                    </h1>
+                    <p class="hero__description">
+                        Access premium trading software, advanced algorithms, and real-time market insights. 
+                        Join thousands of successful traders who trust our platform for their trading journey.
+                    </p>
+                    <div class="hero__cta">
+                        <a href="signup.html" class="btn btn--primary btn--large">
+                            Get Started
+                            <svg class="btn__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                        <a href="#products" class="btn btn--outline btn--large">View Products</a>
+                    </div>
+                    <div class="hero__stats">
+                        <div class="stat">
+                            <h3 class="stat__value">10K+</h3>
+                            <p class="stat__label">Active Traders</p>
+                        </div>
+                        <div class="stat">
+                            <h3 class="stat__value">₹50Cr+</h3>
+                            <p class="stat__label">Capital Deployed</p>
+                        </div>
+                        <div class="stat">
+                            <h3 class="stat__value">99.9%</h3>
+                            <p class="stat__label">Uptime</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero__image">
+                    <div class="hero__card hero__card--1">
+                        <div class="card__icon">📊</div>
+                        <h4>Real-time Analytics</h4>
+                        <p>Live market data</p>
+                    </div>
+                    <div class="hero__card hero__card--2">
+                        <div class="card__icon">⚡</div>
+                        <h4>Lightning Fast</h4>
+                        <p>Execute in milliseconds</p>
+                    </div>
+                    <div class="hero__card hero__card--3">
+                        <div class="card__icon">🔒</div>
+                        <h4>Bank-grade Security</h4>
+                        <p>Your data is safe</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real-time Insights Section -->
+        <style>
+            /* Rich text styling for insights content */
+            #insight-body h1, #insight-body h2, #insight-body h3, #insight-body h4 {
+                color: var(--text-primary);
+                margin-top: 1.5rem;
+                margin-bottom: 1rem;
+                font-weight: 600;
+            }
+            #insight-body h1 { font-size: 1.75rem; }
+            #insight-body h2 { font-size: 1.5rem; }
+            #insight-body h3 { font-size: 1.25rem; }
+            #insight-body h4 { font-size: 1.1rem; }
+            #insight-body p { margin-bottom: 1rem; }
+            #insight-body ul, #insight-body ol { 
+                margin-left: 1.5rem; 
+                margin-bottom: 1rem; 
+            }
+            #insight-body li { margin-bottom: 0.5rem; }
+            #insight-body strong, #insight-body b { 
+                color: var(--text-primary); 
+                font-weight: 600; 
+            }
+            #insight-body em, #insight-body i { font-style: italic; }
+            #insight-body code { 
+                background: var(--bg-tertiary); 
+                padding: 0.2rem 0.4rem; 
+                border-radius: 4px; 
+                font-family: 'Courier New', monospace; 
+                font-size: 0.9rem;
+            }
+            #insight-body pre {
+                background: var(--bg-tertiary);
+                padding: 1rem;
+                border-radius: var(--radius-md);
+                overflow-x: auto;
+                margin-bottom: 1rem;
+            }
+            #insight-body table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 1rem;
+            }
+            #insight-body th, #insight-body td {
+                padding: 0.75rem;
+                border: 1px solid var(--border-color);
+                text-align: left;
+            }
+            #insight-body th {
+                background: var(--bg-tertiary);
+                font-weight: 600;
+                color: var(--text-primary);
+            }
+            #insight-body blockquote {
+                border-left: 4px solid var(--primary-color);
+                padding-left: 1rem;
+                margin: 1rem 0;
+                font-style: italic;
+                color: var(--text-secondary);
+            }
+            #insight-body hr {
+                border: none;
+                border-top: 1px solid var(--border-color);
+                margin: 2rem 0;
+            }
+            #insight-body a {
+                color: var(--primary-color);
+                text-decoration: underline;
+            }
+            #insight-body a:hover {
+                color: var(--secondary-color);
+            }
+        </style>
+        <section class="insights section" id="insights" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); padding: 3rem 0;">
+            <div class="container">
+                <div class="insights-card" style="background: var(--card-bg); border-radius: var(--radius-xl); padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                    <div class="insights-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <span style="font-size: 2rem;">📊</span>
+                            <div>
+                                <h2 class="section__title" style="margin: 0; font-size: 1.75rem;">Real-time Market Insights</h2>
+                                <p style="color: var(--text-secondary); margin: 0.25rem 0 0 0; font-size: 0.875rem;">Latest analysis updated by our experts</p>
+                            </div>
+                        </div>
+                        <button id="toggle-insight-btn" class="btn btn--primary" style="min-width: 120px;">
+                            Show Insight
+                        </button>
+                    </div>
+
+                    <div id="insight-content" style="display: none;">
+                        <div id="insight-loading" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            Loading latest insights...
+                        </div>
+
+                        <div id="insight-data" style="display: none;">
+                            <div style="border-left: 4px solid var(--primary-color); padding-left: 1.5rem; margin-bottom: 1.5rem;">
+                                <h3 id="insight-title" style="color: var(--text-primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></h3>
+                                <div id="insight-meta" style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;"></div>
+                            </div>
+                            
+                            <div id="insight-body" style="color: var(--text-secondary); line-height: 1.8; font-size: 1rem; max-height: 600px; overflow-y: auto; padding-right: 1rem;">
+                                <!-- Rich HTML content will be rendered here -->
+                            </div>
+                        </div>
+
+                        <div id="no-insight" style="display: none; text-align: center; padding: 2rem; color: var(--text-secondary);">
+                            No insights available at the moment. Check back soon!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section class="products section" id="products">
+            <div class="container">
+                <div class="section__header">
+                    <span class="section__tag">Our Products</span>
+                    <h2 class="section__title">Premium Trading Solutions</h2>
+                    <p class="section__description">
+                        Choose from our range of professional trading tools designed to maximize your trading potential
+                    </p>
+                </div>
+
+                <div class="products__grid">
+                    <div class="product-card">
+                        <div class="product-card__icon">🎯</div>
+                        <h3 class="product-card__title" style="font-size: 1.75rem;">Algo Trading Platform</h3>
+                        <p class="product-card__description" style="font-size: 1.1rem; line-height: 1.7;">
+                            Algo trading shouldn't just grow your capital; it should upgrade your life. Our algorithmic trading platform lets you subscribe to strategies that match your trading personality and run them seamlessly across multiple brokers, so your trades execute with discipline while you reclaim your time. Free from screen-watching, emotional decisions, and constant anxiety, you can let the algos work in the background—giving you mental relaxation, more time with family, and the freedom to earn and enjoy life together.
+                        </p>
+                        <a href="login.html" class="btn btn--primary btn--full" style="margin-top: 2rem;">Subscribe Now</a>
+                    </div>
+
+                    <div class="product-card product-card--featured">
+                        <div class="product-card__badge">Most Popular</div>
+                        <div class="product-card__icon">💎</div>
+                        <h3 class="product-card__title" style="font-size: 1.75rem;">Premium Algo Strategy Suite</h3>
+                        <p class="product-card__description" style="font-size: 1.1rem; line-height: 1.7;">
+                            Premium Algo Strategy Suite is a plug-and-play product that lets you subscribe to institutional-grade trading strategies and execute them automatically in your own broker account—no coding, no manual order punching. It brings disciplined, rules-based trading to your daily life, helping you reduce screen time, emotional stress, and decision fatigue so you can focus on your career, family, and passions while your strategies work in the background.
+                        </p>
+                        <p class="product-card__description" style="margin-top: 1rem; font-style: italic; color: var(--text-secondary); font-size: 1.05rem;">
+                            Curated, backtested algo strategies for index and options traders
+                        </p>
+                        <a href="login.html" class="btn btn--primary btn--full" style="margin-top: 2rem;">Subscribe Now</a>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-card__icon">💻</div>
+                        <h3 class="product-card__title" style="font-size: 1.75rem;">Small-Scale Software Development</h3>
+                        <p class="product-card__description" style="font-size: 1.1rem; line-height: 1.7;">
+                            Small-Scale Software Development delivers end-to-end custom solutions for startups and growing businesses that need reliable, tailored software without enterprise overhead. From modern websites to web apps, APIs, automation tools, and complex business algorithms, we design, build, and deploy secure, scalable systems aligned with your domain and workflows.
+                        </p>
+                        <p class="product-card__description" style="margin-top: 1rem; font-style: italic; color: var(--text-secondary); font-size: 1.05rem;">
+                            Every engagement follows an agile, collaborative delivery model—short iterations, transparent communication, and clean architecture that integrates smoothly with your existing stack.
+                        </p>
+                        <a href="login.html" class="btn btn--primary btn--full" style="margin-top: 2rem;">Subscribe Now</a>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-card__icon">📚</div>
+                        <h3 class="product-card__title" style="font-size: 1.75rem;">Learn Trading and Automation</h3>
+                        <p class="product-card__description" style="font-size: 1.1rem; line-height: 1.7;">
+                            Learn Trading & Algo Execution is a structured program that blends capital‑market education with hands-on automation. Participants master the essentials of equity, futures, and options trading, gain a practical understanding of options Greeks, and learn rules-based strategies tailored for real-world market conditions and robust risk management.
+                        </p>
+                        <p class="product-card__description" style="margin-top: 1rem; font-style: italic; color: var(--text-secondary); font-size: 1.05rem;">
+                            The curriculum then focuses on translating these strategies into fully or semi-automated workflows, including signal generation, quantitative analysis, rule-based trade execution, and ongoing trade management using API-driven algorithmic systems similar to those deployed in modern professional trading environments.
+                        </p>
+                        <a href="login.html" class="btn btn--primary btn--full" style="margin-top: 2rem;">Subscribe Now</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Offers Section -->
+        <section class="offers section" id="offers">
+            <div class="container">
+                <div class="section__header">
+                    <span class="section__tag">Special Offers</span>
+                    <h2 class="section__title">Limited Time Deals</h2>
+                </div>
+
+                <div class="offers__grid">
+                    <div class="offer-card">
+                        <div class="offer-card__header">
+                            <span class="offer-card__badge">🎉 New Year Sale</span>
+                            <h3 class="offer-card__discount">40% OFF</h3>
+                        </div>
+                        <h4 class="offer-card__title">Annual Subscription</h4>
+                        <p class="offer-card__description">
+                            Save big with our annual plans. Get 40% off on all products when you subscribe for 12 months.
+                        </p>
+                        <div class="offer-card__validity">
+                            <span>⏰ Valid until: Dec 31, 2025</span>
+                        </div>
+                        <a href="login.html" class="btn btn--primary btn--full">Claim Offer</a>
+                    </div>
+
+                    <div class="offer-card offer-card--highlight">
+                        <div class="offer-card__header">
+                            <span class="offer-card__badge">🔥 Hot Deal</span>
+                            <h3 class="offer-card__discount">FREE</h3>
+                        </div>
+                        <h4 class="offer-card__title">First Week Free</h4>
+                        <p class="offer-card__description">
+                            Enjoy full access to the Premium Algo Strategy Suite free for your first week—no credit card, no commitment, just live performance on real markets.
+                        </p>
+                        <div class="offer-card__validity">
+                            <span>⏰ Limited spots available</span>
+                        </div>
+                        <a href="signup.html" class="btn btn--primary btn--full">Get Started Free</a>
+                    </div>
+
+                    <div class="offer-card">
+                        <div class="offer-card__header">
+                            <span class="offer-card__badge">💰 Bundle Offer</span>
+                            <h3 class="offer-card__discount">10% OFF</h3>
+                        </div>
+                        <h4 class="offer-card__title">Complete Package</h4>
+                        <p class="offer-card__description">
+                            Unlock 10% savings when you bundle any two or more products under a single subscription. The discount is automatically applied to your total subscription value, rewarding multi-product users with better value on every billing cycle.
+                        </p>
+                        <div class="offer-card__validity">
+                            <span>⏰ Ongoing offer</span>
+                        </div>
+                        <a href="login.html" class="btn btn--primary btn--full">View Bundles</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Testimonials Section -->
+        <section class="testimonials section" id="testimonials">
+            <div class="container">
+                <div class="section__header">
+                    <span class="section__tag">Testimonials</span>
+                    <h2 class="section__title">What Our Traders Say</h2>
+                    <p class="section__description">
+                        Join thousands of successful traders who have transformed their trading journey with us
+                    </p>
+                </div>
+
+                <div class="testimonials__grid">
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "The algo trading platform has completely transformed my trading. I've seen a 45% increase in my profits since I started using it. The backtesting feature is incredibly accurate!"
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">RK</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Rajesh Kumar</h4>
+                                <p class="author__role">Full-time Trader</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "Best investment I've made in my trading career. The premium analytics suite provides insights that I couldn't get anywhere else. Worth every rupee!"
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">PS</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Priya Sharma</h4>
+                                <p class="author__role">Options Trader</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "I started as a complete beginner with the Trading Academy. Now I'm consistently profitable. The mentorship program is exceptional and the community is very supportive."
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">AM</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Amit Mehta</h4>
+                                <p class="author__role">Swing Trader</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "The trading bots are game-changers. They execute trades perfectly 24/7 while I sleep. My portfolio has grown steadily without the stress of manual trading."
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">SK</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Sneha Kapoor</h4>
+                                <p class="author__role">Day Trader</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "Outstanding platform with excellent customer support. The tools are intuitive and powerful. I've recommended it to all my trading friends."
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">VG</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Vikram Gupta</h4>
+                                <p class="author__role">Intraday Trader</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-card__rating">
+                            <span>⭐⭐⭐⭐⭐</span>
+                        </div>
+                        <p class="testimonial-card__text">
+                            "The risk management tools have saved me from many bad trades. The platform's analytics help me make informed decisions rather than emotional ones."
+                        </p>
+                        <div class="testimonial-card__author">
+                            <div class="author__avatar">NR</div>
+                            <div class="author__info">
+                                <h4 class="author__name">Neha Reddy</h4>
+                                <p class="author__role">Position Trader</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="about section" id="about">
+            <div class="container">
+                <div class="about__container">
+                    <div class="about__content">
+                        <span class="section__tag">About Us</span>
+                        <h2 class="section__title">Empowering Traders Since 2023</h2>
+                        <p class="about__text">
+                            We are a team of experienced traders, developers, and data scientists passionate about democratizing access to professional trading tools. Our mission is to empower traders of all levels with the technology and knowledge they need to succeed in today's markets.
+                        </p>
+                        <p class="about__text">
+                            Founded by traders for traders, we understand the challenges you face. That's why we've built a platform that combines cutting-edge technology with practical trading wisdom. From beginners taking their first steps to professional traders managing large portfolios, we provide the tools, education, and support you need.
+                        </p>
+                        
+                        <div class="about__features">
+                            <div class="feature">
+                                <div class="feature__icon">🎯</div>
+                                <div class="feature__content">
+                                    <h4>Our Mission</h4>
+                                    <p>To democratize access to professional trading tools and education</p>
+                                </div>
+                            </div>
+                            <div class="feature">
+                                <div class="feature__icon">💡</div>
+                                <div class="feature__content">
+                                    <h4>Our Vision</h4>
+                                    <p>To become India's most trusted trading technology partner</p>
+                                </div>
+                            </div>
+                            <div class="feature">
+                                <div class="feature__icon">🤝</div>
+                                <div class="feature__content">
+                                    <h4>Our Values</h4>
+                                    <p>Transparency, Innovation, and Customer Success</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="about__contact">
+                            <h3>Get In Touch</h3>
+                            <div class="contact__info">
+                                <div class="contact__item">
+                                    <span class="contact__icon">📧</span>
+                                    <a href="mailto:support@tradingpro.com">support@tradingpro.com</a>
+                                </div>
+                                <div class="contact__item">
+                                    <span class="contact__icon">📞</span>
+                                    <a href="tel:+918888888888">+91 88888 88888</a>
+                                </div>
+                                <div class="contact__item">
+                                    <span class="contact__icon">📍</span>
+                                    <span>Mumbai, Maharashtra, India</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta section">
+            <div class="container">
+                <div class="cta__container">
+                    <h2 class="cta__title">Ready to Transform Your Trading?</h2>
+                    <p class="cta__description">
+                        Join thousands of successful traders and start your journey today. Get your first month free!
+                    </p>
+                    <div class="cta__buttons">
+                        <a href="signup.html" class="btn btn--primary btn--large">Get Started Free</a>
+                        <a href="#products" class="btn btn--outline-light btn--large">View All Products</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__container">
+                <div class="footer__section">
+                    <a href="#" class="footer__logo">
+                        <span class="logo__icon">📈</span>
+                        <span class="logo__text">TradingPro</span>
+                    </a>
+                    <p class="footer__description">
+                        Professional trading tools and education for traders of all levels. Trade smarter, not harder.
+                    </p>
+                    <div class="footer__social">
+                        <a href="#" class="social__link" aria-label="Twitter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path>
+                            </svg>
+                        </a>
+                        <a href="#" class="social__link" aria-label="LinkedIn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                                <rect x="2" y="9" width="4" height="12"></rect>
+                                <circle cx="4" cy="4" r="2"></circle>
+                            </svg>
+                        </a>
+                        <a href="#" class="social__link" aria-label="YouTube">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                                <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                            </svg>
+                        </a>
+                        <a href="#" class="social__link" aria-label="Telegram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.198 2.433l-19.99 8.05c-1.366.551-1.358 1.312-.248 1.653l5.122 1.598 11.876-7.495c.561-.344 1.074-.16.653.22L9.298 14.505l-.35 5.165c.512 0 .739-.235 1.027-.513l2.461-2.394 5.115 3.778c.943.519 1.622.251 1.856-.872l3.358-15.828c.344-1.381-.521-2.005-1.567-1.408z"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="footer__section">
+                    <h4 class="footer__title">Products</h4>
+                    <ul class="footer__links">
+                        <li><a href="#products">Algo Trading</a></li>
+                        <li><a href="#products">Analytics Suite</a></li>
+                        <li><a href="#products">Trading Bots</a></li>
+                        <li><a href="#products">Trading Academy</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__section">
+                    <h4 class="footer__title">Company</h4>
+                    <ul class="footer__links">
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#testimonials">Testimonials</a></li>
+                        <li><a href="login.html">Login</a></li>
+                        <li><a href="signup.html">Sign Up</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__section">
+                    <h4 class="footer__title">Resources</h4>
+                    <ul class="footer__links">
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API Reference</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__section">
+                    <h4 class="footer__title">Legal</h4>
+                    <ul class="footer__links">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms & Conditions</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Disclaimer</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer__bottom">
+                <p class="footer__copyright">
+                    © 2025 TradingPro. All rights reserved.
+                </p>
+                <p class="footer__disclaimer">
+                    Trading involves risk. Past performance does not guarantee future results.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button class="scroll-top" id="scroll-top" aria-label="Scroll to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Real-time Insights functionality
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        let insightLoaded = false;
+        let isInsightVisible = false;
+        let isAuthenticated = false;
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Check authentication status and update navigation
+        async function checkAuthAndUpdateNav() {
+            const token = getAuthToken();
+            const navActions = document.getElementById('nav-actions');
+            
+            if (!token) {
+                // Not logged in - show default buttons
+                navActions.innerHTML = `
+                    <a href="login.html" class="btn btn--secondary">Login</a>
+                    <a href="signup.html" class="btn btn--primary">Get Started</a>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    isAuthenticated = true;
+                    
+                    // User is logged in - show dashboard/profile/logout buttons
+                    navActions.innerHTML = `
+                        <a href="dashboard.html" class="btn btn--secondary">Dashboard</a>
+                        <a href="profile.html" class="btn btn--secondary">Profile</a>
+                        <button id="logout-btn" class="btn btn--outline">Logout</button>
+                    `;
+
+                    // Add logout handler
+                    document.getElementById('logout-btn').addEventListener('click', async () => {
+                        try {
+                            await fetch(`${API_BASE_URL}/auth/logout`, {
+                                method: 'POST',
+                                headers: getAuthHeaders()
+                            });
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                        }
+                        localStorage.removeItem('authToken');
+                        window.location.reload();
+                    });
+                } else {
+                    // Token invalid - clear it and show login buttons
+                    localStorage.removeItem('authToken');
+                    navActions.innerHTML = `
+                        <a href="login.html" class="btn btn--secondary">Login</a>
+                        <a href="signup.html" class="btn btn--primary">Get Started</a>
+                    `;
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('authToken');
+                navActions.innerHTML = `
+                    <a href="login.html" class="btn btn--secondary">Login</a>
+                    <a href="signup.html" class="btn btn--primary">Get Started</a>
+                `;
+            }
+        }
+
+        // Initialize auth check on page load
+        checkAuthAndUpdateNav();
+
+        document.getElementById('toggle-insight-btn').addEventListener('click', async () => {
+            const contentDiv = document.getElementById('insight-content');
+            const btn = document.getElementById('toggle-insight-btn');
+
+            if (!isInsightVisible) {
+                contentDiv.style.display = 'block';
+                btn.textContent = 'Hide Insight';
+                isInsightVisible = true;
+
+                // Load insight if not already loaded
+                if (!insightLoaded) {
+                    await loadLatestInsight();
+                    insightLoaded = true;
+                }
+            } else {
+                contentDiv.style.display = 'none';
+                btn.textContent = 'Show Insight';
+                isInsightVisible = false;
+            }
+        });
+
+        async function loadLatestInsight() {
+            try {
+                console.log('Fetching insights from:', `${API_BASE_URL}/insights/latest`);
+                const response = await fetch(`${API_BASE_URL}/insights/latest`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`Failed to load insight: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Insight data received:', data);
+
+                document.getElementById('insight-loading').style.display = 'none';
+
+                if (data.insight) {
+                    document.getElementById('insight-title').textContent = data.insight.title;
+                    
+                    const metaHTML = [];
+                    if (data.insight.category) {
+                        metaHTML.push(`<span style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); text-transform: uppercase; font-weight: 600;">${data.insight.category}</span>`);
+                    }
+                    if (data.insight.published_at) {
+                        metaHTML.push(`<span>📅 ${new Date(data.insight.published_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>`);
+                    }
+                    if (data.insight.author_email) {
+                        metaHTML.push(`<span>👤 ${data.insight.author_email.split('@')[0]}</span>`);
+                    }
+                    document.getElementById('insight-meta').innerHTML = metaHTML.join('');
+
+                    // Render HTML content (backend sanitizes dangerous scripts)
+                    document.getElementById('insight-body').innerHTML = data.insight.content;
+                    document.getElementById('insight-data').style.display = 'block';
+                } else {
+                    document.getElementById('no-insight').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading insight:', error);
+                console.error('Error details:', error.message, error.stack);
+                document.getElementById('insight-loading').innerHTML = 
+                    `<p style="color: var(--error-color);">Failed to load insights: ${error.message}<br><small>Check browser console (F12) for details.</small></p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

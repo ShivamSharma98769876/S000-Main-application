@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header" id="header">
+        <nav class="nav container">
+            <a href="dashboard.html" class="nav__logo">
+                <span class="logo__icon">📈</span>
+                <span class="logo__text">TradingPro</span>
+            </a>
+            <div class="nav__actions">
+                <a href="cart.html" class="btn btn--secondary">
+                    🛒 Cart (<span id="cart-count">0</span>)
+                </a>
+                <a href="dashboard.html" class="btn btn--secondary">Dashboard</a>
+                <button id="logout-btn" class="btn btn--outline">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <main class="main" style="padding-top: 100px;">
+        <section class="products section">
+            <div class="container">
+                <div class="section__header">
+                    <h1 class="section__title">Our Products</h1>
+                    <p class="section__description">Choose from our range of professional trading tools</p>
+                </div>
+
+                <div id="products-grid" class="products__grid">
+                    <div class="loading">Loading products...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Add to Cart Modal -->
+        <div id="cart-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                <h2 id="modal-product-name"></h2>
+                <form id="add-to-cart-form">
+                    <div class="form-group">
+                        <label>Duration Type:</label>
+                        <select id="duration-type" class="form-input" required>
+                            <option value="MONTH">Monthly</option>
+                            <option value="YEAR">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (1-12):</label>
+                        <input type="number" id="duration-units" class="form-input" min="1" max="12" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <p><strong>Price:</strong> ₹<span id="modal-price">0</span></p>
+                        <p><strong>Total:</strong> ₹<span id="modal-total">0</span></p>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full">Add to Cart</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .loading { text-align: center; padding: var(--spacing-3xl); color: var(--text-secondary); }
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 10000; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            overflow: auto;
+        }
+        .modal.show { display: block; }
+        .modal-content { 
+            background: var(--card-bg); 
+            margin: 10% auto; 
+            padding: var(--spacing-2xl); 
+            border-radius: var(--radius-xl); 
+            max-width: 500px; 
+            position: relative; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-close { 
+            position: absolute; 
+            right: 20px; 
+            top: 20px; 
+            font-size: 28px; 
+            cursor: pointer; 
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+        }
+        .modal-close:hover { color: var(--primary-color); }
+        .form-group { margin-bottom: var(--spacing-lg); }
+        .form-input { 
+            width: 100%; 
+            padding: var(--spacing-md); 
+            background: var(--bg-tertiary); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-md); 
+            color: var(--text-primary); 
+        }
+        .error { color: #ff4444; text-align: center; padding: var(--spacing-lg); }
+    </style>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        let currentProduct = null;
+
+        // Get JWT token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Get authorization headers
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        // Check authentication on page load
+        async function checkAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    throw new Error('Failed to verify authentication');
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Auth check error:', error);
+                localStorage.removeItem('authToken');
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/products`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load products');
+                }
+                
+                const data = await response.json();
+                displayProducts(data.products);
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('products-grid').innerHTML = `<p class="error">Failed to load products: ${error.message}</p>`;
+            }
+        }
+
+        function displayProducts(products) {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = products.map((product, index) => {
+                const productId = product.id;
+                const productName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                const monthlyPrice = product.price_per_month || product.monthly_price || 0;
+                const yearlyPrice = product.price_per_year || product.yearly_price || 0;
+                
+                return `
+                <div class="product-card">
+                    <div class="product-card__icon">🎯</div>
+                    <h3 class="product-card__title">${product.name || 'Product'}</h3>
+                    <p class="product-card__description">${product.description || ''}</p>
+                    <div class="product-card__pricing">
+                        <div class="pricing">
+                            <span class="pricing__amount">₹${monthlyPrice}</span>
+                            <span class="pricing__period">/month</span>
+                        </div>
+                        <div class="pricing">
+                            <span class="pricing__amount">₹${yearlyPrice}</span>
+                            <span class="pricing__period">/year</span>
+                        </div>
+                    </div>
+                    <button class="btn btn--primary btn--full add-to-cart-btn" 
+                            data-product-id="${productId}"
+                            data-product-name="${productName}"
+                            data-monthly-price="${monthlyPrice}"
+                            data-yearly-price="${yearlyPrice}">
+                        Add to Cart
+                    </button>
+                </div>
+            `;
+            }).join('');
+            
+            // Attach event listeners to all "Add to Cart" buttons
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const productId = parseInt(this.getAttribute('data-product-id'));
+                    const productName = this.getAttribute('data-product-name');
+                    const monthlyPrice = parseFloat(this.getAttribute('data-monthly-price'));
+                    const yearlyPrice = parseFloat(this.getAttribute('data-yearly-price'));
+                    openCartModal(productId, productName, monthlyPrice, yearlyPrice);
+                });
+            });
+        }
+
+        function openCartModal(id, name, monthlyPrice, yearlyPrice) {
+            console.log('Opening cart modal:', { id, name, monthlyPrice, yearlyPrice });
+            
+            if (!id || !name) {
+                console.error('Invalid product data:', { id, name });
+                alert('Error: Product information is missing');
+                return;
+            }
+            
+            currentProduct = { id, name, monthlyPrice, yearlyPrice };
+            
+            const modalNameEl = document.getElementById('modal-product-name');
+            const modalEl = document.getElementById('cart-modal');
+            
+            if (!modalNameEl || !modalEl) {
+                console.error('Modal elements not found');
+                alert('Error: Cart modal not found. Please refresh the page.');
+                return;
+            }
+            
+            modalNameEl.textContent = name;
+            modalEl.style.display = 'block';
+            modalEl.classList.add('show');
+            updateModalPrice();
+        }
+
+        function updateModalPrice() {
+            const type = document.getElementById('duration-type').value;
+            const units = parseInt(document.getElementById('duration-units').value);
+            const price = type === 'MONTH' ? currentProduct.monthlyPrice : currentProduct.yearlyPrice;
+            const total = price * units;
+            document.getElementById('modal-price').textContent = price;
+            document.getElementById('modal-total').textContent = total;
+        }
+
+        document.getElementById('duration-type').addEventListener('change', updateModalPrice);
+        document.getElementById('duration-units').addEventListener('input', updateModalPrice);
+
+        // Close modal handlers
+        const modalCloseBtn = document.querySelector('.modal-close');
+        const cartModal = document.getElementById('cart-modal');
+        
+        if (modalCloseBtn) {
+            modalCloseBtn.addEventListener('click', () => {
+                if (cartModal) {
+                    cartModal.style.display = 'none';
+                    cartModal.classList.remove('show');
+                }
+            });
+        }
+        
+        // Close modal when clicking outside
+        if (cartModal) {
+            cartModal.addEventListener('click', (e) => {
+                if (e.target === cartModal) {
+                    cartModal.style.display = 'none';
+                    cartModal.classList.remove('show');
+                }
+            });
+        }
+
+        document.getElementById('add-to-cart-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                // Get form elements
+                const durationTypeEl = document.getElementById('duration-type');
+                const durationUnitsEl = document.getElementById('duration-units');
+                
+                if (!durationTypeEl || !durationUnitsEl) {
+                    alert('Error: Form elements not found. Please refresh the page.');
+                    return;
+                }
+                
+                const durationType = durationTypeEl.value;
+                const durationUnits = parseInt(durationUnitsEl.value);
+
+                // Validate inputs
+                if (!currentProduct || !currentProduct.id) {
+                    alert('Error: Product information is missing');
+                    return;
+                }
+
+                if (!durationType || (durationType !== 'MONTH' && durationType !== 'YEAR')) {
+                    alert('Error: Please select a valid duration type');
+                    return;
+                }
+
+                if (isNaN(durationUnits) || durationUnits < 1 || durationUnits > 12) {
+                    alert('Error: Duration must be between 1 and 12');
+                    return;
+                }
+
+                const requestBody = {
+                    productId: currentProduct.id,
+                    durationType: durationType,
+                    durationUnits: durationUnits
+                };
+
+                console.log('Adding to cart:', requestBody);
+
+                const response = await fetch(`${API_BASE_URL}/cart/items`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(requestBody)
+                });
+                
+                let responseData = {};
+                try {
+                    responseData = await response.json();
+                } catch (parseError) {
+                    console.error('Failed to parse response:', parseError);
+                }
+                
+                console.log('Cart response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: responseData
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    if (response.status === 403) {
+                        // Profile incomplete
+                        const message = responseData.message || 'Please complete your profile before adding items to cart';
+                        if (confirm(message + '\n\nWould you like to complete your profile now?')) {
+                            window.location.href = 'profile.html';
+                        }
+                        return;
+                    }
+                    
+                    if (response.status === 400) {
+                        // Validation error
+                        const errorMsg = responseData.details 
+                            ? responseData.details.map(d => d.msg).join(', ')
+                            : responseData.message || 'Invalid input data';
+                        alert('Validation Error: ' + errorMsg);
+                        return;
+                    }
+                    
+                    const errorMsg = responseData.message || responseData.error || 'Failed to add to cart';
+                    alert('Error: ' + errorMsg);
+                    return;
+                }
+                
+                alert('Product added to cart successfully!');
+                document.getElementById('cart-modal').style.display = 'none';
+                loadCart();
+            } catch (error) {
+                console.error('Add to cart error:', error);
+                alert('Error: ' + (error.message || 'Failed to add product to cart. Please try again.'));
+            }
+        });
+
+        async function loadCart() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('cart-count').textContent = data.items.length;
+                } else if (response.status === 401) {
+                    // Not authenticated, cart count stays at 0
+                    document.getElementById('cart-count').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Failed to load cart:', error);
+            }
+        }
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+            localStorage.removeItem('authToken');
+            window.location.href = 'index.html';
+        });
+
+        // Initialize page
+        (async () => {
+            const isAuthenticated = await checkAuth();
+            if (isAuthenticated) {
+                loadProducts();
+                loadCart();
+            }
+        })();
+    </script>
+</body>
+</html>
+

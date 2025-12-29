@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Execute Strategy | TradingPro</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .strategy-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .strategy-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .strategy-card {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .strategy-card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .execute-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .execute-btn:disabled {
+            background: var(--border-color);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .execution-log {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            background: var(--bg-primary);
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .log-entry.success {
+            border-left-color: #10b981;
+        }
+
+        .log-entry.error {
+            border-left-color: #ef4444;
+        }
+
+        .log-time {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .back-btn {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        .back-btn:hover {
+            background: var(--border-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">📊</span>
+                TradingPro
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="products.html">Browse Products</a>
+                <button id="logout-btn" class="btn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="strategy-container">
+        <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+
+        <div class="strategy-header">
+            <h1 id="product-name" style="margin: 0 0 0.5rem 0;">Loading Strategy...</h1>
+            <p id="subscription-info" style="margin: 0; opacity: 0.9;">Subscription Details</p>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>ℹ️ Demo Mode:</strong> This is a demonstration page. In production, this would connect to your trading platform (e.g., Zerodha) and execute real trades based on the strategy parameters you configure.
+        </div>
+
+        <div class="strategy-grid">
+            <!-- Strategy Configuration -->
+            <div class="strategy-card">
+                <h3>📈 Strategy Configuration</h3>
+                <form id="strategy-form">
+                    <div class="form-group">
+                        <label for="strategy-type">Strategy Type</label>
+                        <select id="strategy-type" required>
+                            <option value="">Select Strategy</option>
+                            <option value="scalping">Scalping (1-5 min)</option>
+                            <option value="intraday">Intraday (Day Trading)</option>
+                            <option value="swing">Swing Trading (2-7 days)</option>
+                            <option value="positional">Positional (Weeks/Months)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="instrument">Instrument</label>
+                        <select id="instrument" required>
+                            <option value="">Select Instrument</option>
+                            <option value="NIFTY">NIFTY 50</option>
+                            <option value="BANKNIFTY">BANK NIFTY</option>
+                            <option value="FINNIFTY">FIN NIFTY</option>
+                            <option value="stocks">Equity Stocks</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="capital">Capital Allocation (₹)</label>
+                        <input type="number" id="capital" min="1000" step="100" required placeholder="Enter capital amount">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="risk-level">Risk Level</label>
+                        <select id="risk-level" required>
+                            <option value="">Select Risk Level</option>
+                            <option value="low">Low (1-2% per trade)</option>
+                            <option value="medium">Medium (2-3% per trade)</option>
+                            <option value="high">High (3-5% per trade)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="execute-btn" id="execute-btn">
+                        <span>🚀</span> Execute Strategy
+                    </button>
+                </form>
+            </div>
+
+            <!-- Subscription Details -->
+            <div class="strategy-card">
+                <h3>📋 Subscription Details</h3>
+                <div id="subscription-details">
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value" id="sub-status">Loading...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Start Date:</span>
+                        <span class="info-value" id="sub-start">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">End Date:</span>
+                        <span class="info-value" id="sub-end">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Days Remaining:</span>
+                        <span class="info-value" id="sub-days">-</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h4 style="margin-bottom: 1rem;">📊 Quick Stats (Demo)</h4>
+                    <div class="info-item">
+                        <span class="info-label">Total Trades:</span>
+                        <span class="info-value">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Win Rate:</span>
+                        <span class="info-value">0%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">P&L:</span>
+                        <span class="info-value" style="color: #10b981;">₹0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Execution Log -->
+        <div class="strategy-card">
+            <h3>📜 Execution Log</h3>
+            <div class="execution-log" id="execution-log">
+                <p style="text-align: center; color: var(--text-secondary);">No executions yet. Configure and execute your strategy to see logs here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+
+        // Get JWT token from localStorage or URL
+        function getAuthToken() {
+            // Check URL for token (from OAuth redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenFromUrl = urlParams.get('token');
+            
+            if (tokenFromUrl) {
+                // Store token in localStorage
+                localStorage.setItem('authToken', tokenFromUrl);
+                // Remove token from URL
+                const newUrl = window.location.pathname + (window.location.search.replace(/[?&]token=[^&]*/, ''));
+                window.history.replaceState({}, document.title, newUrl);
+                return tokenFromUrl;
+            }
+            
+            // Get token from localStorage
+            return localStorage.getItem('authToken');
+        }
+
+        // Launch child app with JWT token
+        async function launchChildApp() {
+            try {
+                const token = getAuthToken();
+                
+                if (!token) {
+                    alert('Authentication required. Please login again.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // Show loading
+                const executeBtn = document.getElementById('execute-btn');
+                const originalText = executeBtn.innerHTML;
+                executeBtn.disabled = true;
+                executeBtn.innerHTML = '<span>⏳</span> Launching...';
+
+                // Call child app launch endpoint with JWT token
+                const response = await fetch(`${API_BASE_URL}/child-app/get-url`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || 'Failed to launch child application');
+                }
+
+                const data = await response.json();
+                
+                if (data.success && data.url) {
+                    // Redirect to child app with JWT token in URL
+                    console.log('Redirecting to child app:', data.url);
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('Invalid response from server');
+                }
+
+            } catch (error) {
+                console.error('Error launching child app:', error);
+                const executeBtn = document.getElementById('execute-btn');
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = '<span>🚀</span> Execute Strategy';
+                alert(`Failed to launch strategy application: ${error.message}\n\nPlease try again or contact support.`);
+            }
+        }
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const subscriptionId = urlParams.get('subscription');
+        const productName = urlParams.get('product');
+
+        // Initialize page
+        async function initPage() {
+            if (!subscriptionId) {
+                alert('Invalid subscription');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            // Set product name
+            document.getElementById('product-name').textContent = decodeURIComponent(productName || 'Strategy Execution');
+
+            // Load subscription details
+            try {
+                const response = await fetch(`${API_BASE_URL}/subscriptions/me`, { credentials: 'include' });
+                if (!response.ok) throw new Error('Failed to load subscription');
+                
+                const data = await response.json();
+                const subscription = data.subscriptions.find(s => s.id == subscriptionId);
+                
+                if (!subscription) {
+                    throw new Error('Subscription not found');
+                }
+
+                // Display subscription details
+                document.getElementById('subscription-info').textContent = 
+                    `Valid: ${new Date(subscription.start_date).toLocaleDateString()} - ${new Date(subscription.end_date).toLocaleDateString()}`;
+                
+                document.getElementById('sub-status').textContent = subscription.status;
+                document.getElementById('sub-status').style.color = subscription.status === 'ACTIVE' ? '#10b981' : '#ef4444';
+                document.getElementById('sub-start').textContent = new Date(subscription.start_date).toLocaleDateString();
+                document.getElementById('sub-end').textContent = new Date(subscription.end_date).toLocaleDateString();
+                
+                const daysRemaining = Math.ceil((new Date(subscription.end_date) - new Date()) / (1000 * 60 * 60 * 24));
+                document.getElementById('sub-days').textContent = daysRemaining > 0 ? `${daysRemaining} days` : 'Expired';
+                document.getElementById('sub-days').style.color = daysRemaining > 7 ? '#10b981' : '#ef4444';
+
+                // Disable form if subscription is not active
+                if (subscription.status !== 'ACTIVE') {
+                    document.getElementById('execute-btn').disabled = true;
+                    document.getElementById('execute-btn').textContent = 'Subscription Not Active';
+                }
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+                alert('Failed to load subscription details');
+            }
+        }
+
+        // Handle strategy execution
+        document.getElementById('strategy-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Launch child app instead of showing demo message
+            await launchChildApp();
+        });
+
+        function addLogEntry(type, message) {
+            const logContainer = document.getElementById('execution-log');
+            
+            // Clear placeholder if this is first entry
+            if (logContainer.querySelector('p')) {
+                logContainer.innerHTML = '';
+            }
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `
+                <div class="log-time">${new Date().toLocaleTimeString()}</div>
+                <div>${message}</div>
+            `;
+            
+            logContainer.insertBefore(entry, logContainer.firstChild);
+        }
+
+        // Logout handler
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            window.location.href = 'index.html';
+        });
+
+        // Initialize page on load
+        initPage();
+    </script>
+</body>
+</html>
+

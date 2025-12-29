@@ -1,0 +1,41 @@
+[
+  {
+    "id": 27,
+    "name": "S002-Zero Touch Strangle(Customized)",
+    "description": "Zero Touch Strangle is an automated options selling strategy that manages the full lifecycle of a short strangle—with entries, SL, re-entries and adjustments—without manual intervention. In this variant, the system only initiates or re-initiates strangle positions when both Price Strength and Volume Strength align in the same direction, ensuring entries are taken during strong, high-conviction moves rather than just at arbitrary levels.\n​",
+    "category": "ZTT",
+    "price_per_month": "2200.00",
+    "price_per_year": "24000.00",
+    "features": null,
+    "status": "ACTIVE",
+    "popularity": 0,
+    "created_at": "2025-12-07T12:38:32.851Z",
+    "updated_at": "2025-12-21T21:13:48.544Z"
+  },
+  {
+    "id": 28,
+    "name": "S001-Zero Touch Strangle",
+    "description": "Zero Touch Strangle is a fully-automated options strangle engine that handles the entire lifecycle of the trade—entry, SL placement, re-entry after SL hits, and continuous delta-based rebalancing without manual intervention. It constantly monitors Greeks and price action to adjust or exit legs when delta drifts beyond defined thresholds, keeping the strangle balanced while the trader only sets risk parameters.",
+    "category": "ZTT",
+    "price_per_month": "2200.00",
+    "price_per_year": "24000.00",
+    "features": null,
+    "status": "ACTIVE",
+    "popularity": 0,
+    "created_at": "2025-12-07T12:38:32.852Z",
+    "updated_at": "2025-12-21T21:17:49.450Z"
+  },
+  {
+    "id": 29,
+    "name": "S003- Fibonacci Retracement",
+    "description": "Fibonacci retracement is a technical tool that plots percentage levels between a swing high and swing low to mark potential support and resistance zones. Commonly used levels are 23.6%, 38.2%, 50%, 61.8%, and 78.6%, derived from relationships in the Fibonacci sequence and used to plan entries, exits, and stop-losses during pullbacks within a trend.",
+    "category": "ZTT",
+    "price_per_month": "199.00",
+    "price_per_year": "1999.00",
+    "features": null,
+    "status": "ACTIVE",
+    "popularity": 0,
+    "created_at": "2025-12-22T03:01:51.460Z",
+    "updated_at": "2025-12-22T03:01:51.460Z"
+  }
+]
