@@ -7,6 +7,27 @@ const logger = require('../config/logger');
 const failedLoginService = require('../services/failedLogin.service');
 const jwtService = require('../services/jwt.service');
 
+// Helper function to get frontend URL (auto-detect if not set)
+const getFrontendUrl = () => {
+    if (process.env.FRONTEND_URL) {
+        return process.env.FRONTEND_URL;
+    }
+    
+    // Auto-detect for Azure
+    if (process.env.WEBSITE_HOSTNAME) {
+        return `https://${process.env.WEBSITE_HOSTNAME}`;
+    }
+    
+    // Auto-detect from WEBSITE_SITE_NAME
+    if (process.env.WEBSITE_SITE_NAME) {
+        const region = process.env.WEBSITE_SITE_NAME.includes('southindia') ? 'southindia-01' : 'eastus';
+        return `https://${process.env.WEBSITE_SITE_NAME}.${region}.azurewebsites.net`;
+    }
+    
+    // Fallback to localhost for development
+    return 'http://localhost:8000';
+};
+
 // Apply rate limiting to auth routes
 router.use(authRateLimiter);
 
@@ -49,12 +70,12 @@ router.get('/oauth/google/callback',
             
             if (err) {
                 logger.error('OAuth authentication error', err);
-                return res.redirect(process.env.FRONTEND_URL + '/login.html?error=auth_failed');
+                return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed');
             }
             
             if (!user) {
                 logger.warn('OAuth authentication failed - no user', { info });
-                return res.redirect(process.env.FRONTEND_URL + '/login.html?error=auth_failed');
+                return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed');
             }
             
             console.log('=== BEFORE req.logIn ===');
@@ -80,7 +101,7 @@ router.get('/oauth/google/callback',
                 
                 if (err) {
                     logger.error('Session login error', err);
-                    return res.redirect(process.env.FRONTEND_URL + '/login.html?error=server_error');
+                    return res.redirect(getFrontendUrl() + '/login.html?error=server_error');
                 }
                 
                 // CRITICAL: Verify Passport data is in session
@@ -93,14 +114,14 @@ router.get('/oauth/google/callback',
                         passportUser: req.session.passport?.user || null,
                         sessionKeys: Object.keys(req.session || {})
                     });
-                    return res.redirect(process.env.FRONTEND_URL + '/login.html?error=server_error');
+                    return res.redirect(getFrontendUrl() + '/login.html?error=server_error');
                 }
                 
                 // Save session to ensure cookie is set before redirect
                 req.session.save(async (saveErr) => {
                     if (saveErr) {
                         logger.error('Error saving session after logIn', saveErr);
-                        return res.redirect(process.env.FRONTEND_URL + '/login.html?error=server_error');
+                        return res.redirect(getFrontendUrl() + '/login.html?error=server_error');
                     }
                     
                     console.log('=== SESSION SAVED ===');
@@ -145,9 +166,10 @@ router.get('/oauth/google/callback',
                     });
                     
                     // Determine redirect URL
+                    const frontendUrl = getFrontendUrl();
                     const baseUrl = isProfileComplete 
-                        ? process.env.FRONTEND_URL + '/dashboard.html'
-                        : process.env.FRONTEND_URL + '/register.html';
+                        ? frontendUrl + '/dashboard.html'
+                        : frontendUrl + '/register.html';
                     
                     // Redirect with token in URL (frontend will extract and store it)
                     const redirectUrl = `${baseUrl}?token=${encodeURIComponent(token)}`;
@@ -169,7 +191,7 @@ router.get('/oauth/google/callback',
                     res.redirect(redirectUrl);
                     } catch (error) {
                         logger.error('Error in Google OAuth callback', error);
-                        res.redirect(process.env.FRONTEND_URL + '/login.html?error=server_error');
+                        res.redirect(getFrontendUrl() + '/login.html?error=server_error');
                     }
                 });
             });
@@ -269,12 +291,12 @@ router.get('/oauth/apple/callback',
         passport.authenticate('apple', (err, user, info) => {
             if (err) {
                 logger.error('Apple OAuth error', err);
-                return res.redirect(process.env.FRONTEND_URL + '/login.html?error=auth_failed');
+                return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed');
             }
             
             if (!user) {
                 logger.warn('Apple OAuth failed - no user', { info });
-                return res.redirect(process.env.FRONTEND_URL + '/login.html?error=auth_failed');
+                return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed');
             }
             
             req.logIn(user, async (err) => {
@@ -300,14 +322,14 @@ router.get('/oauth/apple/callback',
                             const isProfileComplete = result.rows.length > 0 && result.rows[0].profile_completed;
                             
                             if (isProfileComplete) {
-                                res.redirect(process.env.FRONTEND_URL + '/dashboard.html');
+                                res.redirect(getFrontendUrl() + '/dashboard.html');
                             } else {
-                                res.redirect(process.env.FRONTEND_URL + '/register.html');
+                                res.redirect(getFrontendUrl() + '/register.html');
                             }
                         })
                         .catch(error => {
                             logger.error('Error in Apple OAuth callback', error);
-                            res.redirect(process.env.FRONTEND_URL + '/login.html?error=server_error');
+                            res.redirect(getFrontendUrl() + '/login.html?error=server_error');
                         });
                     });
                 } catch (error) {

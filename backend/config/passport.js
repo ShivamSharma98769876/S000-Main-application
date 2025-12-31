@@ -30,10 +30,38 @@ passport.deserializeUser(async (id, done) => {
 
 // Google OAuth Strategy
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    // Auto-detect callback URL if not set
+    const getGoogleCallbackUrl = () => {
+        if (process.env.GOOGLE_CALLBACK_URL) {
+            return process.env.GOOGLE_CALLBACK_URL;
+        }
+        
+        // Auto-detect for Azure
+        if (process.env.WEBSITE_HOSTNAME) {
+            return `https://${process.env.WEBSITE_HOSTNAME}/api/v1/auth/oauth/google/callback`;
+        }
+        
+        // Auto-detect from WEBSITE_SITE_NAME
+        if (process.env.WEBSITE_SITE_NAME) {
+            // Azure App Service format: sitename.region.azurewebsites.net
+            const region = process.env.WEBSITE_SITE_NAME.includes('southindia') ? 'southindia-01' : 'eastus';
+            return `https://${process.env.WEBSITE_SITE_NAME}.${region}.azurewebsites.net/api/v1/auth/oauth/google/callback`;
+        }
+        
+        // Fallback to localhost for development
+        return 'http://localhost:3000/api/v1/auth/oauth/google/callback';
+    };
+    
+    const googleCallbackUrl = getGoogleCallbackUrl();
+    logger.info('Google OAuth callback URL configured', { 
+        callbackUrl: googleCallbackUrl,
+        source: process.env.GOOGLE_CALLBACK_URL ? 'environment' : 'auto-detected'
+    });
+    
     passport.use(new GoogleStrategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+        callbackURL: googleCallbackUrl,
         passReqToCallback: true
     },
     async (req, accessToken, refreshToken, profile, done) => {
@@ -113,12 +141,39 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
 // Apple OAuth Strategy
 if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID) {
+    // Auto-detect callback URL if not set
+    const getAppleCallbackUrl = () => {
+        if (process.env.APPLE_CALLBACK_URL) {
+            return process.env.APPLE_CALLBACK_URL;
+        }
+        
+        // Auto-detect for Azure
+        if (process.env.WEBSITE_HOSTNAME) {
+            return `https://${process.env.WEBSITE_HOSTNAME}/api/v1/auth/oauth/apple/callback`;
+        }
+        
+        // Auto-detect from WEBSITE_SITE_NAME
+        if (process.env.WEBSITE_SITE_NAME) {
+            const region = process.env.WEBSITE_SITE_NAME.includes('southindia') ? 'southindia-01' : 'eastus';
+            return `https://${process.env.WEBSITE_SITE_NAME}.${region}.azurewebsites.net/api/v1/auth/oauth/apple/callback`;
+        }
+        
+        // Fallback to localhost for development
+        return 'http://localhost:3000/api/v1/auth/oauth/apple/callback';
+    };
+    
+    const appleCallbackUrl = getAppleCallbackUrl();
+    logger.info('Apple OAuth callback URL configured', { 
+        callbackUrl: appleCallbackUrl,
+        source: process.env.APPLE_CALLBACK_URL ? 'environment' : 'auto-detected'
+    });
+    
     passport.use(new AppleStrategy({
         clientID: process.env.APPLE_CLIENT_ID,
         teamID: process.env.APPLE_TEAM_ID,
         keyID: process.env.APPLE_KEY_ID,
         privateKeyLocation: process.env.APPLE_PRIVATE_KEY_PATH,
-        callbackURL: process.env.APPLE_CALLBACK_URL,
+        callbackURL: appleCallbackUrl,
         passReqToCallback: true
     },
     async (req, accessToken, refreshToken, idToken, profile, done) => {
