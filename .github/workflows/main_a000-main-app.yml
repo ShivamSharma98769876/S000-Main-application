@@ -66,17 +66,67 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: .
       
-      - name: Verify package.json location
+      - name: Verify and prepare package.json
         run: |
-          # Verify package.json exists in backend directory
-          if [ ! -f backend/package.json ]; then
-            echo "ERROR: package.json not found in backend directory!"
+          # Check current directory structure after artifact download
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo ""
+          echo "Searching for package.json in directory tree..."
+          
+          # Find package.json anywhere in the directory
+          PKG_JSON=$(find . -name "package.json" -type f 2>/dev/null | head -1)
+          
+          if [ -z "$PKG_JSON" ]; then
+            echo "ERROR: package.json not found anywhere!"
+            echo "Full directory tree:"
+            find . -type f -name "*.json" 2>/dev/null | head -20
             exit 1
           fi
-          echo "✓ Found package.json in backend directory"
-          echo "Package.json location: $(pwd)/backend/package.json"
-          cat backend/package.json | grep -A 2 '"name"'
+          
+          echo "✓ Found package.json at: $PKG_JSON"
+          echo "Package.json contents (name field):"
+          cat "$PKG_JSON" | grep -A 2 '"name"'
+          
+          # Ensure backend/ directory structure exists with package.json
+          if [[ "$PKG_JSON" != "./backend/package.json" ]] && [[ "$PKG_JSON" != "backend/package.json" ]]; then
+            echo "Note: package.json found at $PKG_JSON, ensuring backend/ structure..."
+            mkdir -p backend
+            
+            # If package.json is in root, we need to check artifact structure
+            # The artifact should have extracted backend/ folder, but let's verify
+            if [ -f "package.json" ] && [ ! -f "backend/package.json" ]; then
+              echo "Artifact structure issue: package.json in root instead of backend/"
+              echo "This suggests the artifact was uploaded incorrectly."
+              echo "Checking if we can find backend files..."
+              if [ -f "server.js" ] || [ -d "routes" ]; then
+                echo "Backend files found in root, creating backend structure..."
+                mkdir -p backend
+                [ -f "package.json" ] && mv package.json backend/ 2>/dev/null || true
+                [ -f "package-lock.json" ] && mv package-lock.json backend/ 2>/dev/null || true
+                [ -f "server.js" ] && mv server.js backend/ 2>/dev/null || true
+                [ -d "routes" ] && mv routes backend/ 2>/dev/null || true
+                [ -d "config" ] && mv config backend/ 2>/dev/null || true
+                [ -d "middleware" ] && mv middleware backend/ 2>/dev/null || true
+                [ -d "services" ] && mv services backend/ 2>/dev/null || true
+              fi
+            fi
+          fi
+          
+          # Final verification - package.json must be in backend/
+          if [ ! -f "backend/package.json" ]; then
+            echo "ERROR: backend/package.json not found after preparation!"
+            echo "Current directory structure:"
+            find . -type f -name "package.json" 2>/dev/null
+            exit 1
+          fi
+          
+          echo "✓ Verified: backend/package.json exists"
+          echo "Backend directory structure:"
+          ls -la backend/ | head -10
       
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
