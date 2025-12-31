@@ -55,9 +55,21 @@ jobs:
         run: |
           # Create a temporary directory with backend contents at root
           # This ensures Azure gets package.json at the root level
+          # Exclude database files and data directory from deployment
           mkdir -p deploy-package
-          cp -r backend/* deploy-package/ 2>/dev/null || true
-          cp backend/.* deploy-package/ 2>/dev/null || true
+          
+          # Copy all files from backend, excluding database files and data directories
+          cd backend
+          find . -type f ! -path "*/node_modules/*" ! -path "*/.git/*" \
+                ! -name "*.db" ! -name "*.db-shm" ! -name "*.db-wal" \
+                ! -name "*.sqlite" ! -name "*.sqlite3" \
+                ! -path "*/data/*" ! -path "./data/*" \
+                -exec sh -c 'mkdir -p "../deploy-package/$(dirname "$1")" && cp "$1" "../deploy-package/$1"' _ {} \;
+          
+          # Copy hidden files (but exclude .git, .env, etc.)
+          find . -maxdepth 1 -name ".*" ! -name ".git" ! -name ".env*" ! -name ".DS_Store" \
+                -exec sh -c 'cp -r "$1" "../deploy-package/"' _ {} \; 2>/dev/null || true
+          cd ..
           
           # Verify package.json is at root
           if [ ! -f "deploy-package/package.json" ]; then
@@ -65,8 +77,17 @@ jobs:
             exit 1
           fi
           
-          echo "✓ Deployment package prepared"
+          echo "✓ Deployment package prepared (database files excluded)"
+          echo "Files in deployment package:"
           ls -la deploy-package/ | head -15
+          
+          # Verify database files are excluded
+          if find deploy-package -name "*.db" -o -name "*.sqlite*" 2>/dev/null | grep -q .; then
+            echo "WARNING: Database files found in deployment package!"
+            find deploy-package -name "*.db" -o -name "*.sqlite*" 2>/dev/null
+          else
+            echo "✓ Verified: No database files in deployment package"
+          fi
       
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4

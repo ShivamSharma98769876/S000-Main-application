@@ -129,6 +129,13 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('combined', { stream: logger.stream }));
 }
 
+// Ensure data directory exists for database files and sessions
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    logger.info('Created data directory', { path: dataDir });
+}
+
 // Session middleware - MUST be before static files to ensure cookies work
 const sessionConfig = {
     store: new SQLiteStore({

@@ -1,0 +1,50 @@
+# Exclude database files from Azure deployment
+# Database files should be created on the server, not deployed
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Data directory (will be created on server)
+data/
+../data/
+
+# Local database files
+backend/data/
+sessions.db
+
+# Logs
+logs/
+*.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Node modules (handled by npm install)
+node_modules/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+dist/
+build/
+coverage/
+

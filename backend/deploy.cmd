@@ -76,9 +76,9 @@ IF NOT DEFINED NPM_CMD (
 
 echo Handling node.js deployment.
 
-:: 1. KuduSync
+:: 1. KuduSync (exclude database files and data directory)
 IF /I "%IN_PLACE_DEPLOYMENT%" NEQ "1" (
-  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd"
+  call :ExecuteCmd "%KUDU_SYNC_CMD%" -v 50 -f "%DEPLOYMENT_SOURCE%" -t "%DEPLOYMENT_TARGET%" -n "%NEXT_MANIFEST_PATH%" -p "%PREVIOUS_MANIFEST_PATH%" -i ".git;.hg;.deployment;deploy.cmd;*.db;*.db-shm;*.db-wal;*.sqlite;*.sqlite3;data/"
   IF !ERRORLEVEL! NEQ 0 goto error
 )
 
@@ -91,6 +91,17 @@ IF /I "%SKIP_NODE_MODULES%" NEQ "1" (
   call :ExecuteCmd !NPM_CMD! install --production
   IF !ERRORLEVEL! NEQ 0 goto error
   popd
+)
+
+:: 4. Create data directory for database files (if it doesn't exist)
+IF NOT EXIST "%DEPLOYMENT_TARGET%\data" (
+  echo Creating data directory for database files...
+  mkdir "%DEPLOYMENT_TARGET%\data"
+  IF !ERRORLEVEL! NEQ 0 (
+    echo Warning: Failed to create data directory, but continuing...
+  ) ELSE (
+    echo Data directory created successfully.
+  )
 )
 
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
