@@ -7,11 +7,24 @@ const logger = require('../config/logger');
 class JWTService {
     constructor() {
         try {
-            const privateKeyPath = path.join(__dirname, '../config/keys/private.pem');
-            const publicKeyPath = path.join(__dirname, '../config/keys/public.pem');
+            // Try to load keys from environment variables first (for cloud deployments)
+            if (process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
+                this.privateKey = process.env.JWT_PRIVATE_KEY;
+                this.publicKey = process.env.JWT_PUBLIC_KEY;
+                logger.info('JWT Service initialized from environment variables');
+            } else {
+                // Fallback to file system (for local development)
+                const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH 
+                    ? path.resolve(process.env.JWT_PRIVATE_KEY_PATH)
+                    : path.join(__dirname, '../config/keys/private.pem');
+                const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH 
+                    ? path.resolve(process.env.JWT_PUBLIC_KEY_PATH)
+                    : path.join(__dirname, '../config/keys/public.pem');
 
-            this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-            this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+                this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+                this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
+                logger.info('JWT Service initialized from file system');
+            }
 
             this.issuer = process.env.JWT_ISSUER || 'tradingpro-main-app';
             this.audience = process.env.JWT_AUDIENCE || 'tradingpro-child-app';
@@ -20,7 +33,7 @@ class JWTService {
             logger.info('JWT Service initialized successfully');
         } catch (error) {
             logger.error('Failed to initialize JWT Service', error);
-            throw new Error('JWT keys not found. Run generate-keys.js first.');
+            throw new Error('JWT keys not found. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js and upload keys to server.');
         }
     }
 
