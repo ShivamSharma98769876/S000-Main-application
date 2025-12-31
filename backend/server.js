@@ -130,17 +130,54 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Ensure data directory exists for database files and sessions
-const dataDir = path.join(__dirname, 'data');
+// On Azure: use ./data/ relative to app root
+// Locally: use ./data/ relative to backend/
+const getDataDir = () => {
+    // Check if we're in Azure (has WEBSITE_SITE_NAME or WEBSITE_HOSTNAME)
+    if (process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME) {
+        // Azure: use data/ relative to app root
+        return path.resolve(process.cwd(), 'data');
+    }
+    // Local development: use ./data/ relative to backend/
+    return path.join(__dirname, 'data');
+};
+
+const dataDir = getDataDir();
 if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-    logger.info('Created data directory', { path: dataDir });
+    try {
+        fs.mkdirSync(dataDir, { recursive: true });
+        logger.info('Created data directory', { path: dataDir });
+    } catch (error) {
+        logger.error('Failed to create data directory', { 
+            path: dataDir, 
+            error: error.message,
+            code: error.code
+        });
+        // Try alternative location
+        const altDataDir = path.resolve(process.cwd(), 'data');
+        if (altDataDir !== dataDir && !fs.existsSync(altDataDir)) {
+            try {
+                fs.mkdirSync(altDataDir, { recursive: true });
+                logger.info('Created alternative data directory', { path: altDataDir });
+            } catch (altError) {
+                logger.error('Failed to create alternative data directory', { 
+                    path: altDataDir, 
+                    error: altError.message 
+                });
+            }
+        }
+    }
+} else {
+    logger.info('Data directory exists', { path: dataDir });
 }
 
 // Session middleware - MUST be before static files to ensure cookies work
+// Use the same data directory as the main database
+const sessionDataDir = dataDir;
 const sessionConfig = {
     store: new SQLiteStore({
         db: 'sessions.db',
-        dir: './data',
+        dir: sessionDataDir,
         table: 'session'
     }),
     secret: process.env.SESSION_SECRET,

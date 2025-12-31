@@ -4,15 +4,65 @@ const fs = require('fs');
 const logger = require('./logger');
 
 // Get database path from environment or use default
-// Default to root data folder: D:\Automation\FIn-Independence\data\tradingpro.db
-// From backend/config/, go up two levels to reach project root, then into data folder
-const DB_PATH = process.env.SQLITE_DB_PATH || path.resolve(__dirname, '../../data/tradingpro.db');
+// On Azure: use ./data/ (relative to app root: /home/site/wwwroot/data/)
+// Locally: use ../../data/ (relative to backend/config/)
+const getDefaultDbPath = () => {
+    // Check if we're in Azure (has WEBSITE_SITE_NAME or WEBSITE_HOSTNAME)
+    if (process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME) {
+        // Azure: use data/ relative to app root
+        return path.resolve(process.cwd(), 'data', 'tradingpro.db');
+    }
+    // Local development: use ../../data/ relative to backend/config/
+    return path.resolve(__dirname, '../../data/tradingpro.db');
+};
+
+const DB_PATH = process.env.SQLITE_DB_PATH || getDefaultDbPath();
 
 // Ensure data directory exists
 const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+    try {
+        fs.mkdirSync(dataDir, { recursive: true });
+        logger.info('Created data directory', { path: dataDir });
+    } catch (mkdirError) {
+        logger.error('Failed to create data directory', { 
+            path: dataDir, 
+            error: mkdirError.message,
+            code: mkdirError.code
+        });
+        // Try alternative location
+        const altDataDir = path.resolve(process.cwd(), 'data');
+        if (!fs.existsSync(altDataDir)) {
+            try {
+                fs.mkdirSync(altDataDir, { recursive: true });
+                logger.info('Created alternative data directory', { path: altDataDir });
+            } catch (altError) {
+                logger.error('Failed to create alternative data directory', { 
+                    path: altDataDir, 
+                    error: altError.message 
+                });
+            }
+        }
+    }
 }
+
+// Log the database path for debugging
+logger.info('Database path configured', { 
+    path: DB_PATH,
+    dataDir: dataDir,
+    exists: fs.existsSync(dataDir),
+    writable: (() => {
+        try {
+            if (fs.existsSync(dataDir)) {
+                fs.accessSync(dataDir, fs.constants.W_OK);
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
+        }
+    })()
+});
 
 // Create or open database
 // better-sqlite3 opens in read-write mode by default
