@@ -6,6 +6,18 @@ This is a **Node.js application**, not Python. The dependency management files a
 - **`backend/package.json`** - Defines all dependencies (equivalent to `requirements.txt` for Python)
 - **`backend/package-lock.json`** - Locks dependency versions for consistent installs
 
+### Important: Package.json Location
+
+The `package.json` file is located in the `backend/` directory:
+```
+backend/package.json
+```
+
+The GitHub Actions workflow automatically:
+1. Builds from `backend/package.json`
+2. Restructures the deployment so `package.json` is at the root when deployed to Azure
+3. Ensures Azure can find and use `package.json` for dependency installation
+
 ## Files for Azure Deployment
 
 ### Required Files

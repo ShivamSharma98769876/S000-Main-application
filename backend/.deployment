@@ -1,7 +1,8 @@
 [config]
 SCM_DO_BUILD_DURING_DEPLOYMENT=true
 command = deploy.cmd
+project = .
 
 [deploy]
 command = deploy.cmd
-
+project = .

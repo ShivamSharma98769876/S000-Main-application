@@ -66,6 +66,29 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: ./deploy
+      
+      - name: Prepare deployment package
+        run: |
+          # Move backend contents to root for deployment
+          # Azure expects package.json at the root of the deployment
+          echo "Preparing deployment package from backend directory..."
+          cd deploy
+          # Move all files and directories from backend/ to current directory
+          if [ -d "backend" ]; then
+            shopt -s dotglob
+            mv backend/* . 2>/dev/null || true
+            shopt -u dotglob
+            rmdir backend 2>/dev/null || true
+          fi
+          # Verify package.json is at root
+          if [ ! -f "package.json" ]; then
+            echo "ERROR: package.json not found at root after restructuring"
+            ls -la
+            exit 1
+          fi
+          echo "✓ package.json found at root"
+          echo "✓ Deployment package prepared successfully"
       
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -74,3 +97,5 @@ jobs:
           app-name: 'A000-Main-App'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BCCDD66C2B2240B2B334EBFDA892DF8F }}
+          package: './deploy'
+          startup-command: 'node server.js'
