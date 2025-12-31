@@ -19,12 +19,15 @@ The deployment will fail if these are not set correctly. Azure is currently dete
 1. In the same **General settings** page:
 2. Under **Startup Command**, enter:
    ```
-   npm start
+   cd /home/site/wwwroot && npm start
    ```
    OR
    ```
-   node server.js
+   cd /home/site/wwwroot && node server.js
    ```
+   
+   **Important:** The `cd /home/site/wwwroot &&` part ensures npm runs from the correct directory where your `package.json` is located.
+   
 3. Click **Save**
 
 ### Step 3: Verify Application Settings

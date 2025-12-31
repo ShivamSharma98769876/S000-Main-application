@@ -153,4 +153,4 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BCCDD66C2B2240B2B334EBFDA892DF8F }}
           package: '.'
-          startup-command: 'npm start'
+          startup-command: 'cd /home/site/wwwroot && npm start'
