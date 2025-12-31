@@ -28,6 +28,8 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
+    <!-- API Configuration - Auto-detects environment -->
+    <script src="../js/config.js"></script>
 </head>
 <body>
     <div class="admin-layout">
@@ -186,7 +188,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        // API_BASE_URL is set by config.js (auto-detects environment)
         let currentTab = 'errors';
 
         function switchTab(tab) {

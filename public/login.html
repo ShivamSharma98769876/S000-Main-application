@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- API Configuration - Auto-detects environment -->
+    <script src="js/config.js"></script>
 </head>
 <body>
     <div class="auth-container">
@@ -71,7 +73,7 @@
 
     <script>
         // OAuth Integration
-        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        // API_BASE_URL is set by config.js (auto-detects environment)
         
         const googleBtn = document.querySelector('.auth-btn--google');
         const appleBtn = document.querySelector('.auth-btn--apple');

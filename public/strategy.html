@@ -183,6 +183,8 @@
             background: var(--border-color);
         }
     </style>
+    <!-- API Configuration - Auto-detects environment -->
+    <script src="js/config.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -309,7 +311,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        // API_BASE_URL is set by config.js (auto-detects environment)
 
         // Get JWT token from localStorage or URL
         function getAuthToken() {

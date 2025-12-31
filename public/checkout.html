@@ -52,6 +52,8 @@
         .file-upload.has-file { border-color: var(--accent-color); background: rgba(16, 185, 129, 0.05); }
         @media (max-width: 1024px) { .checkout-grid { grid-template-columns: 1fr; } }
     </style>
+    <!-- API Configuration - Auto-detects environment -->
+    <script src="js/config.js"></script>
 </head>
 <body>
     <header class="header" id="header">
@@ -170,7 +172,7 @@
     </main>
 
     <script>
-        const API_BASE_URL = 'http://127.0.0.1:3000/api/v1';
+        // API_BASE_URL is set by config.js (auto-detects environment)
         let orderId = null;
         let selectedFile = null;
 
