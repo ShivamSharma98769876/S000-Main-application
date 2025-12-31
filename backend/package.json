@@ -18,6 +18,7 @@
     "db:export:postgres": "node scripts/export-postgres-data.js",
     "db:import:sqlite": "node scripts/import-sqlite-data.js",
     "db:verify:sqlite": "node scripts/verify-sqlite-migration.js",
+    "db:open": "node scripts/open-db.js",
     "db:seed": "node scripts/seed.js",
     "test": "jest --runInBand",
     "test:unit": "jest tests/unit --runInBand",

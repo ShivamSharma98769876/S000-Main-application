@@ -50,7 +50,9 @@ Go to **Configuration** → **Application settings** and ensure you have:
 - `JWT_EXPIRY` = `600m`
 
 **Session:**
-- `SESSION_SECRET` = Your production secret key
+- `SESSION_SECRET` = Your production secret key ⚠️ **REQUIRED - Generate a secure random string**
+  - Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+  - Or use a long random string (minimum 32 characters)
 - `SESSION_MAX_AGE` = `86400000`
 
 **OAuth:**
