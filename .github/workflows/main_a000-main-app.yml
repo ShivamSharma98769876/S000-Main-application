@@ -67,4 +67,8 @@ jobs:
         with:
           app-name: 'A000-Main-App'
           slot-name: 'Production'
+<<<<<<< HEAD
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BCCDD66C2B2240B2B334EBFDA892DF8F }}
+=======
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_9C69BC5855FA47A0A424A4EDAAA9D1BF }}
+>>>>>>> f3f4b72d9daa08adf75634ef62d2ceaaf8aa198d
