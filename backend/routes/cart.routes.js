@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { query, transaction } = require('../config/database');
+const { query } = require('../config/database');
 const { isAuthenticated, isProfileComplete } = require('../middleware/auth');
 const { validateCartItem } = require('../middleware/validator');
 const logger = require('../config/logger');
@@ -139,81 +139,96 @@ router.post('/items', isAuthenticated, isProfileComplete, validateCartItem, asyn
         const durationUnit = duration_unit || req.body.durationType || 'MONTH';
         const durationValue = duration_value || req.body.durationUnits || 1;
         
-        await transaction(async (client) => {
-            // Get product
-            const productResult = await client.query(
-                'SELECT * FROM products WHERE id = $1 AND status = $2',
-                [productId, 'ACTIVE']
-            );
-            
-            if (productResult.rows.length === 0) {
-                throw new Error('Product not found or inactive');
-            }
-            
-            const product = productResult.rows[0];
-            
-            // Calculate dates and pricing (check for existing subscription)
-            const { startDate, endDate, price } = await calculateCartItem(
-                product, 
-                durationUnit, 
-                durationValue, 
-                req.user.id, 
-                client
-            );
-            
-            // Get or create cart
-            let cartResult = await client.query(
-                'SELECT id FROM carts WHERE user_id = $1',
+        // Get product first (outside transaction)
+        const productResult = await query(
+            'SELECT * FROM products WHERE id = $1 AND status = $2',
+            [productId, 'ACTIVE']
+        );
+        
+        if (productResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Product not found or inactive' });
+        }
+        
+        const product = productResult.rows[0];
+        
+        // Calculate dates and pricing (check for existing subscription) - outside transaction
+        // We need to pass a query function that can be used inside calculateCartItem
+        const { startDate, endDate, price } = await calculateCartItem(
+            product, 
+            durationUnit, 
+            durationValue, 
+            req.user.id, 
+            { query: (text, params) => query(text, params) }
+        );
+        
+        // Calculate unit_price (price per unit - month or year)
+        const unitPrice = durationUnit === 'MONTH' 
+            ? parseFloat(product.price_per_month) 
+            : parseFloat(product.price_per_year);
+        
+        // subtotal is the same as price (total price)
+        const subtotal = price;
+        
+        // Get or create cart (outside transaction for simplicity, or we can do it inside)
+        let cartResult = await query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [req.user.id]
+        );
+        
+        if (cartResult.rows.length === 0) {
+            cartResult = await query(
+                'INSERT INTO carts (user_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING id',
                 [req.user.id]
             );
-            
-            if (cartResult.rows.length === 0) {
-                cartResult = await client.query(
-                    'INSERT INTO carts (user_id, created_at, updated_at) VALUES ($1, NOW(), NOW()) RETURNING id',
-                    [req.user.id]
-                );
-            }
-            
-            const cartId = cartResult.rows[0].id;
-            
-            // Check if product already in cart
-            const existingItem = await client.query(
-                'SELECT id FROM cart_items WHERE cart_id = $1 AND product_id = $2',
-                [cartId, productId]
-            );
-            
+        }
+        
+        const cartId = cartResult.rows[0].id;
+        
+        // Check if product already in cart
+        const existingItem = await query(
+            'SELECT id FROM cart_items WHERE cart_id = $1 AND product_id = $2',
+            [cartId, productId]
+        );
+        
+        let item;
             if (existingItem.rows.length > 0) {
                 // Update existing item
-                const result = await client.query(
+                const result = await query(
                     `UPDATE cart_items 
-                     SET duration_unit = $1, duration_value = $2, start_date = $3, end_date = $4,
-                         price = $5, updated_at = NOW()
-                     WHERE id = $6
+                     SET duration_unit = $1, duration_value = $2, duration_type = $3, duration_units = $4,
+                         start_date = $5, end_date = $6, price = $7, unit_price = $8, subtotal = $9, updated_at = NOW()
+                     WHERE id = $10
                      RETURNING *`,
-                    [durationUnit, durationValue, startDate, endDate, price, existingItem.rows[0].id]
+                    [durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, existingItem.rows[0].id]
                 );
-                
-                return result.rows[0];
-            } else {
-                // Insert new item
-                const result = await client.query(
-                    `INSERT INTO cart_items (cart_id, product_id, duration_unit, duration_value, 
-                                            start_date, end_date, price, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-                     RETURNING *`,
-                    [cartId, productId, durationUnit, durationValue, startDate, endDate, price]
-                );
-                
-                return result.rows[0];
-            }
-        }).then(item => {
+            
+            item = result.rows[0];
+        } else {
+            // Insert new item
+            const result = await query(
+                `INSERT INTO cart_items (cart_id, product_id, duration_unit, duration_value, 
+                                        duration_type, duration_units, start_date, end_date, price, unit_price, subtotal, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+                 RETURNING *`,
+                [cartId, productId, durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal]
+            );
+            
+            item = result.rows[0];
+        }
+        
+        if (item) {
             logger.info('Item added to cart', { userId: req.user.id, productId, item: item.id });
             
             res.status(201).json({
                 message: 'Item added to cart successfully',
                 item
             });
-        });
+        } else {
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'Failed to add item to cart'
+            });
+        }
     } catch (error) {
         logger.error('Error adding item to cart', error);
         res.status(500).json({
@@ -231,56 +246,75 @@ router.put('/items/:itemId', isAuthenticated, isProfileComplete, validateCartIte
         const durationValue = duration_value || req.body.durationUnits || 1;
         const { itemId } = req.params;
         
-        await transaction(async (client) => {
-            // Get cart item with product
-            const itemResult = await client.query(
-                `SELECT ci.*, c.user_id, p.*
-                 FROM cart_items ci
-                 JOIN carts c ON c.id = ci.cart_id
-                 JOIN products p ON p.id = ci.product_id
-                 WHERE ci.id = $1`,
-                [itemId]
-            );
-            
-            if (itemResult.rows.length === 0) {
-                throw new Error('Cart item not found');
-            }
-            
-            const item = itemResult.rows[0];
-            
-            // Verify ownership
-            if (item.user_id !== req.user.id) {
-                throw new Error('Unauthorized');
-            }
-            
-            // Calculate new dates and pricing (check for existing subscription)
-            const { startDate, endDate, price } = await calculateCartItem(
-                item, 
-                durationUnit, 
-                durationValue, 
-                req.user.id, 
-                client
-            );
-            
-            // Update item
-            const result = await client.query(
-                `UPDATE cart_items 
-                 SET duration_unit = $1, duration_value = $2, start_date = $3, end_date = $4,
-                     price = $5, updated_at = NOW()
-                 WHERE id = $6
-                 RETURNING *`,
-                [durationUnit, durationValue, startDate, endDate, price, itemId]
-            );
-            
-            return result.rows[0];
-        }).then(item => {
+        // Get cart item with product (outside transaction)
+        const itemResult = await query(
+            `SELECT ci.*, c.user_id, p.*
+             FROM cart_items ci
+             JOIN carts c ON c.id = ci.cart_id
+             JOIN products p ON p.id = ci.product_id
+             WHERE ci.id = $1`,
+            [itemId]
+        );
+        
+        if (itemResult.rows.length === 0) {
+            return res.status(404).json({
+                error: 'Not Found',
+                message: 'Cart item not found'
+            });
+        }
+        
+        const item = itemResult.rows[0];
+        
+        // Verify ownership
+        if (item.user_id !== req.user.id) {
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'Unauthorized to update this item'
+            });
+        }
+        
+        // Calculate new dates and pricing (check for existing subscription) - outside transaction
+        const { startDate, endDate, price } = await calculateCartItem(
+            item, 
+            durationUnit, 
+            durationValue, 
+            req.user.id, 
+            { query: (text, params) => query(text, params) }
+        );
+        
+        // Calculate unit_price (price per unit - month or year)
+        const unitPrice = durationUnit === 'MONTH' 
+            ? parseFloat(item.price_per_month) 
+            : parseFloat(item.price_per_year);
+        
+        // subtotal is the same as price (total price)
+        const subtotal = price;
+        
+        // Update item
+        const result = await query(
+            `UPDATE cart_items 
+             SET duration_unit = $1, duration_value = $2, duration_type = $3, duration_units = $4,
+                 start_date = $5, end_date = $6, price = $7, unit_price = $8, subtotal = $9, updated_at = NOW()
+             WHERE id = $10
+             RETURNING *`,
+            [durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, itemId]
+        );
+        
+        const updatedItem = result.rows[0];
+        
+        if (updatedItem) {
             logger.info('Cart item updated', { userId: req.user.id, itemId });
             
             res.json({
                 message: 'Cart item updated successfully',
-                item
+                item: updatedItem
             });
-        });
+        } else {
+            return res.status(500).json({
+                error: 'Internal Server Error',
+                message: 'Failed to update cart item'
+            });
+        }
     } catch (error) {
         logger.error('Error updating cart item', error);
         res.status(500).json({

@@ -112,7 +112,7 @@ router.get('/oauth/google/callback',
                     try {
                         // Fetch user profile data for JWT token
                     const profileResult = await query(
-                        `SELECT up.profile_completed, up.full_name, u.is_admin
+                        `SELECT up.profile_completed, up.full_name, up.zerodha_client_id, u.is_admin
                          FROM user_profiles up
                          JOIN users u ON u.id = up.user_id
                          WHERE up.user_id = $1`,
@@ -131,7 +131,8 @@ router.get('/oauth/google/callback',
                         email: user.email,
                         full_name: profile?.full_name || '',
                         profile_completed: isProfileComplete,
-                        is_admin: user.is_admin || false
+                        is_admin: user.is_admin || false,
+                        zerodha_client_id: profile?.zerodha_client_id || null
                     };
                     
                     // Generate JWT token for user authentication

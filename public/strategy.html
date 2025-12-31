@@ -364,9 +364,9 @@
                 const data = await response.json();
                 
                 if (data.success && data.url) {
-                    // Redirect to child app with JWT token in URL
-                    console.log('Redirecting to child app:', data.url);
-                    window.location.href = data.url;
+                    // Open child app in new window with JWT token in URL
+                    console.log('Opening child app in new window:', data.url);
+                    window.open(data.url, '_blank', 'noopener,noreferrer');
                 } else {
                     throw new Error('Invalid response from server');
                 }

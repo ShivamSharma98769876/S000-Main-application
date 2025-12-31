@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { query, transaction } = require('../config/database');
+const { query } = require('../config/database');
 const { isAuthenticated, isProfileComplete } = require('../middleware/auth');
 const { validateOrder } = require('../middleware/validator');
 const logger = require('../config/logger');
@@ -46,70 +46,66 @@ router.post('/', isAuthenticated, isProfileComplete, validateOrder, async (req, 
     try {
         const { paymentReference, paymentDate } = req.body;
         
-        const order = await transaction(async (client) => {
-            // Get cart
-            const cartResult = await client.query(
-                'SELECT id FROM carts WHERE user_id = $1',
-                [req.user.id]
+        // Get cart
+        const cartResult = await query(
+            'SELECT id FROM carts WHERE user_id = $1',
+            [req.user.id]
+        );
+        
+        if (cartResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Cart not found' });
+        }
+        
+        const cartId = cartResult.rows[0].id;
+        
+        // Get cart items
+        const itemsResult = await query(
+            `SELECT ci.*, p.status
+             FROM cart_items ci
+             JOIN products p ON p.id = ci.product_id
+             WHERE ci.cart_id = $1`,
+            [cartId]
+        );
+        
+        if (itemsResult.rows.length === 0) {
+            return res.status(400).json({ error: 'Cart is empty' });
+        }
+        
+        // Validate all products are active
+        const inactiveProducts = itemsResult.rows.filter(item => item.status !== 'ACTIVE');
+        if (inactiveProducts.length > 0) {
+            return res.status(400).json({ error: 'Cart contains inactive products' });
+        }
+        
+        // Calculate total
+        const totalAmount = itemsResult.rows.reduce((sum, item) => sum + parseFloat(item.price), 0);
+        
+        // Create order
+        const orderResult = await query(
+            `INSERT INTO subscription_orders (user_id, status, total_amount, payment_reference, payment_date, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+             RETURNING *`,
+            [req.user.id, 'PENDING', totalAmount, paymentReference || null, paymentDate || null]
+        );
+        
+        const order = orderResult.rows[0];
+        
+        // Copy cart items to order items
+        for (const item of itemsResult.rows) {
+            const unitPrice = parseFloat(item.price) / item.duration_value;
+            const subtotal = parseFloat(item.price);
+            
+            await query(
+                `INSERT INTO subscription_order_items (order_id, product_id, duration_unit, duration_value, 
+                                                      start_date, end_date, unit_price, subtotal)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [order.id, item.product_id, item.duration_unit, item.duration_value, 
+                 item.start_date, item.end_date, unitPrice, subtotal]
             );
-            
-            if (cartResult.rows.length === 0) {
-                throw new Error('Cart not found');
-            }
-            
-            const cartId = cartResult.rows[0].id;
-            
-            // Get cart items
-            const itemsResult = await client.query(
-                `SELECT ci.*, p.status
-                 FROM cart_items ci
-                 JOIN products p ON p.id = ci.product_id
-                 WHERE ci.cart_id = $1`,
-                [cartId]
-            );
-            
-            if (itemsResult.rows.length === 0) {
-                throw new Error('Cart is empty');
-            }
-            
-            // Validate all products are active
-            const inactiveProducts = itemsResult.rows.filter(item => item.status !== 'ACTIVE');
-            if (inactiveProducts.length > 0) {
-                throw new Error('Cart contains inactive products');
-            }
-            
-            // Calculate total
-            const totalAmount = itemsResult.rows.reduce((sum, item) => sum + parseFloat(item.price), 0);
-            
-            // Create order
-            const orderResult = await client.query(
-                `INSERT INTO subscription_orders (user_id, status, total_amount, payment_reference, payment_date, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-                 RETURNING *`,
-                [req.user.id, 'PENDING', totalAmount, paymentReference || null, paymentDate || null]
-            );
-            
-            const order = orderResult.rows[0];
-            
-            // Copy cart items to order items
-            for (const item of itemsResult.rows) {
-                const unitPrice = parseFloat(item.price) / item.duration_value;
-                const subtotal = parseFloat(item.price);
-                
-                await client.query(
-                    `INSERT INTO subscription_order_items (order_id, product_id, duration_unit, duration_value, 
-                                                          start_date, end_date, unit_price, subtotal)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                    [order.id, item.product_id, item.duration_unit, item.duration_value, 
-                     item.start_date, item.end_date, unitPrice, subtotal]
-                );
-            }
-            
-            // Clear cart
-            await client.query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
-            
-            return order;
-        });
+        }
+        
+        // Clear cart
+        await query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
         
         logger.info('Order created', { userId: req.user.id, orderId: order.id });
         

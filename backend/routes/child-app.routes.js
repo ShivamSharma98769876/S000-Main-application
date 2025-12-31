@@ -1,11 +1,59 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const jwtService = require('../services/jwt.service');
 const { isAuthenticated } = require('../middleware/auth');
 const logger = require('../config/logger');
 const { query } = require('../config/database');
 const { childAppRateLimiter } = require('../middleware/rateLimiter');
 const { csrfProtection } = require('../middleware/csrf');
+
+// Helper function to get CHILD_APP_URL
+// Priority: 1. process.env.CHILD_APP_URL (for Azure/cloud deployments)
+//          2. backend/.env file (for local development)
+function getChildAppUrl() {
+    // First, check if CHILD_APP_URL is set as an environment variable (Azure/cloud)
+    if (process.env.CHILD_APP_URL) {
+        const url = process.env.CHILD_APP_URL.trim();
+        logger.info('Using CHILD_APP_URL from environment variable', { url });
+        // Remove quotes if present
+        return url.replace(/^["']|["']$/g, '');
+    }
+    
+    // Fallback to reading from backend/.env file (local development)
+    const envPath = path.join(__dirname, '..', '.env');
+    
+    if (!fs.existsSync(envPath)) {
+        logger.error('backend/.env file does not exist and CHILD_APP_URL not set in environment');
+        throw new Error('CHILD_APP_URL is not configured. Please set CHILD_APP_URL as an environment variable or in backend/.env file');
+    }
+    
+    try {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const match = envContent.match(/^CHILD_APP_URL=(.+)$/m);
+        if (match && match[1]) {
+            const url = match[1].trim();
+            // Remove quotes if present
+            const cleanUrl = url.replace(/^["']|["']$/g, '');
+            // Skip commented lines
+            if (!cleanUrl.startsWith('#')) {
+                logger.info('Using CHILD_APP_URL from .env file', { url: cleanUrl });
+                return cleanUrl;
+            }
+        }
+        
+        // CHILD_APP_URL not found in .env file
+        logger.error('CHILD_APP_URL is not defined in backend/.env file or as environment variable');
+        throw new Error('CHILD_APP_URL is not configured. Please set CHILD_APP_URL as an environment variable (for Azure) or in backend/.env file (for local)');
+    } catch (error) {
+        if (error.message.includes('CHILD_APP_URL is not configured')) {
+            throw error;
+        }
+        logger.error('Failed to read CHILD_APP_URL from backend/.env file', { error: error.message });
+        throw new Error(`Failed to read CHILD_APP_URL from backend/.env file: ${error.message}`);
+    }
+}
 
 /**
  * GET /api/v1/child-app/test-session-id
@@ -36,7 +84,7 @@ router.get('/generate-token', isAuthenticated, childAppRateLimiter, async (req, 
 
         // Fetch fresh user data
         const userResult = await query(
-            `SELECT u.id, u.email, up.full_name, up.profile_completed
+            `SELECT u.id, u.email, up.full_name, up.profile_completed, up.zerodha_client_id
              FROM users u
              LEFT JOIN user_profiles up ON u.id = up.user_id
              WHERE u.id = $1`,
@@ -71,7 +119,7 @@ router.get('/generate-token', isAuthenticated, childAppRateLimiter, async (req, 
             success: true,
             token,
             expiresIn: process.env.JWT_EXPIRY || '10m',
-            child_app_url: process.env.CHILD_APP_URL
+            child_app_url: getChildAppUrl()
         });
 
     } catch (error) {
@@ -89,18 +137,26 @@ router.post('/launch', isAuthenticated, csrfProtection, async (req, res) => {
         const user = req.user;
         const { return_url } = req.body;
 
-        // Generate token
-        const userData = {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            profile_completed: user.profile_completed
-        };
+        // Fetch fresh user data including zerodha_client_id
+        const userResult = await query(
+            `SELECT u.id, u.email, up.full_name, up.profile_completed, up.zerodha_client_id
+             FROM users u
+             LEFT JOIN user_profiles up ON u.id = up.user_id
+             WHERE u.id = $1`,
+            [user.id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const userData = userResult.rows[0];
 
         const token = jwtService.generateToken(userData, req.sessionID);
 
         // Build child app URL with token
-        const childAppUrl = new URL(process.env.CHILD_APP_URL);
+        const childAppUrlValue = getChildAppUrl();
+        const childAppUrl = new URL(childAppUrlValue);
         childAppUrl.searchParams.append('sso_token', token);
         
         if (return_url) {
@@ -109,7 +165,7 @@ router.post('/launch', isAuthenticated, csrfProtection, async (req, res) => {
 
         logger.info('Child app launch initiated', {
             user_id: user.id,
-            child_app: process.env.CHILD_APP_URL
+            child_app: childAppUrlValue
         });
 
         res.json({
@@ -208,7 +264,8 @@ router.post('/verify-token', async (req, res) => {
                 full_name: decoded.full_name || '',
                 profile_completed: decoded.profile_completed || false,
                 is_admin: decoded.is_admin || false,
-                session_id: decoded.session_id || null
+                session_id: decoded.session_id || null,
+                zerodha_client_id: decoded.zerodha_client_id || null
             }
         });
 
@@ -246,7 +303,7 @@ router.get('/get-url', async (req, res) => {
         }
 
         // Build child app URL with token
-        const childAppUrl = process.env.CHILD_APP_URL || 'https://a001-strangle-ckb5h2a9cqcaamhb.southindia-01.azurewebsites.net';
+        const childAppUrl = getChildAppUrl();
         const url = new URL(childAppUrl);
         url.searchParams.append('sso_token', token);
 

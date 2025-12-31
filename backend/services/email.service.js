@@ -1,9 +1,12 @@
 const nodemailer = require('nodemailer');
 const logger = require('../config/logger');
 
+// Check if SMTP is configured
+const isSmtpConfigured = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD;
+
 // Create email transporter
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
+    host: process.env.SMTP_HOST || 'localhost',
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === 'true',
     auth: {
@@ -17,17 +20,38 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Verify transporter connection
-transporter.verify((error, success) => {
-    if (error) {
-        logger.error('Email transporter verification failed', error);
-    } else {
-        logger.info('Email transporter is ready');
-    }
-});
+// Verify transporter connection only if SMTP is configured
+if (isSmtpConfigured) {
+    transporter.verify((error, success) => {
+        if (error) {
+            // In development, log as warning; in production, log as error
+            if (process.env.NODE_ENV === 'development') {
+                logger.warn('Email transporter verification failed - emails may not work', {
+                    message: error.message,
+                    code: error.code,
+                    hint: 'Configure SMTP settings in .env file to enable email functionality'
+                });
+            } else {
+                logger.error('Email transporter verification failed', error);
+            }
+        } else {
+            logger.info('Email transporter is ready');
+        }
+    });
+} else {
+    logger.warn('SMTP not configured - email functionality will be disabled', {
+        hint: 'Set SMTP_HOST, SMTP_USER, and SMTP_PASSWORD in .env to enable emails'
+    });
+}
 
 // Send email helper
 async function sendEmail(to, subject, html) {
+    // Skip sending if SMTP is not configured
+    if (!isSmtpConfigured) {
+        logger.warn('Email sending skipped - SMTP not configured', { to, subject });
+        return { messageId: 'skipped-no-smtp', accepted: [to] };
+    }
+
     try {
         const info = await transporter.sendMail({
             from: `"TradingPro" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,

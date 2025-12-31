@@ -63,10 +63,10 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                             <h2 style="margin: 0;">My Subscriptions</h2>
                             <div style="display: flex; gap: 0.5rem;">
-                                <button id="view-grid-btn" class="view-toggle-btn active" onclick="toggleView('grid')" title="Grid View">
+                                <button id="view-grid-btn" class="view-toggle-btn active" data-view="grid" title="Grid View">
                                     <span>⊞</span>
                                 </button>
-                                <button id="view-table-btn" class="view-toggle-btn" onclick="toggleView('table')" title="Table View">
+                                <button id="view-table-btn" class="view-toggle-btn" data-view="table" title="Table View">
                                     <span>☰</span>
                                 </button>
                             </div>
@@ -92,7 +92,7 @@
                             <a href="products.html" class="btn btn--primary btn--full">Browse Products</a>
                             <a href="cart.html" class="btn btn--secondary btn--full">View Cart</a>
                             <a href="testimonials.html" class="btn btn--secondary btn--full">⭐ Submit Testimonial</a>
-                            <button onclick="viewProfile()" class="btn btn--outline btn--full">My Profile</button>
+                            <button id="view-profile-btn" class="btn btn--outline btn--full">My Profile</button>
                         </div>
                     </div>
                 </div>
@@ -330,8 +330,9 @@
                                     
                                     ${sub.status === 'ACTIVE' ? `
                                         <button 
-                                            class="btn btn-primary" 
-                                            onclick="executeStrategy(${sub.id}, '${sub.product_name.replace(/'/g, "\\'")}')"
+                                            class="btn btn-primary execute-strategy-btn" 
+                                            data-subscription-id="${sub.id}"
+                                            data-product-name="${sub.product_name.replace(/"/g, '&quot;')}"
                                             style="width: 100%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; padding: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: var(--radius-sm); cursor: pointer;">
                                             <span>🚀</span> Execute Strategy
                                         </button>
@@ -389,8 +390,9 @@
                                             <td>
                                                 ${sub.status === 'ACTIVE' ? `
                                                     <button 
-                                                        class="btn btn-primary" 
-                                                        onclick="executeStrategy(${sub.id}, '${sub.product_name.replace(/'/g, "\\'")}')"
+                                                        class="btn btn-primary execute-strategy-btn" 
+                                                        data-subscription-id="${sub.id}"
+                                                        data-product-name="${sub.product_name.replace(/"/g, '&quot;')}"
                                                         style="padding: 0.5rem 1rem; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border: none; font-weight: 600; border-radius: var(--radius-sm); cursor: pointer; font-size: 0.9rem;">
                                                         🚀 Execute
                                                     </button>
@@ -489,9 +491,9 @@
                 const data = await response.json();
                 
                 if (data.success && data.url) {
-                    // Redirect to child app with JWT token in URL
-                    console.log('Redirecting to child app:', data.url);
-                    window.location.href = data.url;
+                    // Open child app in new window with JWT token in URL
+                    console.log('Opening child app in new window:', data.url);
+                    window.open(data.url, '_blank', 'noopener,noreferrer');
                 } else {
                     throw new Error('Invalid response from server');
                 }
@@ -544,6 +546,35 @@
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
             window.location.href = 'index.html';
+        });
+
+        // View toggle buttons
+        document.getElementById('view-grid-btn').addEventListener('click', () => {
+            toggleView('grid');
+        });
+
+        document.getElementById('view-table-btn').addEventListener('click', () => {
+            toggleView('table');
+        });
+
+        // View profile button
+        const viewProfileBtn = document.getElementById('view-profile-btn');
+        if (viewProfileBtn) {
+            viewProfileBtn.addEventListener('click', () => {
+                viewProfile();
+            });
+        }
+
+        // Event delegation for dynamically created Execute Strategy buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.execute-strategy-btn')) {
+                const button = e.target.closest('.execute-strategy-btn');
+                const subscriptionId = parseInt(button.getAttribute('data-subscription-id'));
+                const productName = button.getAttribute('data-product-name');
+                if (subscriptionId && productName) {
+                    executeStrategy(subscriptionId, productName);
+                }
+            }
         });
 
         loadDashboard();

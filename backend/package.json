@@ -13,6 +13,8 @@
     "db:migrate:email-queue": "node scripts/migrate-email-queue.js",
     "db:migrate:monitoring": "node scripts/migrate-monitoring.js",
     "db:migrate:sqlite": "node scripts/migrate-sqlite-schema.js",
+    "db:fix:cart-items": "node scripts/fix-cart-items-columns.js",
+    "db:update:upcoming-to-active": "node scripts/update-upcoming-to-active.js",
     "db:export:postgres": "node scripts/export-postgres-data.js",
     "db:import:sqlite": "node scripts/import-sqlite-data.js",
     "db:verify:sqlite": "node scripts/verify-sqlite-migration.js",

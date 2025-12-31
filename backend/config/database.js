@@ -200,8 +200,54 @@ const query = async (text, params = []) => {
                 command: 'INSERT',
                 lastInsertRowid: result.lastInsertRowid
             };
+        } else if (queryType === 'UPDATE') {
+            // UPDATE - SQLite doesn't support RETURNING, so we need to handle it differently
+            const result = sanitizedParams.length > 0 ? stmt.run(sanitizedParams) : stmt.run();
+            const duration = Date.now() - start;
+            
+            // If the original query had RETURNING, fetch the updated row
+            let rows = [];
+            if (text.toUpperCase().includes('RETURNING') && result.changes > 0) {
+                // Extract table name from UPDATE statement
+                const tableMatch = sqliteQuery.match(/UPDATE\s+(\w+)/i);
+                if (tableMatch) {
+                    const tableName = tableMatch[1];
+                    // Try to find WHERE id = ? pattern
+                    const whereIdMatch = sqliteQuery.match(/WHERE\s+id\s*=\s*\?/i);
+                    if (whereIdMatch && sanitizedParams.length > 0) {
+                        // Find the position of the ? in WHERE id = ?
+                        const whereIndex = sqliteQuery.indexOf('WHERE');
+                        const afterWhere = sqliteQuery.substring(whereIndex);
+                        // Count ? placeholders before the WHERE clause
+                        const beforeWhere = sqliteQuery.substring(0, whereIndex);
+                        const paramCountBeforeWhere = (beforeWhere.match(/\?/g) || []).length;
+                        // The ID parameter is at the index corresponding to the ? in WHERE id = ?
+                        // Since WHERE id = ? comes after all SET parameters, use the last parameter
+                        const idParam = sanitizedParams[sanitizedParams.length - 1];
+                        if (idParam !== undefined) {
+                            try {
+                                const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
+                                const updatedRow = selectStmt.get(idParam);
+                                if (updatedRow) {
+                                    rows = [updatedRow];
+                                }
+                            } catch (selectError) {
+                                logger.warn('Failed to fetch updated row', { error: selectError.message });
+                            }
+                        }
+                    }
+                }
+            }
+            
+            logger.debug('Executed query', { text: sqliteQuery, duration, changes: result.changes });
+            return {
+                rows,
+                rowCount: result.changes,
+                command: 'UPDATE',
+                lastInsertRowid: result.lastInsertRowid
+            };
         } else {
-            // UPDATE, DELETE
+            // DELETE
             const result = sanitizedParams.length > 0 ? stmt.run(sanitizedParams) : stmt.run();
             const duration = Date.now() - start;
             logger.debug('Executed query', { text: sqliteQuery, duration, changes: result.changes });
@@ -225,16 +271,82 @@ const transaction = async (callback) => {
         const mockClient = {
             query: (text, params = []) => {
                 let sqliteQuery = text;
-                if (params && params.length > 0) {
-                    sqliteQuery = text.replace(/\$(\d+)/g, '?');
+                
+                // Sanitize parameters
+                const sanitizedParams = sanitizeParams(params);
+                
+                // Replace PostgreSQL parameterized queries ($1, $2) with SQLite (?)
+                if (sanitizedParams && sanitizedParams.length > 0) {
+                    sqliteQuery = sqliteQuery.replace(/\$(\d+)/g, '?');
                 }
+                
+                // Replace PostgreSQL functions with SQLite equivalents
+                sqliteQuery = sqliteQuery.replace(/\bNOW\s*\(\s*\)/gi, "(datetime('now'))");
+                
                 const stmt = db.prepare(sqliteQuery);
                 
                 if (sqliteQuery.trim().toUpperCase().startsWith('SELECT')) {
-                    const rows = params.length > 0 ? stmt.all(params) : stmt.all();
+                    const rows = sanitizedParams.length > 0 ? stmt.all(sanitizedParams) : stmt.all();
                     return { rows, rowCount: rows.length };
+                } else if (sqliteQuery.trim().toUpperCase().startsWith('INSERT')) {
+                    // INSERT - handle RETURNING clause
+                    const result = sanitizedParams.length > 0 ? stmt.run(sanitizedParams) : stmt.run();
+                    
+                    // If the original query had RETURNING, fetch the inserted row
+                    let rows = [];
+                    if (text.toUpperCase().includes('RETURNING') && result.lastInsertRowid) {
+                        const tableMatch = sqliteQuery.match(/INSERT\s+INTO\s+(\w+)/i);
+                        if (tableMatch) {
+                            const tableName = tableMatch[1];
+                            const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
+                            const insertedRow = selectStmt.get(result.lastInsertRowid);
+                            if (insertedRow) {
+                                rows = [insertedRow];
+                            }
+                        }
+                    }
+                    
+                    return {
+                        rows,
+                        rowCount: result.changes,
+                        lastInsertRowid: result.lastInsertRowid
+                    };
+                } else if (sqliteQuery.trim().toUpperCase().startsWith('UPDATE')) {
+                    // UPDATE - handle RETURNING clause
+                    const result = sanitizedParams.length > 0 ? stmt.run(sanitizedParams) : stmt.run();
+                    
+                    // If the original query had RETURNING, fetch the updated row
+                    let rows = [];
+                    if (text.toUpperCase().includes('RETURNING') && result.changes > 0) {
+                        const tableMatch = sqliteQuery.match(/UPDATE\s+(\w+)/i);
+                        if (tableMatch) {
+                            const tableName = tableMatch[1];
+                            const whereIdMatch = sqliteQuery.match(/WHERE\s+id\s*=\s*\?/i);
+                            if (whereIdMatch && sanitizedParams.length > 0) {
+                                const idParam = sanitizedParams[sanitizedParams.length - 1];
+                                if (idParam !== undefined) {
+                                    try {
+                                        const selectStmt = db.prepare(`SELECT * FROM ${tableName} WHERE id = ?`);
+                                        const updatedRow = selectStmt.get(idParam);
+                                        if (updatedRow) {
+                                            rows = [updatedRow];
+                                        }
+                                    } catch (selectError) {
+                                        // Silently fail - row might not exist
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    return {
+                        rows,
+                        rowCount: result.changes,
+                        lastInsertRowid: result.lastInsertRowid
+                    };
                 } else {
-                    const result = params.length > 0 ? stmt.run(params) : stmt.run();
+                    // DELETE
+                    const result = sanitizedParams.length > 0 ? stmt.run(sanitizedParams) : stmt.run();
                     return {
                         rows: [],
                         rowCount: result.changes,

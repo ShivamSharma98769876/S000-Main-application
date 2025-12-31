@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { query, transaction } = require('../config/database');
+const { query } = require('../config/database');
 const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validator');
 const logger = require('../config/logger');
@@ -104,58 +104,56 @@ router.post('/orders/:orderId/approve', isAuthenticated, isAdmin, async (req, re
     try {
         const { orderId } = req.params;
         
-        await transaction(async (client) => {
-            // Get order
-            const orderResult = await client.query(
-                'SELECT * FROM subscription_orders WHERE id = $1',
-                [orderId]
-            );
+        // Get order
+        const orderResult = await query(
+            'SELECT * FROM subscription_orders WHERE id = $1',
+            [orderId]
+        );
+        
+        if (orderResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        
+        const order = orderResult.rows[0];
+        
+        if (order.status !== 'PENDING') {
+            return res.status(400).json({ error: 'Only pending orders can be approved' });
+        }
+        
+        // Get order items
+        const itemsResult = await query(
+            'SELECT * FROM subscription_order_items WHERE order_id = $1',
+            [orderId]
+        );
+        
+        // Create subscriptions for each item
+        for (const item of itemsResult.rows) {
+            // Determine subscription status based on dates
+            // When order is approved, set to ACTIVE immediately (unless already expired)
+            const endDate = new Date(item.end_date);
+            const now = new Date();
             
-            if (orderResult.rows.length === 0) {
-                throw new Error('Order not found');
+            let status;
+            if (now > endDate) {
+                status = 'EXPIRED';
+            } else {
+                // Set to ACTIVE when approved, regardless of start_date
+                // This allows customers to use the subscription immediately after approval
+                status = 'ACTIVE';
             }
             
-            const order = orderResult.rows[0];
-            
-            if (order.status !== 'PENDING') {
-                throw new Error('Only pending orders can be approved');
-            }
-            
-            // Get order items
-            const itemsResult = await client.query(
-                'SELECT * FROM subscription_order_items WHERE order_id = $1',
-                [orderId]
+            await query(
+                `INSERT INTO subscriptions (user_id, product_id, start_date, end_date, status, order_id, auto_renew, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, false, datetime('now'), datetime('now'))`,
+                [order.user_id, item.product_id, item.start_date, item.end_date, status, orderId]
             );
-            
-            // Create subscriptions for each item
-            for (const item of itemsResult.rows) {
-                // Determine subscription status based on dates
-                const startDate = new Date(item.start_date);
-                const endDate = new Date(item.end_date);
-                const now = new Date();
-                
-                let status;
-                if (now < startDate) {
-                    status = 'UPCOMING';
-                } else if (now > endDate) {
-                    status = 'EXPIRED';
-                } else {
-                    status = 'ACTIVE';
-                }
-                
-                await client.query(
-                    `INSERT INTO subscriptions (user_id, product_id, start_date, end_date, status, order_id, auto_renew, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, false, NOW(), NOW())`,
-                    [order.user_id, item.product_id, item.start_date, item.end_date, status, orderId]
-                );
-            }
-            
-            // Update order status
-            await client.query(
-                'UPDATE subscription_orders SET status = $1, updated_at = NOW() WHERE id = $2',
-                ['APPROVED', orderId]
-            );
-        });
+        }
+        
+        // Update order status
+        await query(
+            'UPDATE subscription_orders SET status = $1, updated_at = NOW() WHERE id = $2',
+            ['APPROVED', orderId]
+        );
         
         logger.info('Order approved', { orderId, adminId: req.user.id });
         

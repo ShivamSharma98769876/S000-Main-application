@@ -7,7 +7,16 @@ const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const passport = require('passport');
 const path = require('path');
-require('dotenv').config();
+const fs = require('fs');
+
+// Load environment variables from 'env' file (not '.env')
+const envPath = path.join(__dirname, 'env');
+if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+} else {
+    // Fallback to default .env if env file doesn't exist
+    require('dotenv').config();
+}
 
 const { pool } = require('./config/database');
 const logger = require('./config/logger');
@@ -71,7 +80,6 @@ const corsOptions = {
             'http://localhost:3000',
             process.env.FRONTEND_URL,
             process.env.CHILD_APP_ALLOWED_ORIGINS,
-            'https://a001-strangle-ckb5h2a9cqcaamhb.southindia-01.azurewebsites.net',
             'https://*.southindia-01.azurewebsites.net' // Allow all Azure subdomains in this region
         ].filter(Boolean);
 
@@ -288,40 +296,59 @@ app.use((err, req, res, next) => {
 // Catch unhandled errors
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
+    console.error('Stack:', error.stack);
     logger.error('Uncaught Exception', error);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    console.error('❌ Unhandled Rejection at:', promise);
+    console.error('Reason:', reason);
+    if (reason && reason.stack) {
+        console.error('Stack:', reason.stack);
+    }
     logger.error('Unhandled Rejection', { reason, promise });
+    // Don't exit on unhandled rejection in development to see the error
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
 });
 
 // Start server
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV} mode`);
-    console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
-    console.log(`📊 API Base URL: http://127.0.0.1:${PORT}/api/v1`);
-    console.log(`🔍 Health check: http://127.0.0.1:${PORT}/health`);
-});
-
-server.on('error', (error) => {
-    console.error('❌ Server Error:', error);
-    logger.error('Server Error', error);
-    process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM signal received: closing HTTP server');
-    server.close(() => {
-        logger.info('HTTP server closed');
-        pool.end(() => {
-            logger.info('Database pool closed');
-            process.exit(0);
+try {
+    const server = app.listen(PORT, '0.0.0.0', () => {
+        logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV} mode`);
+        console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
+        console.log(`📊 API Base URL: http://127.0.0.1:${PORT}/api/v1`);
+        console.log(`🔍 Health check: http://127.0.0.1:${PORT}/health`);
+    });
+    
+    server.on('error', (error) => {
+        console.error('❌ Server Error:', error);
+        logger.error('Server Error', error);
+        process.exit(1);
+    });
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        logger.info('SIGTERM signal received: closing HTTP server');
+        server.close(() => {
+            logger.info('HTTP server closed');
+            if (pool && typeof pool.end === 'function') {
+                pool.end(() => {
+                    logger.info('Database pool closed');
+                    process.exit(0);
+                });
+            } else {
+                process.exit(0);
+            }
         });
     });
-});
+} catch (error) {
+    console.error('❌ Failed to start server:', error);
+    logger.error('Failed to start server', error);
+    process.exit(1);
+}
 
 

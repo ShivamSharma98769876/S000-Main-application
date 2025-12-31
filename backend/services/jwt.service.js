@@ -37,7 +37,8 @@ class JWTService {
                 user_id: user.id,
                 email: user.email,
                 full_name: user.full_name || '',
-                profile_completed: user.profile_completed || false
+                profile_completed: user.profile_completed || false,
+                zerodha_client_id: user.zerodha_client_id || null
             };
 
             const token = jwt.sign(payload, this.privateKey, {
@@ -119,7 +120,8 @@ class JWTService {
                 user_id: decoded.user_id,
                 email: decoded.email,
                 full_name: decoded.full_name,
-                profile_completed: decoded.profile_completed
+                profile_completed: decoded.profile_completed,
+                zerodha_client_id: decoded.zerodha_client_id || null
             };
 
             const newToken = jwt.sign(newPayload, this.privateKey, {
@@ -164,7 +166,8 @@ class JWTService {
                 email: user.email,
                 full_name: user.full_name || '',
                 profile_completed: user.profile_completed || false,
-                is_admin: user.is_admin || false
+                is_admin: user.is_admin || false,
+                zerodha_client_id: user.zerodha_client_id || null
             };
 
             // Use same keys but different issuer/audience for user auth tokens
