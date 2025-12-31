@@ -1,0 +1,59 @@
+# Azure Deployment Ignore File
+# This file tells Azure what files/directories to exclude during deployment
+
+# Database files - should NEVER be deployed
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Data directories - will be created on server
+data/
+backend/data/
+**/data/
+
+# Logs
+logs/
+*.log
+**/logs/
+
+# Environment files
+.env
+.env.local
+.env.production
+**/.env*
+
+# Node modules (installed on server)
+node_modules/
+**/node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+coverage/
+**/dist/
+**/build/
+**/coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+**/tmp/
+**/temp/
+

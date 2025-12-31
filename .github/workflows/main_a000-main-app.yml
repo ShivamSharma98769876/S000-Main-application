@@ -58,18 +58,30 @@ jobs:
           # Exclude database files and data directory from deployment
           mkdir -p deploy-package
           
+          # First, explicitly remove any database files from backend directory (in case they exist)
+          echo "Cleaning up any database files from backend directory..."
+          find backend -type f \( -name "*.db" -o -name "*.db-shm" -o -name "*.db-wal" -o -name "*.sqlite" -o -name "*.sqlite3" \) -delete 2>/dev/null || true
+          find backend -type d -name "data" -exec rm -rf {} + 2>/dev/null || true
+          
           # Copy all files from backend, excluding database files and data directories
           cd backend
           find . -type f ! -path "*/node_modules/*" ! -path "*/.git/*" \
                 ! -name "*.db" ! -name "*.db-shm" ! -name "*.db-wal" \
                 ! -name "*.sqlite" ! -name "*.sqlite3" \
                 ! -path "*/data/*" ! -path "./data/*" \
+                ! -path "*/logs/*" ! -name "*.log" \
                 -exec sh -c 'mkdir -p "../deploy-package/$(dirname "$1")" && cp "$1" "../deploy-package/$1"' _ {} \;
           
-          # Copy hidden files (but exclude .git, .env, etc.)
+          # Copy hidden files (but exclude .git, .env, database files, etc.)
           find . -maxdepth 1 -name ".*" ! -name ".git" ! -name ".env*" ! -name ".DS_Store" \
+                ! -name "*.db" ! -name "*.db-shm" ! -name "*.db-wal" \
                 -exec sh -c 'cp -r "$1" "../deploy-package/"' _ {} \; 2>/dev/null || true
           cd ..
+          
+          # Explicitly remove any database files that might have been copied
+          echo "Removing any database files from deployment package..."
+          find deploy-package -type f \( -name "*.db" -o -name "*.db-shm" -o -name "*.db-wal" -o -name "*.sqlite" -o -name "*.sqlite3" \) -delete 2>/dev/null || true
+          find deploy-package -type d -name "data" -exec rm -rf {} + 2>/dev/null || true
           
           # Verify package.json is at root
           if [ ! -f "deploy-package/package.json" ]; then
@@ -83,10 +95,19 @@ jobs:
           
           # Verify database files are excluded
           if find deploy-package -name "*.db" -o -name "*.sqlite*" 2>/dev/null | grep -q .; then
-            echo "WARNING: Database files found in deployment package!"
+            echo "ERROR: Database files found in deployment package! Removing..."
             find deploy-package -name "*.db" -o -name "*.sqlite*" 2>/dev/null
+            find deploy-package -type f \( -name "*.db" -o -name "*.db-shm" -o -name "*.db-wal" -o -name "*.sqlite" -o -name "*.sqlite3" \) -delete
+            echo "Database files removed"
           else
             echo "✓ Verified: No database files in deployment package"
+          fi
+          
+          # Verify no data directory
+          if [ -d "deploy-package/data" ]; then
+            echo "WARNING: data directory found in deployment package! Removing..."
+            rm -rf deploy-package/data
+            echo "data directory removed"
           fi
       
       - name: Upload artifact for deployment jobs
@@ -112,6 +133,21 @@ jobs:
         with:
           name: node-app
           path: .
+      
+      - name: Clean up database files from deployment package
+        run: |
+          echo "Cleaning up any database files from deployment package..."
+          # Remove any database files that might have been included
+          find . -type f \( -name "*.db" -o -name "*.db-shm" -o -name "*.db-wal" -o -name "*.sqlite" -o -name "*.sqlite3" \) -delete 2>/dev/null || true
+          # Remove data directories
+          find . -type d -name "data" -exec rm -rf {} + 2>/dev/null || true
+          # Verify cleanup
+          if find . -name "*.db" -o -name "*.sqlite*" 2>/dev/null | grep -q .; then
+            echo "WARNING: Some database files still exist after cleanup"
+            find . -name "*.db" -o -name "*.sqlite*" 2>/dev/null
+          else
+            echo "✓ Verified: No database files in deployment package"
+          fi
       
       - name: Verify deployment package
         run: |
@@ -165,6 +201,26 @@ jobs:
           # Remove any Python-related files that might confuse Oryx
           echo "Checking for Python files that might confuse Oryx:"
           find . -name "requirements.txt" -o -name "*.py" 2>/dev/null | head -5 || echo "No Python files found (good!)"
+      
+      - name: Create .deploymentignore in package
+        run: |
+          # Create .deploymentignore file to tell Azure to exclude database files
+          cat > .deploymentignore << 'EOF'
+          # Exclude database files from Azure deployment
+          *.db
+          *.db-shm
+          *.db-wal
+          *.sqlite
+          *.sqlite3
+          data/
+          **/data/
+          logs/
+          *.log
+          .env*
+          node_modules/
+          EOF
+          echo "✓ Created .deploymentignore file"
+          cat .deploymentignore
       
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
