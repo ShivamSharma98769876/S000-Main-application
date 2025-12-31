@@ -128,6 +128,31 @@ jobs:
           echo "Backend directory structure:"
           ls -la backend/ | head -10
       
+      - name: Create Oryx configuration for Node.js
+        run: |
+          # Create .oryx file to explicitly specify Node.js (prevents Python detection)
+          echo "PLATFORM_NAME=nodejs" > backend/.oryx
+          echo "PLATFORM_VERSION=18" >> backend/.oryx
+          echo "✓ Created .oryx configuration file"
+          cat backend/.oryx
+          
+          # Also create oryx-manifest.toml
+          cat > backend/oryx-manifest.toml << EOF
+          # Oryx build manifest - explicitly specify Node.js
+          [build]
+          platform = "nodejs"
+          platform_version = "18"
+          EOF
+          echo "✓ Created oryx-manifest.toml"
+          
+          # Verify package.json is present and valid
+          echo "Verifying package.json:"
+          cat backend/package.json | head -10
+          
+          # Remove any Python-related files that might confuse Oryx
+          echo "Checking for Python files that might confuse Oryx:"
+          find backend -name "requirements.txt" -o -name "*.py" 2>/dev/null | head -5 || echo "No Python files found (good!)"
+      
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
@@ -136,3 +161,4 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BCCDD66C2B2240B2B334EBFDA892DF8F }}
           package: './backend'
+          type: zip

@@ -1,0 +1,7 @@
+# Oryx build manifest
+# This file tells Azure Oryx build engine to use Node.js
+
+[build]
+platform = "nodejs"
+platform_version = "18"
+

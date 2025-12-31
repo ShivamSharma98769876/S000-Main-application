@@ -1,0 +1,5 @@
+# Oryx build configuration
+# Explicitly tell Oryx this is a Node.js application
+PLATFORM_NAME=nodejs
+PLATFORM_VERSION=18
+
