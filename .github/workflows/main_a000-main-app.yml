@@ -23,11 +23,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18.x'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
 
       # 🛠️ Local Build Section (Optional)
       # The following section in your workflow is designed to catch build issues early on the client side, before deployment. This can be helpful for debugging and validation. However, if this step significantly increases deployment time and early detection is not critical for your workflow, you may remove this section to streamline the deployment process.
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         working-directory: ./backend
         run: |
