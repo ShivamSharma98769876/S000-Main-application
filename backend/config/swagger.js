@@ -18,12 +18,10 @@ const options = {
         },
         servers: [
             {
-                url: 'http://127.0.0.1:3000',
-                description: 'Development server'
-            },
-            {
-                url: 'https://api.tradingpro.com',
-                description: 'Production server'
+                url: process.env.NODE_ENV === 'production' 
+                    ? (process.env.API_BASE_URL || `https://${process.env.WEBSITE_SITE_NAME || 'your-app'}.azurewebsites.net`)
+                    : `http://localhost:${process.env.PORT || 3000}`,
+                description: process.env.NODE_ENV === 'production' ? 'Production server' : 'Development server'
             }
         ],
         components: {

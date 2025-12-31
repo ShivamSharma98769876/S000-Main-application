@@ -323,12 +323,44 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
+
+// Determine the base URL for logging (use environment variable or detect from request)
+const getBaseUrl = () => {
+    // In production/cloud, use the actual hostname from environment or Azure
+    if (process.env.NODE_ENV === 'production') {
+        // Azure App Service provides WEBSITE_HOSTNAME
+        if (process.env.WEBSITE_HOSTNAME) {
+            const protocol = process.env.WEBSITE_HOSTNAME.includes('localhost') ? 'http' : 'https';
+            return `${protocol}://${process.env.WEBSITE_HOSTNAME}`;
+        }
+        // Fallback to custom environment variable
+        if (process.env.API_BASE_URL) {
+            return process.env.API_BASE_URL;
+        }
+        // Use PORT if available (Azure sets this)
+        return `https://${process.env.WEBSITE_SITE_NAME || 'your-app'}.azurewebsites.net`;
+    }
+    // Development: use localhost
+    return `http://localhost:${PORT}`;
+};
+
+const baseUrl = getBaseUrl();
+
 try {
     const server = app.listen(PORT, '0.0.0.0', () => {
         logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV} mode`);
-        console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
-        console.log(`📊 API Base URL: http://127.0.0.1:${PORT}/api/v1`);
-        console.log(`🔍 Health check: http://127.0.0.1:${PORT}/health`);
+        
+        if (process.env.NODE_ENV === 'production') {
+            // Cloud/production: show actual URLs
+            console.log(`🚀 Server running on port ${PORT}`);
+            console.log(`📊 API Base URL: ${baseUrl}/api/v1`);
+            console.log(`🔍 Health check: ${baseUrl}/health`);
+        } else {
+            // Development: show localhost URLs
+            console.log(`🚀 Server running at http://localhost:${PORT}`);
+            console.log(`📊 API Base URL: http://localhost:${PORT}/api/v1`);
+            console.log(`🔍 Health check: http://localhost:${PORT}/health`);
+        }
     });
     
     server.on('error', (error) => {
