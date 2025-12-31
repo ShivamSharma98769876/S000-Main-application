@@ -238,7 +238,41 @@ require('./config/passport');
 const publicDir = process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME
     ? path.join(__dirname, 'public')  // Azure: same directory
     : path.join(__dirname, '../public');  // Local: one level up
-app.use(express.static(publicDir));
+
+// Log the public directory path for debugging
+logger.info('Static files directory', { 
+    path: publicDir, 
+    exists: fs.existsSync(publicDir),
+    isAzure: !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME),
+    files: fs.existsSync(publicDir) ? fs.readdirSync(publicDir).slice(0, 10) : []
+});
+
+// Explicit root route handler to serve index.html (before static middleware)
+app.get('/', (req, res) => {
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        logger.debug('Serving index.html from root route', { path: indexPath });
+        res.sendFile(indexPath);
+    } else {
+        logger.warn('index.html not found', { path: indexPath, publicDir, cwd: process.cwd(), __dirname });
+        res.status(404).json({
+            error: 'Not Found',
+            message: 'Landing page not found. Please ensure public/index.html exists.',
+            debug: {
+                publicDir,
+                indexPath,
+                exists: fs.existsSync(publicDir),
+                cwd: process.cwd()
+            }
+        });
+    }
+});
+
+// Serve static files (this will handle other static assets)
+app.use(express.static(publicDir, {
+    index: false,  // Don't auto-serve index.html, we handle it explicitly above
+    extensions: ['html', 'htm', 'css', 'js', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico']
+}));
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
