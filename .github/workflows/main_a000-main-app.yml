@@ -78,6 +78,15 @@ jobs:
                 -exec sh -c 'cp -r "$1" "../deploy-package/"' _ {} \; 2>/dev/null || true
           cd ..
           
+          # Copy public directory (frontend static files) to deploy-package
+          echo "Copying public directory..."
+          if [ -d "public" ]; then
+            cp -r public deploy-package/public
+            echo "✓ Public directory copied"
+          else
+            echo "WARNING: public directory not found!"
+          fi
+          
           # Explicitly remove any database files that might have been copied
           echo "Removing any database files from deployment package..."
           find deploy-package -type f \( -name "*.db" -o -name "*.db-shm" -o -name "*.db-wal" -o -name "*.sqlite" -o -name "*.sqlite3" \) -delete 2>/dev/null || true

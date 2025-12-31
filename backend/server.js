@@ -233,7 +233,12 @@ require('./config/passport');
 // Serve static files from public directory (frontend)
 // IMPORTANT: This is AFTER session middleware to ensure cookies work properly
 // This ensures frontend and backend are on same origin, fixing cookie issues
-app.use(express.static(path.join(__dirname, '../public')));
+// On Azure: public/ is in the same directory as server.js
+// Locally: public/ is one level up from backend/
+const publicDir = process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME
+    ? path.join(__dirname, 'public')  // Azure: same directory
+    : path.join(__dirname, '../public');  // Local: one level up
+app.use(express.static(publicDir));
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
@@ -314,11 +319,22 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 404 handler
+// 404 handler - catch all unmatched routes
 app.use((req, res) => {
+    // Log the 404 for debugging
+    logger.warn('404 Not Found', {
+        method: req.method,
+        url: req.originalUrl,
+        path: req.path,
+        query: req.query,
+        ip: req.ip
+    });
+    
     res.status(404).json({ 
         error: 'Not Found',
-        message: 'The requested resource does not exist'
+        message: 'The requested resource does not exist',
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
