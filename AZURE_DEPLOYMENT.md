@@ -8,15 +8,16 @@ This is a **Node.js application**, not Python. The dependency management files a
 
 ### Important: Package.json Location
 
-The `package.json` file is located in the `backend/` directory:
+The `package.json` file is located in the **`backend/`** directory:
 ```
-backend/package.json
+C:\Users\SharmaS8\OneDrive - Unisys\Shivam Imp Documents-2024 June\PythonProgram\S000-Main-application\S000-Main-application\backend\package.json
 ```
 
-The GitHub Actions workflow automatically:
-1. Builds from `backend/package.json`
-2. Restructures the deployment so `package.json` is at the root when deployed to Azure
-3. Ensures Azure can find and use `package.json` for dependency installation
+The deployment configuration is set up to:
+- ✅ Deploy the `backend/` folder to Azure
+- ✅ Use `backend/package.json` for dependency installation
+- ✅ Run `npm install` from the backend directory
+- ✅ Start the application using `backend/server.js`
 
 ## Files for Azure Deployment
 
