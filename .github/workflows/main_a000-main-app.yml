@@ -40,16 +40,40 @@ jobs:
           npm ci
                 
       # By default, when you enable GitHub CI/CD integration through the Azure portal, the platform automatically sets the SCM_DO_BUILD_DURING_DEPLOYMENT application setting to true. This triggers the use of Oryx, a build engine that handles application compilation and dependency installation (e.g., npm install) directly on the platform during deployment. Hence, we exclude the node_modules directory from the deployment artifact to reduce the payload size. 
+      - name: Prepare deployment package
+        working-directory: ./backend
+        run: |
+          # Ensure package.json and package-lock.json exist
+          if [ ! -f package.json ]; then
+            echo "ERROR: package.json not found in backend directory!"
+            exit 1
+          fi
+          echo "✓ package.json verified"
+          ls -la package.json package-lock.json 2>/dev/null || echo "Note: package-lock.json may not exist"
+      
+      - name: Prepare deployment artifact
+        run: |
+          # Create a temporary directory with backend contents at root
+          # This ensures Azure gets package.json at the root level
+          mkdir -p deploy-package
+          cp -r backend/* deploy-package/ 2>/dev/null || true
+          cp backend/.* deploy-package/ 2>/dev/null || true
+          
+          # Verify package.json is at root
+          if [ ! -f "deploy-package/package.json" ]; then
+            echo "ERROR: Failed to copy package.json to deploy-package/"
+            exit 1
+          fi
+          
+          echo "✓ Deployment package prepared"
+          ls -la deploy-package/ | head -15
+      
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: |
-            backend/
-            !backend/node_modules/
-            !backend/logs/
-            !backend/uploads/
-            !backend/data/
+          path: deploy-package/
+          retention-days: 1
 
       # 🚫 Opting Out of Oryx Build
       # If you prefer to disable the Oryx build process during deployment, follow these steps:
@@ -68,76 +92,44 @@ jobs:
           name: node-app
           path: .
       
-      - name: Verify and prepare package.json
+      - name: Verify deployment package
         run: |
           # Check current directory structure after artifact download
           echo "Current directory: $(pwd)"
           echo "Directory contents:"
           ls -la
           echo ""
-          echo "Searching for package.json in directory tree..."
           
-          # Find package.json anywhere in the directory
-          PKG_JSON=$(find . -name "package.json" -type f 2>/dev/null | head -1)
-          
-          if [ -z "$PKG_JSON" ]; then
-            echo "ERROR: package.json not found anywhere!"
-            echo "Full directory tree:"
-            find . -type f -name "*.json" 2>/dev/null | head -20
+          # The artifact should have package.json at root (from deploy-package/)
+          if [ -f "package.json" ]; then
+            echo "✓ Found package.json at root (expected)"
+            echo "Package.json contents (name field):"
+            cat package.json | grep -A 2 '"name"'
+          else
+            echo "ERROR: package.json not found at root!"
+            echo "Searching for package.json:"
+            find . -name "package.json" -type f 2>/dev/null
             exit 1
           fi
           
-          echo "✓ Found package.json at: $PKG_JSON"
-          echo "Package.json contents (name field):"
-          cat "$PKG_JSON" | grep -A 2 '"name"'
-          
-          # Ensure backend/ directory structure exists with package.json
-          if [[ "$PKG_JSON" != "./backend/package.json" ]] && [[ "$PKG_JSON" != "backend/package.json" ]]; then
-            echo "Note: package.json found at $PKG_JSON, ensuring backend/ structure..."
-            mkdir -p backend
-            
-            # If package.json is in root, we need to check artifact structure
-            # The artifact should have extracted backend/ folder, but let's verify
-            if [ -f "package.json" ] && [ ! -f "backend/package.json" ]; then
-              echo "Artifact structure issue: package.json in root instead of backend/"
-              echo "This suggests the artifact was uploaded incorrectly."
-              echo "Checking if we can find backend files..."
-              if [ -f "server.js" ] || [ -d "routes" ]; then
-                echo "Backend files found in root, creating backend structure..."
-                mkdir -p backend
-                [ -f "package.json" ] && mv package.json backend/ 2>/dev/null || true
-                [ -f "package-lock.json" ] && mv package-lock.json backend/ 2>/dev/null || true
-                [ -f "server.js" ] && mv server.js backend/ 2>/dev/null || true
-                [ -d "routes" ] && mv routes backend/ 2>/dev/null || true
-                [ -d "config" ] && mv config backend/ 2>/dev/null || true
-                [ -d "middleware" ] && mv middleware backend/ 2>/dev/null || true
-                [ -d "services" ] && mv services backend/ 2>/dev/null || true
-              fi
-            fi
-          fi
-          
-          # Final verification - package.json must be in backend/
-          if [ ! -f "backend/package.json" ]; then
-            echo "ERROR: backend/package.json not found after preparation!"
-            echo "Current directory structure:"
-            find . -type f -name "package.json" 2>/dev/null
-            exit 1
-          fi
-          
-          echo "✓ Verified: backend/package.json exists"
-          echo "Backend directory structure:"
-          ls -la backend/ | head -10
+          # Verify other key files
+          echo ""
+          echo "Key files verification:"
+          [ -f "server.js" ] && echo "✓ server.js" || echo "✗ server.js missing"
+          [ -f ".oryx" ] && echo "✓ .oryx" || echo "✗ .oryx missing"
+          [ -d "routes" ] && echo "✓ routes/" || echo "✗ routes/ missing"
+          [ -d "config" ] && echo "✓ config/" || echo "✗ config/ missing"
       
       - name: Create Oryx configuration for Node.js
         run: |
           # Create .oryx file to explicitly specify Node.js (prevents Python detection)
-          echo "PLATFORM_NAME=nodejs" > backend/.oryx
-          echo "PLATFORM_VERSION=18" >> backend/.oryx
+          echo "PLATFORM_NAME=nodejs" > .oryx
+          echo "PLATFORM_VERSION=18" >> .oryx
           echo "✓ Created .oryx configuration file"
-          cat backend/.oryx
+          cat .oryx
           
           # Also create oryx-manifest.toml
-          cat > backend/oryx-manifest.toml << EOF
+          cat > oryx-manifest.toml << EOF
           # Oryx build manifest - explicitly specify Node.js
           [build]
           platform = "nodejs"
@@ -147,11 +139,11 @@ jobs:
           
           # Verify package.json is present and valid
           echo "Verifying package.json:"
-          cat backend/package.json | head -10
+          cat package.json | head -10
           
           # Remove any Python-related files that might confuse Oryx
           echo "Checking for Python files that might confuse Oryx:"
-          find backend -name "requirements.txt" -o -name "*.py" 2>/dev/null | head -5 || echo "No Python files found (good!)"
+          find . -name "requirements.txt" -o -name "*.py" 2>/dev/null | head -5 || echo "No Python files found (good!)"
       
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -160,5 +152,4 @@ jobs:
           app-name: 'A000-Main-App'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_BCCDD66C2B2240B2B334EBFDA892DF8F }}
-          package: './backend'
-          type: zip
+          package: '.'
