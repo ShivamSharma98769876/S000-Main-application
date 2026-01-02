@@ -345,11 +345,12 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'tru
     }
 }
 
-// Health check endpoint
+// Simple health check endpoint (for Azure startup probe - must respond quickly)
 app.get('/health', (req, res) => {
-    res.json({ 
+    res.status(200).json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
+        uptime: process.uptime()
         uptime: process.uptime()
     });
 });
@@ -445,51 +446,71 @@ const getBaseUrl = () => {
 
 const baseUrl = getBaseUrl();
 
-// Wrap everything in try-catch to catch initialization errors
-try {
-    // Test database connection before starting server
-    pool.query('SELECT 1')
-        .then(() => {
-            logger.info('Database connection verified');
-            startServer();
-        })
-        .catch((err) => {
-            console.error('❌ Database connection failed:', err.message);
-            const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
-            logger.error('Database connection failed', {
-                message: err.message,
-                code: err.code,
-                isAzure,
-                hasDatabaseUrl: !!process.env.DATABASE_URL,
-                hasDbHost: !!process.env.DB_HOST,
-                hasDbUser: !!process.env.DB_USER,
-                hasDbPassword: !!process.env.DB_PASSWORD
-            });
-            
-            // Provide helpful error message for Azure
-            if (isAzure) {
-                console.error('\n⚠️  Azure Deployment Detected');
-                console.error('Please set database configuration in Azure Portal:');
-                console.error('  1. Go to Azure Portal → Your App Service → Configuration');
-                console.error('  2. Add Application Settings:');
-                console.error('     - DATABASE_URL (recommended) OR');
-                console.error('     - DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
-                console.error('  3. Save and restart the app');
-                console.error('\nCurrent environment variables:');
-                console.error(`  DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
-                console.error(`  DB_HOST: ${process.env.DB_HOST || 'NOT SET'}`);
-                console.error(`  DB_NAME: ${process.env.DB_NAME || 'NOT SET'}`);
-                console.error(`  DB_USER: ${process.env.DB_USER || 'NOT SET'}`);
-                console.error(`  DB_PASSWORD: ${process.env.DB_PASSWORD ? 'SET' : 'NOT SET'}`);
-            }
-            
-            process.exit(1);
+// Start server immediately (don't wait for database connection)
+// This ensures health checks work even if database is temporarily unavailable
+// Database connection will be tested asynchronously
+startServer();
+
+// Test database connection asynchronously (don't block server startup)
+pool.query('SELECT 1')
+    .then(() => {
+        logger.info('Database connection verified');
+    })
+    .catch((err) => {
+        console.error('⚠️  Database connection failed:', err.message);
+        const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
+        logger.error('Database connection failed', {
+            message: err.message,
+            code: err.code,
+            isAzure,
+            hasDatabaseUrl: !!process.env.DATABASE_URL,
+            hasDbHost: !!process.env.DB_HOST,
+            hasDbUser: !!process.env.DB_USER,
+            hasDbPassword: !!process.env.DB_PASSWORD,
+            websiteSiteName: process.env.WEBSITE_SITE_NAME,
+            websiteHostname: process.env.WEBSITE_HOSTNAME
         });
-} catch (error) {
-    console.error('❌ Failed to initialize server:', error);
-    logger.error('Failed to initialize server', error);
-    process.exit(1);
-}
+        
+        // Provide helpful error message for Azure (but don't exit)
+        if (isAzure) {
+            console.error('\n⚠️  Azure Deployment Detected - Database Connection Failed');
+            console.error('═══════════════════════════════════════════════════════════');
+            console.error('Please set database configuration in Azure Portal:');
+            console.error('  1. Go to Azure Portal → Your App Service → Configuration');
+            console.error('  2. Click "Application settings" tab');
+            console.error('  3. Add Application Settings:');
+            console.error('     - DATABASE_URL (recommended) OR');
+            console.error('     - DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
+            console.error('  4. Click "Save" at the top');
+            console.error('  5. Wait for app to restart');
+            console.error('═══════════════════════════════════════════════════════════');
+            console.error('\nCurrent environment variables:');
+            console.error(`  DATABASE_URL: ${process.env.DATABASE_URL ? 'SET (length: ' + process.env.DATABASE_URL.length + ')' : 'NOT SET'}`);
+            console.error(`  DB_HOST: ${process.env.DB_HOST || 'NOT SET'}`);
+            console.error(`  DB_PORT: ${process.env.DB_PORT || 'NOT SET'}`);
+            console.error(`  DB_NAME: ${process.env.DB_NAME || 'NOT SET'}`);
+            console.error(`  DB_USER: ${process.env.DB_USER || 'NOT SET'}`);
+            console.error(`  DB_PASSWORD: ${process.env.DB_PASSWORD ? 'SET (length: ' + process.env.DB_PASSWORD.length + ')' : 'NOT SET'}`);
+            console.error(`\nError Details:`);
+            console.error(`  Code: ${err.code || 'N/A'}`);
+            console.error(`  Message: ${err.message}`);
+            if (err.code === 'ECONNREFUSED') {
+                console.error(`\n💡 This means the database host is not reachable.`);
+                console.error(`   Check: DB_HOST or DATABASE_URL hostname is correct`);
+            } else if (err.code === '28P01') {
+                console.error(`\n💡 Authentication failed.`);
+                console.error(`   Check: DB_USER and DB_PASSWORD are correct`);
+            } else if (err.code === 'ENOTFOUND') {
+                console.error(`\n💡 Database host not found.`);
+                console.error(`   Check: DB_HOST hostname is correct`);
+            }
+            console.error('\n📋 View full logs in Azure Portal → Log stream');
+            console.error('⚠️  Server is running but database is not connected.');
+            console.error('   Health check will show database as disconnected.');
+        }
+        
+        // Don't exit - let server start and show database as disconnected in health check
+    });
 
 function startServer() {
     try {
