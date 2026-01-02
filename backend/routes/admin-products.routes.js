@@ -14,8 +14,30 @@ const validateProduct = [
     body('price_per_year').isFloat({ min: 0 }).withMessage('Yearly price must be a positive number'),
     body('features').optional().isJSON().withMessage('Features must be valid JSON'),
     body('status').optional().isIn(['ACTIVE', 'INACTIVE']).withMessage('Status must be ACTIVE or INACTIVE'),
-    body('child_app_url_local').optional().isURL().withMessage('Child app URL (Local) must be a valid URL').trim(),
-    body('child_app_url_cloud').optional().isURL().withMessage('Child app URL (Cloud) must be a valid URL').trim()
+    body('child_app_url_local')
+        .optional({ values: 'falsy' })
+        .trim()
+        .custom((value) => {
+            if (!value || value === '') return true; // Allow empty
+            try {
+                new URL(value); // Validate URL format
+                return true;
+            } catch {
+                throw new Error('Child app URL (Local) must be a valid URL');
+            }
+        }),
+    body('child_app_url_cloud')
+        .optional({ values: 'falsy' })
+        .trim()
+        .custom((value) => {
+            if (!value || value === '') return true; // Allow empty
+            try {
+                new URL(value); // Validate URL format
+                return true;
+            } catch {
+                throw new Error('Child app URL (Cloud) must be a valid URL');
+            }
+        })
 ];
 
 // GET all products (admin view - includes inactive)

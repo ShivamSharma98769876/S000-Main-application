@@ -3,25 +3,42 @@
 const path = require('path');
 const fs = require('fs');
 
-// Try multiple possible locations for .env file
-const envPaths = [
-    path.join(__dirname, '../env'),      // backend/env
-    path.join(__dirname, '../.env'),     // backend/.env
-    path.join(__dirname, '../../.env'),  // root/.env
-];
+// Try to load dotenv if available (optional - not needed in Azure where env vars are set directly)
+try {
+    // Try multiple possible locations for .env file
+    const envPaths = [
+        path.join(__dirname, '../env'),      // backend/env
+        path.join(__dirname, '../.env'),     // backend/.env
+        path.join(__dirname, '../../.env'),  // root/.env
+    ];
 
-let envLoaded = false;
-for (const envPath of envPaths) {
-    if (fs.existsSync(envPath)) {
-        require('dotenv').config({ path: envPath });
-        envLoaded = true;
-        break;
+    let envLoaded = false;
+    for (const envPath of envPaths) {
+        if (fs.existsSync(envPath)) {
+            try {
+                require('dotenv').config({ path: envPath });
+                envLoaded = true;
+                console.log(`Loaded environment from: ${envPath}`);
+                break;
+            } catch (err) {
+                // dotenv not available, continue
+            }
+        }
     }
-}
 
-// Fallback to default dotenv behavior
-if (!envLoaded) {
-    require('dotenv').config();
+    // Fallback to default dotenv behavior (only if dotenv is available)
+    if (!envLoaded) {
+        try {
+            require('dotenv').config();
+        } catch (err) {
+            // dotenv not available, that's okay - environment variables may be set directly
+            console.log('Note: dotenv not available, using environment variables directly');
+        }
+    }
+} catch (error) {
+    // dotenv not installed or not available - that's fine for Azure deployments
+    // Environment variables are typically set directly in Azure
+    console.log('Note: dotenv not available, using environment variables directly');
 }
 
 const { pool } = require('../config/database');
