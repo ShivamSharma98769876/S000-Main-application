@@ -9,18 +9,52 @@ class JWTService {
         try {
             // Try to load keys from environment variables first (for cloud deployments)
             if (process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
-                this.privateKey = process.env.JWT_PRIVATE_KEY;
-                this.publicKey = process.env.JWT_PUBLIC_KEY;
+                this.privateKey = process.env.JWT_PRIVATE_KEY.trim();
+                this.publicKey = process.env.JWT_PUBLIC_KEY.trim();
                 
-                // Validate key format
-                if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
-                    throw new Error('JWT_PRIVATE_KEY is not in valid PEM format. It must include -----BEGIN and -----END markers.');
-                }
-                if (!this.publicKey.includes('BEGIN') || !this.publicKey.includes('PUBLIC KEY')) {
-                    throw new Error('JWT_PUBLIC_KEY is not in valid PEM format. It must include -----BEGIN and -----END markers.');
+                // Validate private key format
+                const hasBeginPrivate = this.privateKey.includes('BEGIN') && this.privateKey.includes('PRIVATE KEY');
+                const hasEndPrivate = this.privateKey.includes('END PRIVATE KEY') || this.privateKey.includes('END RSA PRIVATE KEY');
+                
+                if (!hasBeginPrivate || !hasEndPrivate) {
+                    logger.error('JWT_PRIVATE_KEY validation failed', {
+                        hasBegin: this.privateKey.includes('BEGIN'),
+                        hasPrivateKey: this.privateKey.includes('PRIVATE KEY'),
+                        hasEnd: this.privateKey.includes('END'),
+                        keyLength: this.privateKey.length,
+                        firstChars: this.privateKey.substring(0, 50),
+                        lastChars: this.privateKey.substring(this.privateKey.length - 50)
+                    });
+                    throw new Error('JWT_PRIVATE_KEY is not in valid PEM format. It must be an RSA private key in PEM format with -----BEGIN PRIVATE KEY----- and -----END PRIVATE KEY----- markers. Current value appears to be a symmetric secret. Please generate RSA keys using: node backend/scripts/generate-keys.js');
                 }
                 
-                logger.info('JWT Service initialized from environment variables');
+                // Validate public key format
+                const hasBeginPublic = this.publicKey.includes('BEGIN') && this.publicKey.includes('PUBLIC KEY');
+                const hasEndPublic = this.publicKey.includes('END PUBLIC KEY');
+                
+                if (!hasBeginPublic || !hasEndPublic) {
+                    logger.error('JWT_PUBLIC_KEY validation failed', {
+                        hasBegin: this.publicKey.includes('BEGIN'),
+                        hasPublicKey: this.publicKey.includes('PUBLIC KEY'),
+                        hasEnd: this.publicKey.includes('END'),
+                        keyLength: this.publicKey.length
+                    });
+                    throw new Error('JWT_PUBLIC_KEY is not in valid PEM format. It must include -----BEGIN PUBLIC KEY----- and -----END PUBLIC KEY----- markers.');
+                }
+                
+                // Check if key is too short (likely a symmetric secret)
+                if (this.privateKey.length < 1000) {
+                    logger.error('JWT_PRIVATE_KEY appears too short', {
+                        keyLength: this.privateKey.length,
+                        expectedMinLength: 1000
+                    });
+                    throw new Error(`JWT_PRIVATE_KEY appears to be too short (${this.privateKey.length} chars). RSA private keys are typically 1600+ characters. You may have set a symmetric secret instead. Please generate RSA keys using: node backend/scripts/generate-keys.js`);
+                }
+                
+                logger.info('JWT Service initialized from environment variables', {
+                    privateKeyLength: this.privateKey.length,
+                    publicKeyLength: this.publicKey.length
+                });
             } else {
                 // Fallback to file system (for local development)
                 const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH 
@@ -195,11 +229,36 @@ class JWTService {
         try {
             // Validate private key before signing
             if (!this.privateKey || typeof this.privateKey !== 'string') {
-                throw new Error('JWT private key is not set or invalid');
+                logger.error('JWT private key validation failed', {
+                    hasPrivateKey: !!this.privateKey,
+                    type: typeof this.privateKey,
+                    length: this.privateKey ? this.privateKey.length : 0
+                });
+                throw new Error('JWT private key is not set or invalid. Please set JWT_PRIVATE_KEY in Azure Portal with a valid RSA private key.');
             }
             
-            if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
-                throw new Error('JWT private key is not in valid PEM format. It must be an RSA private key in PEM format with -----BEGIN and -----END markers. Please set JWT_PRIVATE_KEY in Azure Portal.');
+            // Check if it's a PEM format key
+            const isPEMFormat = this.privateKey.includes('BEGIN') && this.privateKey.includes('PRIVATE KEY');
+            const isPKCS8Format = this.privateKey.includes('BEGIN PRIVATE KEY');
+            const isPKCS1Format = this.privateKey.includes('BEGIN RSA PRIVATE KEY');
+            
+            if (!isPEMFormat && !isPKCS8Format && !isPKCS1Format) {
+                logger.error('JWT private key is not in valid PEM format', {
+                    keyLength: this.privateKey.length,
+                    firstChars: this.privateKey.substring(0, 50),
+                    hasBegin: this.privateKey.includes('BEGIN'),
+                    hasPrivateKey: this.privateKey.includes('PRIVATE KEY'),
+                    hasRSA: this.privateKey.includes('RSA')
+                });
+                throw new Error('JWT private key is not in valid PEM format. It must be an RSA private key in PEM format with -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- markers. Current key appears to be a symmetric secret. Please generate RSA keys using: node backend/scripts/generate-keys.js and set JWT_PRIVATE_KEY in Azure Portal.');
+            }
+            
+            // Try to validate it's actually an RSA key by checking the structure
+            if (this.privateKey.length < 100) {
+                logger.error('JWT private key appears too short to be a valid RSA key', {
+                    keyLength: this.privateKey.length
+                });
+                throw new Error('JWT private key appears to be too short. RSA private keys are typically 1600+ characters. Please ensure you copied the entire key including all lines.');
             }
 
             const payload = {
