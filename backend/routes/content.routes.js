@@ -10,7 +10,8 @@ const logger = require('../config/logger');
 // Configure multer for QR code uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = process.env.UPLOAD_DIR || './uploads';
+        // Use absolute path to ensure consistency with server.js static file serving
+        const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -301,17 +302,17 @@ router.delete('/admin/offers/:id', isAuthenticated, isAdmin, async (req, res) =>
 router.get('/admin/testimonials', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const { status } = req.query;
-        let query = 'SELECT t.*, u.email as user_email FROM testimonials t LEFT JOIN users u ON t.user_id = u.id';
+        let sqlQuery = 'SELECT t.*, u.email as user_email FROM testimonials t LEFT JOIN users u ON t.user_id = u.id';
         const params = [];
         
         if (status) {
-            query += ' WHERE t.status = $1';
+            sqlQuery += ' WHERE t.status = $1';
             params.push(status);
         }
         
-        query += ' ORDER BY CASE WHEN t.status = \'PENDING\' THEN 0 ELSE 1 END, t.display_order, t.created_at DESC';
+        sqlQuery += ' ORDER BY CASE WHEN t.status = \'PENDING\' THEN 0 ELSE 1 END, t.display_order, t.created_at DESC';
         
-        const result = await query(query, params);
+        const result = await query(sqlQuery, params);
         
         res.json({ testimonials: result.rows });
     } catch (error) {

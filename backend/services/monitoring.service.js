@@ -121,7 +121,32 @@ class MonitoringService {
                 [perfData.operation, perfData.duration, JSON.stringify(perfData.metadata)]
             );
         } catch (error) {
-            // Silent fail for performance metrics
+            // Handle duplicate key errors by fixing sequence
+            if (error.code === '23505' && error.message.includes('performance_metrics_pkey')) {
+                logger.warn('Performance metrics sequence out of sync, attempting to fix...');
+                try {
+                    // Get current max ID and reset sequence
+                    const maxIdResult = await query(`
+                        SELECT COALESCE(MAX(id), 0) as max_id 
+                        FROM performance_metrics
+                    `);
+                    const maxId = parseInt(maxIdResult.rows[0].max_id) || 0;
+                    await query(`SELECT setval('performance_metrics_id_seq', $1, false)`, [maxId + 1]);
+                    logger.info('Performance metrics sequence fixed');
+                    
+                    // Retry the insert
+                    await query(
+                        `INSERT INTO performance_metrics (operation, duration, metadata, created_at)
+                         VALUES ($1, $2, $3, NOW())`,
+                        [perfData.operation, perfData.duration, JSON.stringify(perfData.metadata)]
+                    );
+                } catch (fixError) {
+                    logger.error('Failed to fix performance metrics sequence', fixError);
+                }
+            } else {
+                // Silent fail for other errors (performance metrics are non-critical)
+                logger.debug('Failed to save performance metric', { error: error.message });
+            }
         }
     }
 

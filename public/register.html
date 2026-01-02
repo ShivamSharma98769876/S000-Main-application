@@ -151,84 +151,191 @@
 
         // Get JWT token from localStorage or URL
         function getAuthToken() {
-            // Check URL for token (from OAuth redirect)
+            // Check URL for JWT token (from OAuth redirect)
+            // Support both 'jwt' (new) and 'token' (legacy) parameter names
             const urlParams = new URLSearchParams(window.location.search);
-            const tokenFromUrl = urlParams.get('token');
+            const jwtTokenFromUrl = urlParams.get('jwt') || urlParams.get('token'); // Support both for backward compatibility
             
-            if (tokenFromUrl) {
-                console.log('=== TOKEN FOUND IN URL ===');
-                console.log('Token length:', tokenFromUrl.length);
-                console.log('Token preview:', tokenFromUrl.substring(0, 50) + '...');
+            if (jwtTokenFromUrl) {
+                console.log('=== JWT TOKEN FOUND IN URL ===');
+                console.log('JWT Token length:', jwtTokenFromUrl.length);
+                console.log('JWT Token preview:', jwtTokenFromUrl.substring(0, 50) + '...');
                 
-                // Store token in localStorage
-                localStorage.setItem('authToken', tokenFromUrl);
-                console.log('Token stored in localStorage');
+                // Store JWT token in localStorage (using 'authToken' key for backward compatibility)
+                localStorage.setItem('authToken', jwtTokenFromUrl);
+                console.log('JWT Token stored in localStorage');
                 
-                // Remove token from URL
+                // Remove JWT token from URL
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
-                console.log('Token removed from URL');
+                console.log('JWT Token removed from URL');
                 
-                return tokenFromUrl;
+                return jwtTokenFromUrl;
             }
             
-            // Get token from localStorage
-            const storedToken = localStorage.getItem('authToken');
-            if (storedToken) {
-                console.log('Token retrieved from localStorage');
+            // Get JWT token from localStorage
+            const storedJwtToken = localStorage.getItem('authToken');
+            if (storedJwtToken) {
+                console.log('JWT Token retrieved from localStorage');
             } else {
-                console.log('No token found in URL or localStorage');
+                console.log('No JWT token found in URL or localStorage');
             }
             
-            return storedToken;
+            return storedJwtToken;
         }
 
-        // Get authorization headers
+        // Get authorization headers with JWT token
         function getAuthHeaders() {
-            const token = getAuthToken();
+            const jwtToken = getAuthToken();
             const headers = {
                 'Content-Type': 'application/json'
             };
             
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
+            if (jwtToken) {
+                headers['Authorization'] = `Bearer ${jwtToken}`;
             }
             
             return headers;
         }
 
-        // Check if user is authenticated
+        // Show error message on page
+        function showError(message, details = null) {
+            // Remove any existing error messages
+            const existingError = document.getElementById('auth-error-message');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'auth-error-message';
+            errorDiv.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; background: #fee; color: #c33; padding: 20px; border-radius: 8px; border: 2px solid #fcc; max-width: 600px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: system-ui, -apple-system, sans-serif;';
+            
+            errorDiv.innerHTML = `
+                <h3 style="margin: 0 0 10px 0; color: #c33;">⚠️ Authentication Error</h3>
+                <p style="margin: 0 0 10px 0;"><strong>${message}</strong></p>
+                ${details ? `<pre style="background: #fff; padding: 10px; border-radius: 4px; overflow: auto; max-height: 200px; font-size: 12px; margin: 10px 0;">${JSON.stringify(details, null, 2)}</pre>` : ''}
+                <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">Redirecting to login page...</p>
+            `;
+            
+            // Ensure document.body exists before appending
+            if (document.body) {
+                document.body.appendChild(errorDiv);
+            } else {
+                // If body doesn't exist yet, wait for DOM to load
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.body.appendChild(errorDiv);
+                });
+            }
+        }
+
+        // Check if user is authenticated with JWT token
         async function checkAuth() {
-            const token = getAuthToken();
-            if (!token) {
+            console.log('=== CHECKING AUTHENTICATION ===');
+            const jwtToken = getAuthToken();
+            console.log('JWT Token available:', !!jwtToken);
+            
+            if (!jwtToken) {
+                console.error('❌ No JWT token found');
+                showError('No JWT token found in URL or localStorage. Please log in again.', {
+                    url: window.location.href,
+                    hasTokenInUrl: window.location.search.includes('jwt') || window.location.search.includes('token'),
+                    localStorageHasToken: !!localStorage.getItem('authToken')
+                });
+                
+                console.log('Redirecting to login page');
                 window.location.href = 'login.html';
                 return;
             }
 
             try {
+                console.log('Fetching user data from /auth/me with JWT token');
+                console.log('API Base URL:', API_BASE_URL);
+                console.log('Request URL:', `${API_BASE_URL}/auth/me`);
+                
                 const response = await fetch(`${API_BASE_URL}/auth/me`, {
                     method: 'GET',
                     headers: getAuthHeaders()
                 });
                 
+                console.log('Auth response status:', response.status);
+                console.log('Auth response ok:', response.ok);
+                console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                
                 if (!response.ok) {
+                    let errorData = {};
+                    try {
+                        errorData = await response.json();
+                    } catch (e) {
+                        errorData = { message: await response.text() };
+                    }
+                    
+                    console.error('❌ Auth check failed:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorData,
+                        responseHeaders: Object.fromEntries(response.headers.entries())
+                    });
+                    
                     if (response.status === 401) {
+                        const errorMessage = errorData.message || 'JWT token invalid or expired';
+                        console.error('❌ 401 Unauthorized:', errorMessage);
+                        showError(errorMessage, {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorData,
+                            jwtTokenLength: jwtToken.length,
+                            jwtTokenPreview: jwtToken.substring(0, 50) + '...'
+                        });
+                        
                         localStorage.removeItem('authToken');
+                        
+                        console.log('Redirecting to login page');
                         window.location.href = 'login.html';
                         return;
                     }
-                    throw new Error('Failed to verify authentication');
+                    
+                    showError(`Authentication failed: ${response.status} ${response.statusText}`, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorData
+                    });
+                    
+                    console.log('Redirecting to login page');
+                    window.location.href = 'login.html';
+                    return;
                 }
                 
                 const data = await response.json();
+                console.log('✅ Auth successful:', {
+                    userId: data.user?.id,
+                    email: data.user?.email,
+                    profileCompleted: data.profile?.profile_completed,
+                    isProfileComplete: data.isProfileComplete,
+                    hasProfile: !!data.profile,
+                    fullResponse: data
+                });
                 
                 // If profile is already complete, redirect to dashboard
-                if (data.isProfileComplete) {
+                // Check both property names for compatibility
+                if (data.isProfileComplete === true || data.profileCompleted === true) {
+                    console.log('Profile already complete, redirecting to dashboard');
                     window.location.href = 'dashboard.html';
+                    return;
                 }
+                
+                console.log('✅ Profile incomplete, staying on registration page');
             } catch (error) {
-                console.error('Auth check failed:', error);
+                console.error('❌ Auth check exception:', error);
+                console.error('Error stack:', error.stack);
+                showError('Authentication check failed with exception', {
+                    error: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
+                
                 localStorage.removeItem('authToken');
+                
+                console.log('Redirecting to login page');
                 window.location.href = 'login.html';
             }
         }
@@ -299,10 +406,7 @@
                 hasError = true;
             }
             
-            if (!/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/.test(formData.phone)) {
-                showError('phone', 'Invalid phone number format');
-                hasError = true;
-            }
+            // Phone number format validation removed - any format is accepted
             
             if (formData.capitalUsed < 0) {
                 showError('capitalUsed', 'Capital must be a positive number');

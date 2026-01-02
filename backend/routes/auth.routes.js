@@ -25,25 +25,82 @@ const getFrontendUrl = () => {
     }
     
     // Fallback to localhost for development
-    return 'http://localhost:8000';
+    // Use the same port as the backend (3000) since frontend is served from backend
+    return 'http://localhost:3000';
 };
 
-// Apply rate limiting to auth routes
-router.use(authRateLimiter);
+// Apply rate limiting to auth routes (but skip OAuth callbacks - they're called by OAuth providers)
+router.use((req, res, next) => {
+    // Skip rate limiting for OAuth callback routes (they're called by Google/Apple, not users)
+    if (req.path.includes('/oauth/google/callback') || req.path.includes('/oauth/apple/callback')) {
+        return next();
+    }
+    // Apply rate limiting to other auth routes
+    authRateLimiter(req, res, next);
+});
 
 // Google OAuth - Initiate
 router.get('/oauth/google', (req, res, next) => {
     logger.info('Google OAuth initiate called');
     console.log('Google OAuth route hit!');
-    passport.authenticate('google', { 
-        scope: ['profile', 'email'],
-        prompt: 'select_account' // Force account selection after logout
-    })(req, res, next);
+    
+    // Check if Google OAuth is configured
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        logger.error('Google OAuth not configured - missing credentials');
+        return res.status(500).json({
+            error: 'Configuration Error',
+            message: 'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.'
+        });
+    }
+    
+    // Check if passport strategy is registered
+    const googleStrategy = passport._strategies && passport._strategies['google'];
+    if (!googleStrategy) {
+        logger.error('Google OAuth strategy not registered');
+        return res.status(500).json({
+            error: 'Configuration Error',
+            message: 'Google OAuth strategy is not registered. Please check server configuration.'
+        });
+    }
+    
+    try {
+        passport.authenticate('google', { 
+            scope: ['profile', 'email'],
+            prompt: 'select_account' // Force account selection after logout
+        })(req, res, next);
+    } catch (error) {
+        logger.error('Error initiating Google OAuth', { error: error.message, stack: error.stack });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: process.env.NODE_ENV === 'production' 
+                ? 'Failed to initiate OAuth. Please try again later.'
+                : error.message
+        });
+    }
 });
 
 // Google OAuth - Callback
 router.get('/oauth/google/callback',
     (req, res, next) => {
+        // Check for error in query params (OAuth provider may return errors)
+        if (req.query.error) {
+            logger.error('OAuth error from provider', {
+                error: req.query.error,
+                error_description: req.query.error_description,
+                error_uri: req.query.error_uri
+            });
+            return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed&reason=' + encodeURIComponent(req.query.error_description || req.query.error));
+        }
+        
+        // Check if authorization code is present
+        if (!req.query.code) {
+            logger.error('OAuth callback missing authorization code', {
+                query: req.query,
+                url: req.url
+            });
+            return res.redirect(getFrontendUrl() + '/login.html?error=auth_failed&reason=missing_code');
+        }
+        
         console.log('========================================');
         console.log('=== NETWORK TAB: OAUTH CALLBACK REQUEST ===');
         console.log('========================================');
@@ -55,6 +112,7 @@ router.get('/oauth/google/callback',
         console.log('  - Referer:', req.headers.referer || 'No Referer');
         console.log('  - Origin:', req.headers.origin || 'No Origin');
         console.log('Query Params:', req.query);
+        console.log('Has code:', !!req.query.code);
         console.log('========================================');
         console.log('=== OAUTH CALLBACK START ===');
         console.log('Session ID before auth:', req.sessionID);
@@ -131,20 +189,32 @@ router.get('/oauth/google/callback',
                     
                     // Continue with token generation and redirect
                     try {
+                        console.log('=== FETCHING USER PROFILE ===');
+                        console.log('User ID:', user.id);
+                        
                         // Fetch user profile data for JWT token
-                    const profileResult = await query(
-                        `SELECT up.profile_completed, up.full_name, up.zerodha_client_id, u.is_admin
-                         FROM user_profiles up
-                         JOIN users u ON u.id = up.user_id
-                         WHERE up.user_id = $1`,
-                        [user.id]
-                    );
-                    
-                    const profile = profileResult.rows.length > 0 ? profileResult.rows[0] : null;
-                    // Handle SQLite boolean (0/1) conversion
-                    const isProfileComplete = profile && profile.profile_completed !== null && profile.profile_completed !== undefined
-                        ? (profile.profile_completed === 1 || profile.profile_completed === true || profile.profile_completed === '1')
-                        : false;
+                        const profileResult = await query(
+                            `SELECT up.profile_completed, up.full_name, up.zerodha_client_id, u.is_admin
+                             FROM user_profiles up
+                             JOIN users u ON u.id = up.user_id
+                             WHERE up.user_id = $1`,
+                            [user.id]
+                        );
+                        
+                        console.log('Profile query result:', {
+                            rowCount: profileResult.rows.length,
+                            hasProfile: profileResult.rows.length > 0,
+                            profileData: profileResult.rows[0] || null
+                        });
+                        
+                        const profile = profileResult.rows.length > 0 ? profileResult.rows[0] : null;
+                        const isProfileComplete = profile ? (profile.profile_completed === true) : false;
+                        
+                        console.log('=== PROFILE CHECK ===');
+                        console.log('Has profile:', !!profile);
+                        console.log('Profile completed (raw):', profile?.profile_completed);
+                        console.log('Profile completed (boolean):', isProfileComplete);
+                        console.log('Full name:', profile?.full_name);
                     
                     // Prepare user data for JWT token
                     const userData = {
@@ -157,7 +227,7 @@ router.get('/oauth/google/callback',
                     };
                     
                     // Generate JWT token for user authentication
-                    const token = jwtService.generateAuthToken(userData);
+                    const jwtToken = jwtService.generateAuthToken(userData);
                     
                     logger.info('OAuth login successful - JWT token generated', {
                         userId: user.id,
@@ -171,27 +241,67 @@ router.get('/oauth/google/callback',
                         ? frontendUrl + '/dashboard.html'
                         : frontendUrl + '/register.html';
                     
-                    // Redirect with token in URL (frontend will extract and store it)
-                    const redirectUrl = `${baseUrl}?token=${encodeURIComponent(token)}`;
+                    // Redirect with JWT token in URL (frontend will extract and store it)
+                    // Using 'jwt' as URL parameter name for clarity
+                    const redirectUrl = `${baseUrl}?jwt=${encodeURIComponent(jwtToken)}`;
                     
                     console.log('=== JWT TOKEN GENERATED ===');
                     console.log('User ID:', user.id);
-                    console.log('Token generated:', token.substring(0, 50) + '...');
+                    console.log('JWT Token generated:', jwtToken.substring(0, 50) + '...');
+                    console.log('Frontend URL:', frontendUrl);
                     console.log('Base URL:', baseUrl);
-                    console.log('Redirect URL (with token):', redirectUrl.substring(0, 100) + '...');
-                    console.log('Token length:', token.length);
+                    console.log('Redirect URL (with JWT):', redirectUrl.substring(0, 150) + '...');
+                    console.log('JWT Token length:', jwtToken.length);
+                    console.log('Profile complete:', isProfileComplete);
                     
                     logger.info('Redirecting with JWT token', {
                         userId: user.id,
+                        email: user.email,
+                        frontendUrl: frontendUrl,
                         baseUrl: baseUrl,
-                        tokenLength: token.length,
-                        redirectUrlLength: redirectUrl.length
+                        isProfileComplete: isProfileComplete,
+                        jwtTokenLength: jwtToken.length,
+                        redirectUrlLength: redirectUrl.length,
+                        redirectUrlPreview: redirectUrl.substring(0, 100)
+                    });
+                    
+                    // Log redirect for debugging
+                    console.log('=== REDIRECTING USER ===');
+                    console.log('Full redirect URL:', redirectUrl);
+                    console.log('Redirect URL length:', redirectUrl.length);
+                    console.log('Will redirect to:', isProfileComplete ? 'DASHBOARD' : 'REGISTRATION');
+                    
+                    // Ensure response hasn't been sent
+                    if (res.headersSent) {
+                        console.error('❌ ERROR: Response already sent, cannot redirect!');
+                        logger.error('Cannot redirect - response already sent', {
+                            userId: user.id,
+                            redirectUrl: redirectUrl
+                        });
+                        return;
+                    }
+                    
+                    logger.info('Sending redirect response', {
+                        userId: user.id,
+                        statusCode: 302,
+                        location: redirectUrl.substring(0, 200)
                     });
                     
                     res.redirect(redirectUrl);
                     } catch (error) {
-                        logger.error('Error in Google OAuth callback', error);
-                        res.redirect(getFrontendUrl() + '/login.html?error=server_error');
+                        console.error('❌ ERROR IN OAUTH CALLBACK:', error);
+                        console.error('Error stack:', error.stack);
+                        logger.error('Error in Google OAuth callback', {
+                            error: error.message,
+                            stack: error.stack,
+                            userId: user?.id
+                        });
+                        
+                        if (!res.headersSent) {
+                            res.redirect(getFrontendUrl() + '/login.html?error=server_error');
+                        } else {
+                            console.error('❌ Cannot send error redirect - response already sent');
+                        }
                     }
                 });
             });
@@ -341,42 +451,87 @@ router.get('/oauth/apple/callback',
     }
 );
 
-// Get current user
+// Get current user (requires JWT token)
 router.get('/me', async (req, res) => {
     try {
-        let authenticatedUser = null;
+        console.log('=== /auth/me ENDPOINT CALLED ===');
+        console.log('Headers:', {
+            authorization: req.headers.authorization ? 'Bearer ***' : 'missing',
+            'user-agent': req.headers['user-agent']
+        });
         
-        // Try JWT token authentication first
+        // JWT token authentication (REQUIRED)
         const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            try {
-                const decoded = jwtService.verifyAuthToken(token);
-                
-                // Fetch user from database
-                const userResult = await query(
-                    'SELECT id, provider_type, provider_user_id, email, is_admin FROM users WHERE id = $1',
-                    [decoded.user_id]
-                );
-                
-                if (userResult.rows.length > 0) {
-                    authenticatedUser = userResult.rows[0];
-                    req.user = authenticatedUser; // Set for compatibility
-                }
-            } catch (tokenError) {
-                logger.warn('JWT token verification failed in /me', { error: tokenError.message });
-            }
-        }
         
-        // Fallback to session-based authentication
-        if (!authenticatedUser && req.isAuthenticated && req.isAuthenticated()) {
-            authenticatedUser = req.user;
-        }
-        
-        if (!authenticatedUser) {
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.log('❌ No authorization header or invalid format');
+            logger.warn('Missing or invalid authorization header in /me', {
+                hasHeader: !!authHeader,
+                startsWithBearer: authHeader?.startsWith('Bearer ')
+            });
             return res.status(401).json({
                 error: 'Unauthorized',
-                message: 'Not authenticated'
+                message: 'JWT token required. Please include Authorization: Bearer <token> header'
+            });
+        }
+        
+        const jwtToken = authHeader.substring(7);
+        console.log('JWT Token extracted, length:', jwtToken.length);
+        let authenticatedUser = null;
+        
+        try {
+            console.log('Verifying JWT token...');
+            const decoded = jwtService.verifyAuthToken(jwtToken);
+            console.log('Token verified successfully:', {
+                user_id: decoded.user_id,
+                email: decoded.email,
+                profile_completed: decoded.profile_completed
+            });
+            
+            // Fetch user from database
+            console.log('Fetching user from database, user_id:', decoded.user_id);
+            const userResult = await query(
+                'SELECT id, provider_type, provider_user_id, email, is_admin FROM users WHERE id = $1',
+                [decoded.user_id]
+            );
+            
+            console.log('User query result:', {
+                rowCount: userResult.rows.length,
+                userFound: userResult.rows.length > 0
+            });
+            
+            if (userResult.rows.length === 0) {
+                console.log('❌ User not found in database');
+                return res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'User not found'
+                });
+            }
+            
+            authenticatedUser = userResult.rows[0];
+            req.user = authenticatedUser; // Set for compatibility
+            console.log('User authenticated:', {
+                id: authenticatedUser.id,
+                email: authenticatedUser.email
+            });
+        } catch (tokenError) {
+            console.error('❌ Token verification failed:', tokenError.message);
+            console.error('Token error stack:', tokenError.stack);
+            logger.warn('JWT token verification failed in /me', { 
+                error: tokenError.message,
+                stack: tokenError.stack
+            });
+            
+            if (tokenError.message === 'Token expired') {
+                return res.status(401).json({
+                    error: 'Unauthorized',
+                    message: 'Token expired. Please log in again'
+                });
+            }
+            
+            return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Invalid or expired JWT token. Please log in again'
             });
         }
         
@@ -390,12 +545,13 @@ router.get('/me', async (req, res) => {
         );
         
         const profile = profileResult.rows.length > 0 ? profileResult.rows[0] : null;
+        const profileCompleted = profile ? (profile.profile_completed === true) : false;
         
-        // Handle SQLite boolean (0/1) conversion
-        // profile_completed can be: null, 0, 1, true, false
-        const profileCompleted = profile && profile.profile_completed !== null && profile.profile_completed !== undefined
-            ? (profile.profile_completed === 1 || profile.profile_completed === true || profile.profile_completed === '1')
-            : false;
+        logger.info('User profile fetched for /me endpoint', {
+            userId: authenticatedUser.id,
+            hasProfile: !!profile,
+            profileCompleted: profileCompleted
+        });
         
         res.json({
             user: {
@@ -405,7 +561,8 @@ router.get('/me', async (req, res) => {
                 is_admin: authenticatedUser.is_admin
             },
             profile: profile,
-            isProfileComplete: profileCompleted
+            isProfileComplete: profileCompleted,
+            profileCompleted: profileCompleted // Alias for compatibility
         });
     } catch (error) {
         logger.error('Error fetching current user', error);

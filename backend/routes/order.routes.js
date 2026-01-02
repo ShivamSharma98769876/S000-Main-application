@@ -12,7 +12,8 @@ const emailQueue = require('../services/emailQueue.service');
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = process.env.UPLOAD_DIR || './uploads';
+        // Use absolute path to ensure consistency with server.js static file serving
+        const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -41,10 +42,18 @@ const upload = multer({
     }
 });
 
-// Create order from cart
-router.post('/', isAuthenticated, isProfileComplete, validateOrder, async (req, res) => {
+// Create order from cart (requires payment proof)
+router.post('/', isAuthenticated, isProfileComplete, upload.single('paymentProof'), validateOrder, async (req, res) => {
     try {
         const { paymentReference, paymentDate } = req.body;
+        
+        // Payment proof is REQUIRED
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Payment proof screenshot is required to create an order. Please upload a payment screenshot.'
+            });
+        }
         
         // Get cart
         const cartResult = await query(
@@ -80,12 +89,15 @@ router.post('/', isAuthenticated, isProfileComplete, validateOrder, async (req, 
         // Calculate total
         const totalAmount = itemsResult.rows.reduce((sum, item) => sum + parseFloat(item.price), 0);
         
-        // Create order
+        // Generate URL for the uploaded payment proof
+        const paymentProofUrl = `/uploads/${req.file.filename}`;
+        
+        // Create order with payment proof
         const orderResult = await query(
-            `INSERT INTO subscription_orders (user_id, status, total_amount, payment_reference, payment_date, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+            `INSERT INTO subscription_orders (user_id, status, total_amount, payment_proof_url, payment_reference, payment_date, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
              RETURNING *`,
-            [req.user.id, 'PENDING', totalAmount, paymentReference || null, paymentDate || null]
+            [req.user.id, 'PENDING', totalAmount, paymentProofUrl, paymentReference || null, paymentDate || null]
         );
         
         const order = orderResult.rows[0];
@@ -104,26 +116,76 @@ router.post('/', isAuthenticated, isProfileComplete, validateOrder, async (req, 
             );
         }
         
-        // Clear cart
+        // Clear cart only after successful order creation with payment proof
+        // This happens AFTER all database operations succeed
         await query('DELETE FROM cart_items WHERE cart_id = $1', [cartId]);
         
-        logger.info('Order created', { userId: req.user.id, orderId: order.id });
+        logger.info('Order created with payment proof', { userId: req.user.id, orderId: order.id });
         
-        // TODO: Send email notifications
+        // Get user and order details for email
+        const userResult = await query(
+            `SELECT u.email, up.full_name
+             FROM users u
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             WHERE u.id = $1`,
+            [req.user.id]
+        );
+        
+        const orderDetailsResult = await query(
+            `SELECT so.total_amount, COUNT(soi.id) as item_count
+             FROM subscription_orders so
+             LEFT JOIN subscription_order_items soi ON soi.order_id = so.id
+             WHERE so.id = $1
+             GROUP BY so.id, so.total_amount`,
+            [order.id]
+        );
+        
+        if (userResult.rows.length > 0 && orderDetailsResult.rows.length > 0) {
+            const user = userResult.rows[0];
+            const orderDetails = orderDetailsResult.rows[0];
+            
+            // Add emails to queue (don't block response)
+            Promise.all([
+                emailQueue.addToQueue('PAYMENT_RECEIVED', user.email, {
+                    userName: user.full_name,
+                    orderId: order.id,
+                    amount: orderDetails.total_amount
+                }, 'HIGH'),
+                emailQueue.addToQueue('ADMIN_NEW_ORDER', process.env.ADMIN_EMAIL || 'admin@tradingpro.com', {
+                    orderId: order.id,
+                    userName: user.full_name,
+                    userEmail: user.email,
+                    amount: orderDetails.total_amount,
+                    itemCount: orderDetails.item_count
+                }, 'HIGH')
+            ]).catch(err => logger.error('Failed to queue emails', err));
+        }
         
         res.status(201).json({
-            message: 'Order created successfully',
+            message: 'Order created successfully with payment proof',
             order: {
                 orderId: order.id,
                 status: order.status,
-                totalAmount: order.total_amount
+                totalAmount: order.total_amount,
+                paymentProofUrl: order.payment_proof_url
             }
         });
     } catch (error) {
         logger.error('Error creating order', error);
+        
+        // Clean up uploaded file if order creation failed
+        if (req.file && fs.existsSync(req.file.path)) {
+            try {
+                fs.unlinkSync(req.file.path);
+                logger.info('Cleaned up uploaded file after order creation failure', { filename: req.file.filename });
+            } catch (unlinkError) {
+                logger.error('Failed to clean up uploaded file', unlinkError);
+            }
+        }
+        
         res.status(500).json({
             error: 'Internal Server Error',
-            message: error.message || 'Failed to create order'
+            message: error.message || 'Failed to create order. Your cart items have been preserved.'
         });
     }
 });
@@ -131,7 +193,14 @@ router.post('/', isAuthenticated, isProfileComplete, validateOrder, async (req, 
 // Upload payment proof
 router.post('/:orderId/payment-proof', isAuthenticated, isProfileComplete, upload.single('paymentProof'), async (req, res) => {
     try {
-        const { orderId } = req.params;
+        const orderId = parseInt(req.params.orderId);
+        
+        if (isNaN(orderId)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid order ID'
+            });
+        }
         const { paymentReference, paymentDate } = req.body;
         
         if (!req.file) {
@@ -154,7 +223,27 @@ router.post('/:orderId/payment-proof', isAuthenticated, isProfileComplete, uploa
             });
         }
         
-        if (orderResult.rows[0].user_id !== req.user.id) {
+        const order = orderResult.rows[0];
+        const orderUserId = parseInt(order.user_id);
+        const currentUserId = parseInt(req.user.id);
+        
+        // Log for debugging
+        logger.debug('Order ownership check', {
+            orderId,
+            orderUserId,
+            currentUserId,
+            orderUserIdType: typeof order.user_id,
+            currentUserIdType: typeof req.user.id,
+            match: orderUserId === currentUserId
+        });
+        
+        if (orderUserId !== currentUserId) {
+            logger.warn('Unauthorized order update attempt', {
+                orderId,
+                orderUserId,
+                currentUserId,
+                userId: req.user.id
+            });
             return res.status(403).json({
                 error: 'Forbidden',
                 message: 'Unauthorized to update this order'
@@ -246,10 +335,26 @@ router.get('/me', isAuthenticated, isProfileComplete, async (req, res) => {
             orders: result.rows
         });
     } catch (error) {
-        logger.error('Error fetching orders', error);
+        logger.error('Error fetching orders', {
+            error: error.message,
+            stack: error.stack,
+            code: error.code,
+            userId: req.user?.id
+        });
+        
+        // Provide helpful error message if table doesn't exist
+        if (error.code === '42P01' && error.message.includes('subscription_orders')) {
+            return res.status(500).json({
+                error: 'Database Schema Error',
+                message: 'The subscription_orders table does not exist. Please run the database migration: node backend/scripts/migrate.js',
+                details: 'Run the migration script to create the required tables.'
+            });
+        }
+        
         res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to fetch orders'
+            message: 'Failed to fetch orders',
+            ...(process.env.NODE_ENV === 'development' && { details: error.message })
         });
     }
 });
@@ -257,12 +362,21 @@ router.get('/me', isAuthenticated, isProfileComplete, async (req, res) => {
 // Get specific order details
 router.get('/me/:orderId', isAuthenticated, isProfileComplete, async (req, res) => {
     try {
-        const { orderId } = req.params;
+        const orderId = parseInt(req.params.orderId);
+        
+        if (isNaN(orderId)) {
+            return res.status(400).json({
+                error: 'Bad Request',
+                message: 'Invalid order ID'
+            });
+        }
+        
+        const currentUserId = parseInt(req.user.id);
         
         // Get order
         const orderResult = await query(
             'SELECT * FROM subscription_orders WHERE id = $1 AND user_id = $2',
-            [orderId, req.user.id]
+            [orderId, currentUserId]
         );
         
         if (orderResult.rows.length === 0) {

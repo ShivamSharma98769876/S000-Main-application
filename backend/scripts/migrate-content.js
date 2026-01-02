@@ -1,3 +1,14 @@
+const path = require('path');
+const fs = require('fs');
+
+// Load environment variables BEFORE requiring database config
+const envPath = path.join(__dirname, '../env');
+if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+} else {
+    require('dotenv').config();
+}
+
 const { pool } = require('../config/database');
 const logger = require('../config/logger');
 

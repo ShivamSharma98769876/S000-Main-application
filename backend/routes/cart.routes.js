@@ -195,11 +195,11 @@ router.post('/items', isAuthenticated, isProfileComplete, validateCartItem, asyn
                 // Update existing item
                 const result = await query(
                     `UPDATE cart_items 
-                     SET duration_unit = $1, duration_value = $2, duration_type = $3, duration_units = $4,
-                         start_date = $5, end_date = $6, price = $7, unit_price = $8, subtotal = $9, updated_at = NOW()
-                     WHERE id = $10
+                     SET duration_unit = $1, duration_value = $2,
+                         start_date = $3, end_date = $4, price = $5, unit_price = $6, subtotal = $7, updated_at = NOW()
+                     WHERE id = $8
                      RETURNING *`,
-                    [durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, existingItem.rows[0].id]
+                    [durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, existingItem.rows[0].id]
                 );
             
             item = result.rows[0];
@@ -207,10 +207,10 @@ router.post('/items', isAuthenticated, isProfileComplete, validateCartItem, asyn
             // Insert new item
             const result = await query(
                 `INSERT INTO cart_items (cart_id, product_id, duration_unit, duration_value, 
-                                        duration_type, duration_units, start_date, end_date, price, unit_price, subtotal, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+                                        start_date, end_date, price, unit_price, subtotal, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
                  RETURNING *`,
-                [cartId, productId, durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal]
+                [cartId, productId, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal]
             );
             
             item = result.rows[0];
@@ -293,11 +293,11 @@ router.put('/items/:itemId', isAuthenticated, isProfileComplete, validateCartIte
         // Update item
         const result = await query(
             `UPDATE cart_items 
-             SET duration_unit = $1, duration_value = $2, duration_type = $3, duration_units = $4,
-                 start_date = $5, end_date = $6, price = $7, unit_price = $8, subtotal = $9, updated_at = NOW()
-             WHERE id = $10
+             SET duration_unit = $1, duration_value = $2,
+                 start_date = $3, end_date = $4, price = $5, unit_price = $6, subtotal = $7, updated_at = NOW()
+             WHERE id = $8
              RETURNING *`,
-            [durationUnit, durationValue, durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, itemId]
+            [durationUnit, durationValue, startDate, endDate, price, unitPrice, subtotal, itemId]
         );
         
         const updatedItem = result.rows[0];

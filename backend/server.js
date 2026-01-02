@@ -3,8 +3,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const session = require('express-session');
-// Session store - using SQLite since we migrated from PostgreSQL
-const SQLiteStore = require('connect-sqlite3')(session);
+// Session store - using PostgreSQL
+const pgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
 const path = require('path');
 const fs = require('fs');
@@ -54,6 +54,22 @@ const monitoringService = require('./services/monitoring.service');
 
 // Initialize Express app
 const app = express();
+
+// Catch unhandled errors and promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error('Unhandled Rejection', { reason, promise });
+    // Don't exit in development - let nodemon restart
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught Exception:', error);
+    logger.error('Uncaught Exception', error);
+    process.exit(1);
+});
 
 // Trust proxy (important for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
@@ -129,56 +145,12 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('combined', { stream: logger.stream }));
 }
 
-// Ensure data directory exists for database files and sessions
-// On Azure: use ./data/ relative to app root
-// Locally: use ./data/ relative to backend/
-const getDataDir = () => {
-    // Check if we're in Azure (has WEBSITE_SITE_NAME or WEBSITE_HOSTNAME)
-    if (process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME) {
-        // Azure: use data/ relative to app root
-        return path.resolve(process.cwd(), 'data');
-    }
-    // Local development: use ./data/ relative to backend/
-    return path.join(__dirname, 'data');
-};
-
-const dataDir = getDataDir();
-if (!fs.existsSync(dataDir)) {
-    try {
-        fs.mkdirSync(dataDir, { recursive: true });
-        logger.info('Created data directory', { path: dataDir });
-    } catch (error) {
-        logger.error('Failed to create data directory', { 
-            path: dataDir, 
-            error: error.message,
-            code: error.code
-        });
-        // Try alternative location
-        const altDataDir = path.resolve(process.cwd(), 'data');
-        if (altDataDir !== dataDir && !fs.existsSync(altDataDir)) {
-            try {
-                fs.mkdirSync(altDataDir, { recursive: true });
-                logger.info('Created alternative data directory', { path: altDataDir });
-            } catch (altError) {
-                logger.error('Failed to create alternative data directory', { 
-                    path: altDataDir, 
-                    error: altError.message 
-                });
-            }
-        }
-    }
-} else {
-    logger.info('Data directory exists', { path: dataDir });
-}
-
 // Session middleware - MUST be before static files to ensure cookies work
-// Use the same data directory as the main database
-const sessionDataDir = dataDir;
+// Using PostgreSQL session store
 const sessionConfig = {
-    store: new SQLiteStore({
-        db: 'sessions.db',
-        dir: sessionDataDir,
-        table: 'session'
+    store: new pgSession({
+        pool: pool, // Use the same connection pool as the main database
+        tableName: 'session' // Table name for sessions
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -275,7 +247,34 @@ app.use(express.static(publicDir, {
 }));
 
 // Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// Use the same path as multer uploads to ensure consistency
+const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
+// Ensure upload directory exists
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    logger.info('Created upload directory', { path: uploadDir });
+}
+app.use('/uploads', express.static(uploadDir, {
+    setHeaders: (res, filePath) => {
+        // Set proper content type for images
+        if (filePath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+        } else if (filePath.endsWith('.webp')) {
+            res.setHeader('Content-Type', 'image/webp');
+        }
+    }
+}));
+
+// Log upload directory info
+const uploadDirResolved = path.resolve(uploadDir);
+logger.info('Serving uploads from', { 
+    path: uploadDir, 
+    resolved: uploadDirResolved,
+    exists: fs.existsSync(uploadDir),
+    files: fs.existsSync(uploadDir) ? fs.readdirSync(uploadDir).filter(f => f.startsWith('qr-code')).slice(0, 5) : []
+});
 
 // Performance monitoring (track all requests)
 app.use(performanceMonitor);
@@ -355,14 +354,25 @@ app.get('/health', (req, res) => {
 
 // 404 handler - catch all unmatched routes
 app.use((req, res) => {
-    // Log the 404 for debugging
-    logger.warn('404 Not Found', {
-        method: req.method,
-        url: req.originalUrl,
-        path: req.path,
-        query: req.query,
-        ip: req.ip
-    });
+    // Ignore harmless browser/DevTools requests
+    const ignoredPaths = [
+        '/.well-known/appspecific/com.chrome.devtools.json',
+        '/favicon.ico',
+        '/robots.txt'
+    ];
+    
+    const shouldIgnore = ignoredPaths.some(path => req.path === path);
+    
+    // Only log 404s for actual API/resource requests, not browser noise
+    if (!shouldIgnore) {
+        logger.warn('404 Not Found', {
+            method: req.method,
+            url: req.originalUrl,
+            path: req.path,
+            query: req.query,
+            ip: req.ip
+        });
+    }
     
     res.status(404).json({ 
         error: 'Not Found',
@@ -433,48 +443,69 @@ const getBaseUrl = () => {
 
 const baseUrl = getBaseUrl();
 
+// Wrap everything in try-catch to catch initialization errors
 try {
-    const server = app.listen(PORT, '0.0.0.0', () => {
-        logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV} mode`);
-        
-        if (process.env.NODE_ENV === 'production') {
-            // Cloud/production: show actual URLs
-            console.log(`🚀 Server running on port ${PORT}`);
-            console.log(`📊 API Base URL: ${baseUrl}/api/v1`);
-            console.log(`🔍 Health check: ${baseUrl}/health`);
-        } else {
-            // Development: show localhost URLs
-            console.log(`🚀 Server running at http://localhost:${PORT}`);
-            console.log(`📊 API Base URL: http://localhost:${PORT}/api/v1`);
-            console.log(`🔍 Health check: http://localhost:${PORT}/health`);
-        }
-    });
-    
-    server.on('error', (error) => {
-        console.error('❌ Server Error:', error);
-        logger.error('Server Error', error);
-        process.exit(1);
-    });
-    
-    // Graceful shutdown
-    process.on('SIGTERM', () => {
-        logger.info('SIGTERM signal received: closing HTTP server');
-        server.close(() => {
-            logger.info('HTTP server closed');
-            if (pool && typeof pool.end === 'function') {
-                pool.end(() => {
-                    logger.info('Database pool closed');
-                    process.exit(0);
-                });
+    // Test database connection before starting server
+    pool.query('SELECT 1')
+        .then(() => {
+            logger.info('Database connection verified');
+            startServer();
+        })
+        .catch((err) => {
+            console.error('❌ Database connection failed:', err.message);
+            logger.error('Database connection failed', err);
+            process.exit(1);
+        });
+} catch (error) {
+    console.error('❌ Failed to initialize server:', error);
+    logger.error('Failed to initialize server', error);
+    process.exit(1);
+}
+
+function startServer() {
+    try {
+        const server = app.listen(PORT, '0.0.0.0', () => {
+            logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV} mode`);
+            
+            if (process.env.NODE_ENV === 'production') {
+                // Cloud/production: show actual URLs
+                console.log(`🚀 Server running on port ${PORT}`);
+                console.log(`📊 API Base URL: ${baseUrl}/api/v1`);
+                console.log(`🔍 Health check: ${baseUrl}/health`);
             } else {
-                process.exit(0);
+                // Development: show localhost URLs
+                console.log(`🚀 Server running at http://localhost:${PORT}`);
+                console.log(`📊 API Base URL: http://localhost:${PORT}/api/v1`);
+                console.log(`🔍 Health check: http://localhost:${PORT}/health`);
             }
         });
-    });
-} catch (error) {
-    console.error('❌ Failed to start server:', error);
-    logger.error('Failed to start server', error);
-    process.exit(1);
+        
+        server.on('error', (error) => {
+            console.error('❌ Server Error:', error);
+            logger.error('Server Error', error);
+            process.exit(1);
+        });
+        
+        // Graceful shutdown
+        process.on('SIGTERM', () => {
+            logger.info('SIGTERM signal received: closing HTTP server');
+            server.close(() => {
+                logger.info('HTTP server closed');
+                if (pool && typeof pool.end === 'function') {
+                    pool.end(() => {
+                        logger.info('Database pool closed');
+                        process.exit(0);
+                    });
+                } else {
+                    process.exit(0);
+                }
+            });
+        });
+    } catch (error) {
+        console.error('❌ Failed to start server:', error);
+        logger.error('Failed to start server', error);
+        process.exit(1);
+    }
 }
 
 

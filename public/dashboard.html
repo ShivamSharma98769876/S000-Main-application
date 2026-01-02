@@ -107,36 +107,37 @@
 
         // Get JWT token from localStorage or URL
         function getAuthToken() {
-            // Check URL for token (from OAuth redirect)
+            // Check URL for JWT token (from OAuth redirect)
+            // Support both 'jwt' (new) and 'token' (legacy) parameter names
             const urlParams = new URLSearchParams(window.location.search);
-            const tokenFromUrl = urlParams.get('token');
+            const jwtTokenFromUrl = urlParams.get('jwt') || urlParams.get('token'); // Support both for backward compatibility
             
-            if (tokenFromUrl) {
-                console.log('=== TOKEN FOUND IN URL ===');
-                console.log('Token length:', tokenFromUrl.length);
-                console.log('Token preview:', tokenFromUrl.substring(0, 50) + '...');
+            if (jwtTokenFromUrl) {
+                console.log('=== JWT TOKEN FOUND IN URL ===');
+                console.log('JWT Token length:', jwtTokenFromUrl.length);
+                console.log('JWT Token preview:', jwtTokenFromUrl.substring(0, 50) + '...');
                 
-                // Store token in localStorage
-                localStorage.setItem('authToken', tokenFromUrl);
-                console.log('Token stored in localStorage');
+                // Store JWT token in localStorage
+                localStorage.setItem('authToken', jwtTokenFromUrl);
+                console.log('JWT Token stored in localStorage');
                 
-                // Remove token from URL
+                // Remove JWT token from URL
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
-                console.log('Token removed from URL');
+                console.log('JWT Token removed from URL');
                 
-                return tokenFromUrl;
+                return jwtTokenFromUrl;
             }
             
-            // Get token from localStorage
-            const storedToken = localStorage.getItem('authToken');
-            if (storedToken) {
-                console.log('Token retrieved from localStorage');
+            // Get JWT token from localStorage
+            const storedJwtToken = localStorage.getItem('authToken');
+            if (storedJwtToken) {
+                console.log('JWT Token retrieved from localStorage');
             } else {
-                console.log('No token found in URL or localStorage');
+                console.log('No JWT token found in URL or localStorage');
             }
             
-            return storedToken;
+            return storedJwtToken;
         }
 
         // Get authorization headers

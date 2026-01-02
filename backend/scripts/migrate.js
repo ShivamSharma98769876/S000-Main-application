@@ -1,3 +1,28 @@
+// Load environment variables BEFORE requiring database config
+const path = require('path');
+const fs = require('fs');
+
+// Try multiple possible locations for .env file
+const envPaths = [
+    path.join(__dirname, '../env'),      // backend/env
+    path.join(__dirname, '../.env'),     // backend/.env
+    path.join(__dirname, '../../.env'),  // root/.env
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+    if (fs.existsSync(envPath)) {
+        require('dotenv').config({ path: envPath });
+        envLoaded = true;
+        break;
+    }
+}
+
+// Fallback to default dotenv behavior (looks for .env in current and parent directories)
+if (!envLoaded) {
+    require('dotenv').config();
+}
+
 const { pool } = require('../config/database');
 const logger = require('../config/logger');
 
@@ -55,12 +80,13 @@ CREATE TABLE IF NOT EXISTS cart_items (
     id BIGSERIAL PRIMARY KEY,
     cart_id BIGINT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
     product_id BIGINT NOT NULL REFERENCES products(id),
-    duration_type VARCHAR(10) NOT NULL CHECK (duration_type IN ('MONTH', 'YEAR')),
-    duration_units SMALLINT NOT NULL CHECK (duration_units BETWEEN 1 AND 12),
+    duration_unit VARCHAR(10) NOT NULL CHECK (duration_unit IN ('MONTH', 'YEAR')),
+    duration_value INTEGER NOT NULL CHECK (duration_value BETWEEN 1 AND 12),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    unit_price NUMERIC(10,2) NOT NULL,
-    subtotal NUMERIC(10,2) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    unit_price DECIMAL(10,2),
+    subtotal DECIMAL(10,2) NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -84,12 +110,13 @@ CREATE TABLE IF NOT EXISTS subscription_order_items (
     id BIGSERIAL PRIMARY KEY,
     order_id BIGINT NOT NULL REFERENCES subscription_orders(id) ON DELETE CASCADE,
     product_id BIGINT NOT NULL REFERENCES products(id),
-    duration_type VARCHAR(10) NOT NULL,
-    duration_units SMALLINT NOT NULL,
+    duration_unit VARCHAR(10) NOT NULL CHECK (duration_unit IN ('MONTH', 'YEAR')),
+    duration_value INTEGER NOT NULL CHECK (duration_value BETWEEN 1 AND 12),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     unit_price NUMERIC(10,2) NOT NULL,
-    subtotal NUMERIC(10,2) NOT NULL
+    subtotal NUMERIC(10,2) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 -- Create subscriptions table
@@ -120,8 +147,8 @@ CREATE TABLE IF NOT EXISTS login_audit (
 
 -- Create system_config table
 CREATE TABLE IF NOT EXISTS system_config (
-    key VARCHAR(100) PRIMARY KEY,
-    value TEXT NOT NULL,
+    config_key VARCHAR(100) PRIMARY KEY,
+    config_value TEXT NOT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -145,12 +172,12 @@ CREATE INDEX IF NOT EXISTS idx_cart_items_cart ON cart_items(cart_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON subscription_order_items(order_id);
 
 -- Insert default system config
-INSERT INTO system_config (key, value, updated_at) 
+INSERT INTO system_config (config_key, config_value, updated_at) 
 VALUES 
     ('qr_code_url', 'https://example.com/qr-code.png', NOW()),
     ('support_email', 'support@tradingpro.com', NOW()),
     ('admin_email', 'admin@tradingpro.com', NOW())
-ON CONFLICT (key) DO NOTHING;
+ON CONFLICT (config_key) DO NOTHING;
 `;
 
 async function runMigrations() {

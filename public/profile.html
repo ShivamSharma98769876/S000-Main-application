@@ -335,9 +335,6 @@
             if (!phone) {
                 errors.phone = 'Phone number is required';
                 isValid = false;
-            } else if (!/^\+91\s\d{5}\s\d{5}$/.test(phone)) {
-                errors.phone = 'Phone number must be in format: +91 XXXXX XXXXX';
-                isValid = false;
             }
 
             if (!capitalUsed || parseFloat(capitalUsed) <= 0) {

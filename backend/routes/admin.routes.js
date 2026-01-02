@@ -144,7 +144,7 @@ router.post('/orders/:orderId/approve', isAuthenticated, isAdmin, async (req, re
             
             await query(
                 `INSERT INTO subscriptions (user_id, product_id, start_date, end_date, status, order_id, auto_renew, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, false, datetime('now'), datetime('now'))`,
+                 VALUES ($1, $2, $3, $4, $5, $6, false, NOW(), NOW())`,
                 [order.user_id, item.product_id, item.start_date, item.end_date, status, orderId]
             );
         }

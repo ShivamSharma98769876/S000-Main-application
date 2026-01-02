@@ -25,11 +25,18 @@ const validateProfile = [
         .isLength({ min: 5, max: 500 }).withMessage('Address must be between 5 and 500 characters'),
     body('phone')
         .trim()
-        .notEmpty().withMessage('Phone number is required')
-        .matches(/^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/).withMessage('Invalid phone number format'),
+        .notEmpty().withMessage('Phone number is required'),
     body('capitalUsed')
-        .notEmpty().withMessage('Capital used for trading is required')
-        .isFloat({ min: 0 }).withMessage('Capital must be a positive number'),
+        .custom((value) => {
+            if (value === undefined || value === null || value === '') {
+                throw new Error('Capital used for trading is required');
+            }
+            const num = parseFloat(value);
+            if (isNaN(num) || num < 0) {
+                throw new Error('Capital must be a positive number');
+            }
+            return true;
+        }),
     body('zerodhaClientId')
         .trim()
         .notEmpty().withMessage('Zerodha Client ID is required')

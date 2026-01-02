@@ -10,6 +10,15 @@ router.post('/me/profile', isAuthenticated, validateProfile, async (req, res) =>
     try {
         const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId } = req.body;
         
+        // Ensure capitalUsed is a number
+        const capitalUsedNum = parseFloat(capitalUsed);
+        if (isNaN(capitalUsedNum) || capitalUsedNum < 0) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Capital used must be a valid positive number'
+            });
+        }
+        
         // Check if profile exists
         const existingProfile = await query(
             'SELECT user_id FROM user_profiles WHERE user_id = $1',
@@ -23,18 +32,18 @@ router.post('/me/profile', isAuthenticated, validateProfile, async (req, res) =>
             result = await query(
                 `UPDATE user_profiles 
                  SET full_name = $1, address = $2, phone = $3, capital_used = $4, 
-                     referral_code = $5, zerodha_client_id = $6, profile_completed = 1, updated_at = NOW()
+                     referral_code = $5, zerodha_client_id = $6, profile_completed = true, updated_at = NOW()
                  WHERE user_id = $7
                  RETURNING *`,
-                [fullName, address, phone, capitalUsed, referralCode || null, zerodhaClientId, req.user.id]
+                [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, req.user.id]
             );
         } else {
             // Create new profile
             result = await query(
                 `INSERT INTO user_profiles (user_id, full_name, address, phone, capital_used, referral_code, zerodha_client_id, profile_completed, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 1, NOW(), NOW())
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
                  RETURNING *`,
-                [req.user.id, fullName, address, phone, capitalUsed, referralCode || null, zerodhaClientId]
+                [req.user.id, fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null]
             );
         }
         
@@ -45,10 +54,17 @@ router.post('/me/profile', isAuthenticated, validateProfile, async (req, res) =>
             profile: result.rows[0]
         });
     } catch (error) {
-        logger.error('Error updating user profile', error);
+        logger.error('Error updating user profile', {
+            error: error.message,
+            stack: error.stack,
+            code: error.code,
+            userId: req.user?.id,
+            body: req.body
+        });
         res.status(500).json({
             error: 'Internal Server Error',
-            message: 'Failed to update profile'
+            message: 'Failed to update profile',
+            ...(process.env.NODE_ENV === 'development' && { details: error.message })
         });
     }
 });
@@ -97,15 +113,24 @@ router.get('/me/profile', isAuthenticated, async (req, res) => {
 // Update user profile (PUT)
 router.put('/me/profile', isAuthenticated, validateProfile, async (req, res) => {
     try {
-        const { fullName, address, phone, capitalUsed, referralCode } = req.body;
+        const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId } = req.body;
+        
+        // Ensure capitalUsed is a number
+        const capitalUsedNum = parseFloat(capitalUsed);
+        if (isNaN(capitalUsedNum) || capitalUsedNum < 0) {
+            return res.status(400).json({
+                error: 'Validation Error',
+                message: 'Capital used must be a valid positive number'
+            });
+        }
         
         const result = await query(
             `UPDATE user_profiles 
              SET full_name = $1, address = $2, phone = $3, capital_used = $4, 
-                 referral_code = $5, updated_at = NOW()
-             WHERE user_id = $6
+                 referral_code = $5, zerodha_client_id = $6, updated_at = NOW()
+             WHERE user_id = $7
              RETURNING *`,
-            [fullName, address, phone, capitalUsed, referralCode || null, req.user.id]
+            [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, req.user.id]
         );
         
         if (result.rows.length === 0) {

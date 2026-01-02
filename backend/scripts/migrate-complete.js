@@ -3,6 +3,17 @@
  * Creates all tables for the Trading Subscription Platform
  */
 
+const path = require('path');
+const fs = require('fs');
+
+// Load environment variables BEFORE requiring database config
+const envPath = path.join(__dirname, '../env');
+if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+} else {
+    require('dotenv').config();
+}
+
 const { query } = require('../config/database');
 const logger = require('../config/logger');
 
@@ -36,6 +47,7 @@ async function runMigrations() {
                 address TEXT NOT NULL,
                 capital_used DECIMAL(15, 2),
                 referral_code VARCHAR(50),
+                zerodha_client_id VARCHAR(50),
                 communication_preferences JSONB DEFAULT '{"email": true, "sms": false}',
                 profile_completed BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW(),

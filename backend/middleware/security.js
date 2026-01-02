@@ -6,6 +6,11 @@ const helmet = require('helmet');
 const logger = require('../config/logger');
 
 // Configure Helmet for security headers
+// In development, allow localhost connections (127.0.0.1 and localhost are different origins)
+const connectSrc = process.env.NODE_ENV === 'production'
+    ? ["'self'", "https://accounts.google.com", "https://appleid.apple.com"]
+    : ["'self'", "http://localhost:3000", "http://127.0.0.1:3000", "https://accounts.google.com", "https://appleid.apple.com"];
+
 const securityHeaders = helmet({
     contentSecurityPolicy: {
         directives: {
@@ -15,7 +20,7 @@ const securityHeaders = helmet({
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://r2cdn.perplexity.ai"],
             imgSrc: ["'self'", "data:", "https:", "blob:"],
-            connectSrc: ["'self'", "https://accounts.google.com", "https://appleid.apple.com"],
+            connectSrc: connectSrc, // Allow localhost in development
             frameSrc: ["'self'", "https://accounts.google.com", "https://appleid.apple.com"],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null

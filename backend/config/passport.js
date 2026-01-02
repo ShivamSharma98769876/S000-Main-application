@@ -53,23 +53,26 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     };
     
     const googleCallbackUrl = getGoogleCallbackUrl();
-    logger.info('Google OAuth callback URL configured', { 
+    logger.info('Google OAuth strategy configured', { 
         callbackUrl: googleCallbackUrl,
-        source: process.env.GOOGLE_CALLBACK_URL ? 'environment' : 'auto-detected'
+        source: process.env.GOOGLE_CALLBACK_URL ? 'environment' : 'auto-detected',
+        hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+        hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
     });
     
-    passport.use(new GoogleStrategy({
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: googleCallbackUrl,
-        passReqToCallback: true
-    },
+    try {
+        passport.use('google', new GoogleStrategy({
+            clientID: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackURL: googleCallbackUrl,
+            passReqToCallback: true
+        },
     async (req, accessToken, refreshToken, profile, done) => {
         try {
             const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
             const displayName = profile.displayName || '';
             
-            // Ensure profile.id is a string (SQLite requirement)
+            // Ensure profile.id is a string
             const providerUserId = String(profile.id || '');
             if (!providerUserId) {
                 return done(new Error('Google profile ID is missing'));
@@ -102,11 +105,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                 );
                 user = result.rows[0];
                 
-                // Create empty user profile
+                // Create empty user profile with required fields set to empty strings
+                // User will complete profile during registration
                 await query(
-                    `INSERT INTO user_profiles (user_id, profile_completed, created_at, updated_at)
-                     VALUES ($1, $2, NOW(), NOW())`,
-                    [user.id, false]
+                    `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                    [user.id, '', '', '', false]
                 );
                 
                 logger.info('New user created via Google OAuth', { userId: user.id, email });
@@ -121,7 +125,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             
             return done(null, user);
         } catch (error) {
-            logger.error('Google OAuth error', error);
+            logger.error('Google OAuth error', {
+                error: error.message,
+                code: error.code,
+                stack: error.stack
+            });
             
             // Log failed login
             try {
@@ -137,6 +145,16 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             return done(error, null);
         }
     }));
+    
+    logger.info('Google OAuth strategy registered successfully');
+    } catch (error) {
+        logger.error('Failed to register Google OAuth strategy', { 
+            error: error.message,
+            stack: error.stack
+        });
+    }
+} else {
+    logger.warn('Google OAuth not configured - missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET');
 }
 
 // Apple OAuth Strategy
@@ -178,7 +196,7 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID) {
     },
     async (req, accessToken, refreshToken, idToken, profile, done) => {
         try {
-            // Ensure appleId is a string (SQLite requirement)
+            // Ensure appleId is a string
             const appleId = String(profile.id || idToken.sub || '');
             if (!appleId) {
                 return done(new Error('Apple profile ID is missing'));
@@ -213,11 +231,12 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID) {
                 );
                 user = result.rows[0];
                 
-                // Create empty user profile
+                // Create empty user profile with required fields set to empty strings
+                // User will complete profile during registration
                 await query(
-                    `INSERT INTO user_profiles (user_id, profile_completed, created_at, updated_at)
-                     VALUES ($1, $2, NOW(), NOW())`,
-                    [user.id, false]
+                    `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                    [user.id, '', '', '', false]
                 );
                 
                 logger.info('New user created via Apple OAuth', { userId: user.id, email });

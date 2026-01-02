@@ -155,7 +155,7 @@
                         </div>
 
                         <button type="submit" class="btn btn--primary btn--full btn--large">
-                            Submit Payment Proof
+                            Submit Order with Payment Proof
                         </button>
                     </form>
                 </div>
@@ -269,34 +269,12 @@
             });
         }
 
+        // Order creation is now handled by payment form submission
+        // This function is no longer used but kept for backward compatibility
         async function createOrder() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/orders`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({})
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        localStorage.removeItem('authToken');
-                        window.location.href = 'login.html';
-                        return;
-                    }
-                    const error = await response.json();
-                    throw new Error(error.message || 'Failed to create order');
-                }
-                
-                const data = await response.json();
-                orderId = data.order.orderId;
-                
-                // Load order details
-                await loadOrderSummary();
-            } catch (error) {
-                console.error('Error creating order:', error);
-                alert('Error: ' + error.message);
-                window.location.href = 'cart.html';
-            }
+            // Order creation now requires payment proof
+            // This is handled by the payment form submission
+            console.warn('createOrder() called but order creation now requires payment proof. Use payment form instead.');
         }
 
         async function loadOrderSummary() {
@@ -359,49 +337,54 @@
             `;
         }
 
-        // Handle form submission
+        // Handle form submission - Create order with payment proof
         document.getElementById('payment-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            // Payment proof is REQUIRED
             if (!selectedFile) {
-                alert('Please upload payment proof');
-                return;
-            }
-            
-            if (!orderId) {
-                alert('Order not created. Please try again.');
+                alert('Please upload a payment screenshot before submitting your order.');
                 return;
             }
             
             const submitBtn = e.target.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
+            submitBtn.textContent = 'Creating Order...';
             
             try {
+                // Create order with payment proof in one request
                 const formData = new FormData();
                 formData.append('paymentProof', selectedFile);
-                formData.append('paymentReference', document.getElementById('payment-reference').value);
-                formData.append('paymentDate', document.getElementById('payment-date').value);
+                formData.append('paymentReference', document.getElementById('payment-reference').value || '');
+                formData.append('paymentDate', document.getElementById('payment-date').value || '');
                 
-                const response = await fetch(`${API_BASE_URL}/orders/${orderId}/payment-proof`, {
+                const response = await fetch(`${API_BASE_URL}/orders`, {
                     method: 'POST',
                     headers: getAuthHeadersForUpload(),
                     body: formData
                 });
                 
                 if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
                     const error = await response.json();
-                    throw new Error(error.message || 'Failed to upload payment proof');
+                    throw new Error(error.message || 'Failed to create order');
                 }
                 
-                alert('Payment proof submitted successfully! Your order is pending admin approval.');
+                const data = await response.json();
+                orderId = data.order.orderId;
+                
+                alert('Order created successfully! Your order is pending admin approval.');
                 window.location.href = 'dashboard.html';
                 
             } catch (error) {
-                console.error('Error submitting payment:', error);
+                console.error('Error creating order:', error);
                 alert('Error: ' + error.message);
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit Payment Proof';
+                submitBtn.textContent = 'Submit Order';
             }
         });
 
@@ -488,13 +471,85 @@
             }
         }
 
+        // Load cart summary instead of creating order
+        async function loadCartSummary() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cart`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error('Failed to load cart');
+                }
+                
+                const data = await response.json();
+                displayCartSummary(data);
+            } catch (error) {
+                console.error('Error loading cart:', error);
+                document.getElementById('order-summary').innerHTML = `
+                    <div style="color: var(--error-color);">
+                        Error loading cart: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displayCartSummary(cartData) {
+            const summary = document.getElementById('order-summary');
+            
+            if (!cartData.items || cartData.items.length === 0) {
+                summary.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        <p>Your cart is empty.</p>
+                        <a href="cart.html" class="btn btn--primary" style="margin-top: 20px;">Go to Cart</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            const totalAmount = cartData.items.reduce((sum, item) => sum + parseFloat(item.price || item.subtotal || 0), 0);
+            
+            summary.innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p><strong>Items in Cart:</strong> ${cartData.items.length}</p>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 10px;">Items:</h4>
+                    ${cartData.items.map(item => `
+                        <div class="order-item">
+                            <strong>${item.product_name || 'Product'}</strong><br>
+                            <small style="color: var(--text-secondary);">
+                                ${item.duration_value || 0} ${(item.duration_unit || 'MONTH') === 'MONTH' ? 'Month(s)' : 'Year(s)'} | 
+                                ${item.start_date ? new Date(item.start_date).toLocaleDateString() : 'N/A'} - ${item.end_date ? new Date(item.end_date).toLocaleDateString() : 'N/A'}
+                            </small>
+                            <div style="text-align: right; margin-top: 5px;">₹${parseFloat(item.price || item.subtotal || 0).toFixed(2)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="border-top: 2px solid var(--border-color); padding-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; font-size: var(--font-size-xl); font-weight: 700; color: var(--primary-color);">
+                        <span>Total Payable:</span>
+                        <span>₹${totalAmount.toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
         // Initialize page
         (async () => {
             const isAuthenticated = await checkAuth();
             if (isAuthenticated) {
                 setDefaultPaymentDateTime();
                 loadPaymentConfig(); // Load payment configuration
-                createOrder();
+                loadCartSummary(); // Load cart summary instead of creating order
             }
         })();
     </script>
