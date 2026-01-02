@@ -34,8 +34,8 @@ tmp/
 temp/
 
 # JWT Keys - NEVER COMMIT
-config/keys/private.pem
-config/keys/*.pem
+#config/keys/private.pem
+#config/keys/*.pem
 
 # Database files - should not be committed
 *.db

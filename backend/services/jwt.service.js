@@ -18,17 +18,59 @@ class JWTService {
                 const azurePrivateKey = path.join(azureKeysPath, 'private.pem');
                 const azurePublicKey = path.join(azureKeysPath, 'public.pem');
                 
+                logger.info('Checking for JWT keys in Azure file system', {
+                    azureKeysPath,
+                    azurePrivateKey,
+                    azurePublicKey,
+                    privateKeyExists: fs.existsSync(azurePrivateKey),
+                    publicKeyExists: fs.existsSync(azurePublicKey),
+                    privateKeyStats: fs.existsSync(azurePrivateKey) ? {
+                        size: fs.statSync(azurePrivateKey).size,
+                        isFile: fs.statSync(azurePrivateKey).isFile()
+                    } : null,
+                    publicKeyStats: fs.existsSync(azurePublicKey) ? {
+                        size: fs.statSync(azurePublicKey).size,
+                        isFile: fs.statSync(azurePublicKey).isFile()
+                    } : null
+                });
+                
                 if (fs.existsSync(azurePrivateKey) && fs.existsSync(azurePublicKey)) {
                     logger.info('Found JWT keys in Azure file system, using file system keys', {
                         privateKeyPath: azurePrivateKey,
                         publicKeyPath: azurePublicKey
                     });
                     useFileSystem = true;
-                    this.privateKey = fs.readFileSync(azurePrivateKey, 'utf8').trim();
-                    this.publicKey = fs.readFileSync(azurePublicKey, 'utf8').trim();
                     
-                    // Validate file system keys
-                    this._validateKeys();
+                    try {
+                        this.privateKey = fs.readFileSync(azurePrivateKey, 'utf8').trim();
+                        this.publicKey = fs.readFileSync(azurePublicKey, 'utf8').trim();
+                        
+                        logger.info('Successfully read JWT keys from file system', {
+                            privateKeyLength: this.privateKey.length,
+                            publicKeyLength: this.publicKey.length,
+                            privateKeyFirstChars: this.privateKey.substring(0, 50),
+                            publicKeyFirstChars: this.publicKey.substring(0, 50)
+                        });
+                        
+                        // Validate file system keys
+                        this._validateKeys();
+                        logger.info('JWT keys from file system validated successfully');
+                    } catch (readError) {
+                        logger.error('Failed to read or validate JWT keys from file system', {
+                            error: readError.message,
+                            stack: readError.stack,
+                            privateKeyPath: azurePrivateKey,
+                            publicKeyPath: azurePublicKey
+                        });
+                        throw readError;
+                    }
+                } else {
+                    logger.warn('JWT keys not found in Azure file system, will try environment variables', {
+                        privateKeyPath: azurePrivateKey,
+                        publicKeyPath: azurePublicKey,
+                        privateKeyExists: fs.existsSync(azurePrivateKey),
+                        publicKeyExists: fs.existsSync(azurePublicKey)
+                    });
                 }
             }
             
