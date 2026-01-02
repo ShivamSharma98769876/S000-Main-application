@@ -37,12 +37,31 @@ if (process.env.DATABASE_URL) {
                 connectionTimeoutMillis: 2000,
             };
         } else {
+            // Parse connection string to check if SSL is required
+            const urlString = process.env.DATABASE_URL.toLowerCase();
+            const requiresSSL = urlString.includes('sslmode=require') || 
+                               urlString.includes('cloudclusters.net') ||
+                               urlString.includes('azure.com') ||
+                               urlString.includes('amazonaws.com') ||
+                               process.env.NODE_ENV === 'production' || 
+                               process.env.WEBSITE_SITE_NAME || 
+                               process.env.WEBSITE_HOSTNAME;
+            
             poolConfig = {
                 connectionString: process.env.DATABASE_URL,
-                ssl: (process.env.NODE_ENV === 'production' || process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME) 
-                    ? { rejectUnauthorized: false } 
+                ssl: requiresSSL 
+                    ? { 
+                        rejectUnauthorized: false  // Allow self-signed certificates (common with cloud providers like CloudClusters)
+                    } 
                     : false
             };
+            
+            if (requiresSSL) {
+                logger.info('SSL enabled for database connection', { 
+                    host: urlString.includes('@') ? urlString.split('@')[1].split('/')[0].split(':')[0] : 'unknown',
+                    rejectUnauthorized: false 
+                });
+            }
         }
     } catch (e) {
         logger.warn('Failed to parse DATABASE_URL, using individual connection parameters', { error: e.message });
@@ -68,8 +87,16 @@ if (process.env.DATABASE_URL) {
         throw new Error('Database configuration required for Azure deployment. Please set DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD in Azure Portal.');
     }
     
+    // Check if SSL is required (cloud providers, Azure, or explicit SSL mode)
+    const host = process.env.DB_HOST || '127.0.0.1';
+    const requiresSSL = host.includes('cloudclusters.net') ||
+                       host.includes('azure.com') ||
+                       host.includes('amazonaws.com') ||
+                       isAzure ||
+                       process.env.DB_SSL === 'true';
+    
     poolConfig = {
-        host: process.env.DB_HOST || '127.0.0.1',
+        host: host,
         port: parseInt(process.env.DB_PORT) || 5432,
         database: process.env.DB_NAME || 'tradingpro',
         user: process.env.DB_USER || 'postgres',
@@ -77,9 +104,20 @@ if (process.env.DATABASE_URL) {
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
-        // Add SSL for Azure if not using DATABASE_URL
-        ssl: isAzure ? { rejectUnauthorized: false } : false
+        // Add SSL for cloud providers (with certificate verification disabled for self-signed certs)
+        ssl: requiresSSL 
+            ? { 
+                rejectUnauthorized: false  // Allow self-signed certificates (common with cloud providers)
+            } 
+            : false
     };
+    
+    if (requiresSSL) {
+        logger.info('SSL enabled for database connection', { 
+            host: host,
+            rejectUnauthorized: false 
+        });
+    }
     
     // Warn if using localhost on Azure
     if (isAzure && poolConfig.host === '127.0.0.1') {

@@ -11,6 +11,15 @@ class JWTService {
             if (process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
                 this.privateKey = process.env.JWT_PRIVATE_KEY;
                 this.publicKey = process.env.JWT_PUBLIC_KEY;
+                
+                // Validate key format
+                if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
+                    throw new Error('JWT_PRIVATE_KEY is not in valid PEM format. It must include -----BEGIN and -----END markers.');
+                }
+                if (!this.publicKey.includes('BEGIN') || !this.publicKey.includes('PUBLIC KEY')) {
+                    throw new Error('JWT_PUBLIC_KEY is not in valid PEM format. It must include -----BEGIN and -----END markers.');
+                }
+                
                 logger.info('JWT Service initialized from environment variables');
             } else {
                 // Fallback to file system (for local development)
@@ -20,6 +29,10 @@ class JWTService {
                 const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH 
                     ? path.resolve(process.env.JWT_PUBLIC_KEY_PATH)
                     : path.join(__dirname, '../config/keys/public.pem');
+
+                if (!fs.existsSync(privateKeyPath) || !fs.existsSync(publicKeyPath)) {
+                    throw new Error(`JWT keys not found at ${privateKeyPath} or ${publicKeyPath}. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js to create keys.`);
+                }
 
                 this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
                 this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
@@ -33,7 +46,13 @@ class JWTService {
             logger.info('JWT Service initialized successfully');
         } catch (error) {
             logger.error('Failed to initialize JWT Service', error);
-            throw new Error('JWT keys not found. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js and upload keys to server.');
+            const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
+            
+            if (isAzure) {
+                throw new Error(`JWT keys not configured for Azure. Please set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables in Azure Portal → Configuration → Application settings. Error: ${error.message}`);
+            } else {
+                throw new Error(`JWT keys not found. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js and upload keys to server. Error: ${error.message}`);
+            }
         }
     }
 
@@ -174,6 +193,15 @@ class JWTService {
      */
     generateAuthToken(user) {
         try {
+            // Validate private key before signing
+            if (!this.privateKey || typeof this.privateKey !== 'string') {
+                throw new Error('JWT private key is not set or invalid');
+            }
+            
+            if (!this.privateKey.includes('BEGIN') || !this.privateKey.includes('PRIVATE KEY')) {
+                throw new Error('JWT private key is not in valid PEM format. It must be an RSA private key in PEM format with -----BEGIN and -----END markers. Please set JWT_PRIVATE_KEY in Azure Portal.');
+            }
+
             const payload = {
                 user_id: user.id,
                 email: user.email,
