@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -49,6 +50,25 @@ class JWTService {
                         expectedMinLength: 1000
                     });
                     throw new Error(`JWT_PRIVATE_KEY appears to be too short (${this.privateKey.length} chars). RSA private keys are typically 1600+ characters. You may have set a symmetric secret instead. Please generate RSA keys using: node backend/scripts/generate-keys.js`);
+                }
+                
+                // Try to actually parse the key to verify it's a valid RSA key
+                try {
+                    const keyObject = crypto.createPrivateKey(this.privateKey);
+                    if (keyObject.asymmetricKeyType !== 'rsa') {
+                        throw new Error(`Key is not an RSA key. Found: ${keyObject.asymmetricKeyType}`);
+                    }
+                    logger.info('JWT private key validated as RSA key', {
+                        keyType: keyObject.asymmetricKeyType,
+                        keySize: keyObject.asymmetricKeyDetails?.modulusLength
+                    });
+                } catch (parseError) {
+                    logger.error('Failed to parse JWT_PRIVATE_KEY as RSA key', {
+                        error: parseError.message,
+                        keyLength: this.privateKey.length,
+                        firstChars: this.privateKey.substring(0, 100)
+                    });
+                    throw new Error(`JWT_PRIVATE_KEY is not a valid RSA private key. Error: ${parseError.message}. Please generate RSA keys using: node backend/scripts/generate-keys.js and ensure you copy the ENTIRE key including all lines.`);
                 }
                 
                 logger.info('JWT Service initialized from environment variables', {
@@ -276,6 +296,23 @@ class JWTService {
                 'tradingpro-main-app',
                 'tradingpro-child-app'
             ];
+
+            // Final validation before signing - try to create key object
+            let keyObject;
+            try {
+                keyObject = crypto.createPrivateKey(this.privateKey);
+                if (keyObject.asymmetricKeyType !== 'rsa') {
+                    throw new Error(`Key is not RSA. Found: ${keyObject.asymmetricKeyType}`);
+                }
+            } catch (keyError) {
+                logger.error('JWT private key validation failed at signing time', {
+                    error: keyError.message,
+                    keyLength: this.privateKey.length,
+                    keyType: typeof this.privateKey,
+                    firstChars: this.privateKey.substring(0, 100)
+                });
+                throw new Error(`JWT_PRIVATE_KEY is not a valid RSA private key. Error: ${keyError.message}. Please generate RSA keys using: node backend/scripts/generate-keys.js and set them in Azure Portal. Current key appears to be invalid or corrupted.`);
+            }
 
             const token = jwt.sign(payload, this.privateKey, {
                 algorithm: 'RS256',
