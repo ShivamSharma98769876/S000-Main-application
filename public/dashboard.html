@@ -60,6 +60,46 @@
             </div>
 
             <div class="dashboard-grid">
+                <!-- Market Insights Section -->
+                <div style="grid-column: 1 / -1;">
+                    <div class="dashboard-card" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); border: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="font-size: 2rem;">📊</span>
+                                <div>
+                                    <h2 style="margin: 0; font-size: 1.75rem; color: white;">Real-time Market Insights</h2>
+                                    <p style="color: rgba(255,255,255,0.9); margin: 0.25rem 0 0 0; font-size: 0.875rem;">Latest analysis updated by our experts</p>
+                                </div>
+                            </div>
+                            <button id="toggle-insight-btn" class="btn btn--primary" style="min-width: 120px; background: white; color: var(--primary-color);">
+                                Show Insight
+                            </button>
+                        </div>
+
+                        <div id="insight-content" style="display: none; background: var(--card-bg); border-radius: var(--radius-lg); padding: 2rem;">
+                            <div id="insight-loading" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                Loading latest insights...
+                            </div>
+
+                            <div id="insight-data" style="display: none;">
+                                <div style="border-left: 4px solid var(--primary-color); padding-left: 1.5rem; margin-bottom: 1.5rem;">
+                                    <h3 id="insight-title" style="color: var(--text-primary); font-size: 1.5rem; margin-bottom: 0.5rem;"></h3>
+                                    <div id="insight-meta" style="display: flex; gap: 1rem; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; flex-wrap: wrap;"></div>
+                                </div>
+                                
+                                <div id="insight-body" style="color: var(--text-secondary); line-height: 1.8; font-size: 1rem; max-height: 600px; overflow-y: auto; padding-right: 1rem;">
+                                    <!-- Rich HTML content will be rendered here -->
+                                </div>
+                            </div>
+
+                            <div id="no-insight" style="display: none; text-align: center; padding: 2rem; color: var(--text-secondary);">
+                                No insights available at the moment. Check back soon!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subscriptions Section -->
                 <div style="grid-column: 1 / -1;">
                     <div class="dashboard-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -78,8 +118,10 @@
                         </div>
                     </div>
                 </div>
-                    
-                    <div class="dashboard-card" style="margin-top: 2rem;">
+                
+                <!-- Recent Orders and Quick Actions Row -->
+                <div>
+                    <div class="dashboard-card">
                         <h2 style="margin-bottom: 1.5rem;">Recent Orders</h2>
                         <div id="orders-list">
                             <div class="loading">Loading orders...</div>
@@ -204,6 +246,7 @@
                 
                 loadSubscriptions();
                 loadOrders();
+                initializeMarketInsights();
             } catch (error) {
                 console.error('Dashboard load error:', error);
                 localStorage.removeItem('authToken');
@@ -579,6 +622,97 @@
                 }
             }
         });
+
+        // Market Insights functionality
+        let isInsightVisible = false;
+        let insightLoaded = false;
+
+        function initializeMarketInsights() {
+            const toggleBtn = document.getElementById('toggle-insight-btn');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', async () => {
+                    const contentDiv = document.getElementById('insight-content');
+                    const btn = document.getElementById('toggle-insight-btn');
+
+                    if (!isInsightVisible) {
+                        contentDiv.style.display = 'block';
+                        btn.textContent = 'Hide Insight';
+                        isInsightVisible = true;
+
+                        // Load insight if not already loaded
+                        if (!insightLoaded) {
+                            await loadLatestInsight();
+                            insightLoaded = true;
+                        }
+                    } else {
+                        contentDiv.style.display = 'none';
+                        btn.textContent = 'Show Insight';
+                        isInsightVisible = false;
+                    }
+                });
+            }
+        }
+
+        async function loadLatestInsight() {
+            try {
+                console.log('Fetching insights from:', `${API_BASE_URL}/insights/latest`);
+                const response = await fetch(`${API_BASE_URL}/insights/latest`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`Failed to load insight: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Insight data received:', data);
+
+                const loadingEl = document.getElementById('insight-loading');
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+
+                if (data.insight) {
+                    const titleEl = document.getElementById('insight-title');
+                    const metaEl = document.getElementById('insight-meta');
+                    const bodyEl = document.getElementById('insight-body');
+                    const dataEl = document.getElementById('insight-data');
+                    
+                    if (titleEl) titleEl.textContent = data.insight.title;
+                    
+                    if (metaEl) {
+                        const metaHTML = [];
+                        if (data.insight.category) {
+                            metaHTML.push(`<span style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); text-transform: uppercase; font-weight: 600;">${data.insight.category}</span>`);
+                        }
+                        if (data.insight.published_at) {
+                            metaHTML.push(`<span>📅 ${new Date(data.insight.published_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>`);
+                        }
+                        if (data.insight.author_email) {
+                            metaHTML.push(`<span>👤 ${data.insight.author_email.split('@')[0]}</span>`);
+                        }
+                        metaEl.innerHTML = metaHTML.join('');
+                    }
+
+                    // Render HTML content (backend sanitizes dangerous scripts)
+                    if (bodyEl) bodyEl.innerHTML = data.insight.content;
+                    if (dataEl) dataEl.style.display = 'block';
+                } else {
+                    const noInsightEl = document.getElementById('no-insight');
+                    if (noInsightEl) {
+                        noInsightEl.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading insight:', error);
+                const loadingEl = document.getElementById('insight-loading');
+                if (loadingEl) {
+                    loadingEl.innerHTML = 
+                        `<p style="color: var(--error-color);">Failed to load insights: ${error.message}<br><small>Check browser console (F12) for details.</small></p>`;
+                }
+            }
+        }
 
         loadDashboard();
     </script>
