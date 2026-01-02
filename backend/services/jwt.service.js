@@ -9,9 +9,27 @@ class JWTService {
     constructor() {
         try {
             // Try to load keys from environment variables first (for cloud deployments)
+            // Log what we're getting from environment (without exposing full keys)
+            logger.info('Checking JWT keys from environment', {
+                hasJWT_PRIVATE_KEY: !!process.env.JWT_PRIVATE_KEY,
+                hasJWT_PUBLIC_KEY: !!process.env.JWT_PUBLIC_KEY,
+                privateKeyLength: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.length : 0,
+                publicKeyLength: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.length : 0,
+                privateKeyFirstChars: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.substring(0, 50) : 'NOT SET',
+                publicKeyFirstChars: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.substring(0, 50) : 'NOT SET',
+                isAzure: !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME)
+            });
+            
             if (process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
                 this.privateKey = process.env.JWT_PRIVATE_KEY.trim();
                 this.publicKey = process.env.JWT_PUBLIC_KEY.trim();
+                
+                logger.info('JWT keys found in environment variables', {
+                    privateKeyLength: this.privateKey.length,
+                    publicKeyLength: this.publicKey.length,
+                    privateKeyStartsWith: this.privateKey.substring(0, 30),
+                    publicKeyStartsWith: this.publicKey.substring(0, 30)
+                });
                 
                 // Validate private key format
                 const hasBeginPrivate = this.privateKey.includes('BEGIN') && this.privateKey.includes('PRIVATE KEY');
@@ -76,21 +94,55 @@ class JWTService {
                     publicKeyLength: this.publicKey.length
                 });
             } else {
-                // Fallback to file system (for local development)
-                const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH 
-                    ? path.resolve(process.env.JWT_PRIVATE_KEY_PATH)
-                    : path.join(__dirname, '../config/keys/private.pem');
-                const publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH 
-                    ? path.resolve(process.env.JWT_PUBLIC_KEY_PATH)
-                    : path.join(__dirname, '../config/keys/public.pem');
-
-                if (!fs.existsSync(privateKeyPath) || !fs.existsSync(publicKeyPath)) {
-                    throw new Error(`JWT keys not found at ${privateKeyPath} or ${publicKeyPath}. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js to create keys.`);
+                // Fallback to file system (for local development and Azure)
+                // On Azure, check /site/wwwroot/config/keys first, then relative path
+                const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
+                
+                let privateKeyPath, publicKeyPath;
+                
+                if (isAzure) {
+                    // Azure: check /site/wwwroot/config/keys first
+                    const azureKeysPath = '/home/site/wwwroot/config/keys';
+                    const azurePrivateKey = path.join(azureKeysPath, 'private.pem');
+                    const azurePublicKey = path.join(azureKeysPath, 'public.pem');
+                    
+                    if (fs.existsSync(azurePrivateKey) && fs.existsSync(azurePublicKey)) {
+                        privateKeyPath = azurePrivateKey;
+                        publicKeyPath = azurePublicKey;
+                        logger.info('Found JWT keys in Azure config/keys directory', {
+                            privateKeyPath: azurePrivateKey,
+                            publicKeyPath: azurePublicKey
+                        });
+                    } else {
+                        // Fallback to relative path on Azure
+                        privateKeyPath = path.join(__dirname, '../config/keys/private.pem');
+                        publicKeyPath = path.join(__dirname, '../config/keys/public.pem');
+                    }
+                } else {
+                    // Local development: use relative path
+                    privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH 
+                        ? path.resolve(process.env.JWT_PRIVATE_KEY_PATH)
+                        : path.join(__dirname, '../config/keys/private.pem');
+                    publicKeyPath = process.env.JWT_PUBLIC_KEY_PATH 
+                        ? path.resolve(process.env.JWT_PUBLIC_KEY_PATH)
+                        : path.join(__dirname, '../config/keys/public.pem');
                 }
 
-                this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-                this.publicKey = fs.readFileSync(publicKeyPath, 'utf8');
-                logger.info('JWT Service initialized from file system');
+                if (!fs.existsSync(privateKeyPath) || !fs.existsSync(publicKeyPath)) {
+                    const errorMsg = isAzure
+                        ? `JWT keys not found. Checked: ${privateKeyPath} and ${publicKeyPath}. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables in Azure Portal, or place keys in /home/site/wwwroot/config/keys/ directory.`
+                        : `JWT keys not found at ${privateKeyPath} or ${publicKeyPath}. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js to create keys.`;
+                    throw new Error(errorMsg);
+                }
+
+                this.privateKey = fs.readFileSync(privateKeyPath, 'utf8').trim();
+                this.publicKey = fs.readFileSync(publicKeyPath, 'utf8').trim();
+                logger.info('JWT Service initialized from file system', {
+                    privateKeyPath,
+                    publicKeyPath,
+                    privateKeyLength: this.privateKey.length,
+                    publicKeyLength: this.publicKey.length
+                });
             }
 
             this.issuer = process.env.JWT_ISSUER || 'tradingpro-main-app';
