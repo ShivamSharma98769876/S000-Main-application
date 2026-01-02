@@ -223,11 +223,14 @@ async function runMigrations() {
         logger.info('✓ Testimonials table created');
 
         // 13. Create Session table (for express-session)
+        // connect-pg-simple requires explicit UNIQUE constraint for ON CONFLICT
         await query(`
             CREATE TABLE IF NOT EXISTS session (
-                sid VARCHAR NOT NULL PRIMARY KEY,
+                sid VARCHAR NOT NULL,
                 sess JSON NOT NULL,
-                expire TIMESTAMP(6) NOT NULL
+                expire TIMESTAMP(6) NOT NULL,
+                CONSTRAINT session_pkey PRIMARY KEY (sid),
+                CONSTRAINT session_sid_unique UNIQUE (sid)
             );
         `);
         logger.info('✓ Session table created');

@@ -5,12 +5,15 @@ async function createSessionTable() {
     try {
         logger.info('Creating session table...');
         
-        // Create session table
+        // Create session table with explicit unique constraint for connect-pg-simple
+        // connect-pg-simple requires UNIQUE constraint for ON CONFLICT to work
         await query(`
             CREATE TABLE IF NOT EXISTS session (
-                sid VARCHAR NOT NULL PRIMARY KEY,
+                sid VARCHAR NOT NULL,
                 sess JSON NOT NULL,
-                expire TIMESTAMP(6) NOT NULL
+                expire TIMESTAMP(6) NOT NULL,
+                CONSTRAINT session_pkey PRIMARY KEY (sid),
+                CONSTRAINT session_sid_unique UNIQUE (sid)
             );
         `);
         

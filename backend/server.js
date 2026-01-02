@@ -455,7 +455,34 @@ try {
         })
         .catch((err) => {
             console.error('❌ Database connection failed:', err.message);
-            logger.error('Database connection failed', err);
+            const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
+            logger.error('Database connection failed', {
+                message: err.message,
+                code: err.code,
+                isAzure,
+                hasDatabaseUrl: !!process.env.DATABASE_URL,
+                hasDbHost: !!process.env.DB_HOST,
+                hasDbUser: !!process.env.DB_USER,
+                hasDbPassword: !!process.env.DB_PASSWORD
+            });
+            
+            // Provide helpful error message for Azure
+            if (isAzure) {
+                console.error('\n⚠️  Azure Deployment Detected');
+                console.error('Please set database configuration in Azure Portal:');
+                console.error('  1. Go to Azure Portal → Your App Service → Configuration');
+                console.error('  2. Add Application Settings:');
+                console.error('     - DATABASE_URL (recommended) OR');
+                console.error('     - DB_HOST, DB_NAME, DB_USER, DB_PASSWORD');
+                console.error('  3. Save and restart the app');
+                console.error('\nCurrent environment variables:');
+                console.error(`  DATABASE_URL: ${process.env.DATABASE_URL ? 'SET' : 'NOT SET'}`);
+                console.error(`  DB_HOST: ${process.env.DB_HOST || 'NOT SET'}`);
+                console.error(`  DB_NAME: ${process.env.DB_NAME || 'NOT SET'}`);
+                console.error(`  DB_USER: ${process.env.DB_USER || 'NOT SET'}`);
+                console.error(`  DB_PASSWORD: ${process.env.DB_PASSWORD ? 'SET' : 'NOT SET'}`);
+            }
+            
             process.exit(1);
         });
 } catch (error) {

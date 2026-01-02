@@ -1,9 +1,23 @@
 const { Pool } = require('pg');
 const logger = require('./logger');
 
+// Detect if running on Azure
+const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
+
 // Database connection pool
 // Supports both DATABASE_URL and individual connection parameters
 let poolConfig;
+
+// Log environment detection
+logger.info('Database configuration', {
+    isAzure,
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    hasDbHost: !!process.env.DB_HOST,
+    hasDbUser: !!process.env.DB_USER,
+    hasDbPassword: !!process.env.DB_PASSWORD,
+    websiteSiteName: process.env.WEBSITE_SITE_NAME,
+    websiteHostname: process.env.WEBSITE_HOSTNAME
+});
 
 if (process.env.DATABASE_URL) {
     try {
@@ -44,6 +58,16 @@ if (process.env.DATABASE_URL) {
         };
     }
 } else {
+    // Check if we're on Azure but don't have database config
+    if (isAzure && !process.env.DB_HOST && !process.env.DATABASE_URL) {
+        logger.error('Azure deployment detected but database configuration is missing!', {
+            error: 'Missing database configuration',
+            required: 'DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD must be set',
+            help: 'Set these in Azure Portal → Configuration → Application Settings'
+        });
+        throw new Error('Database configuration required for Azure deployment. Please set DATABASE_URL or DB_HOST, DB_NAME, DB_USER, DB_PASSWORD in Azure Portal.');
+    }
+    
     poolConfig = {
         host: process.env.DB_HOST || '127.0.0.1',
         port: parseInt(process.env.DB_PORT) || 5432,
@@ -53,8 +77,24 @@ if (process.env.DATABASE_URL) {
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 2000,
+        // Add SSL for Azure if not using DATABASE_URL
+        ssl: isAzure ? { rejectUnauthorized: false } : false
     };
+    
+    // Warn if using localhost on Azure
+    if (isAzure && poolConfig.host === '127.0.0.1') {
+        logger.error('⚠️  WARNING: Using localhost database on Azure!', {
+            host: poolConfig.host,
+            message: 'This will not work. Please set DATABASE_URL or DB_HOST in Azure Portal.'
+        });
+    }
 }
+
+// Log final pool configuration (without sensitive data)
+const safeConfig = { ...poolConfig };
+if (safeConfig.password) safeConfig.password = '***';
+if (safeConfig.connectionString) safeConfig.connectionString = safeConfig.connectionString.replace(/:[^:@]+@/, ':***@');
+logger.info('Database pool configuration', safeConfig);
 
 const pool = new Pool(poolConfig);
 
