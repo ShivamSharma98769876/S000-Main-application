@@ -98,16 +98,46 @@ class JWTService {
             this.expiresIn = process.env.JWT_EXPIRY || '10m';
 
             logger.info('JWT Service initialized successfully');
+            this.initialized = true;
+            this.initializationError = null;
         } catch (error) {
             logger.error('Failed to initialize JWT Service', error);
+            this.initialized = false;
+            this.initializationError = error;
+            this.privateKey = null;
+            this.publicKey = null;
+            
             const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
             
             if (isAzure) {
-                throw new Error(`JWT keys not configured for Azure. Please set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables in Azure Portal → Configuration → Application settings. Error: ${error.message}`);
+                logger.error('JWT keys not configured for Azure - app will start but OAuth will fail', {
+                    error: error.message,
+                    help: 'Please set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables in Azure Portal → Configuration → Application settings'
+                });
             } else {
-                throw new Error(`JWT keys not found. Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js and upload keys to server. Error: ${error.message}`);
+                logger.error('JWT keys not found - app will start but OAuth will fail', {
+                    error: error.message,
+                    help: 'Either set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY environment variables, or run generate-keys.js and upload keys to server'
+                });
             }
+            
+            // Don't throw - let app start but JWT operations will fail gracefully
+            // This allows the app to start and show proper error messages
         }
+    }
+    
+    /**
+     * Check if JWT service is properly initialized
+     */
+    isInitialized() {
+        return this.initialized === true && this.privateKey && this.publicKey;
+    }
+    
+    /**
+     * Get initialization error if any
+     */
+    getInitializationError() {
+        return this.initializationError;
     }
 
     /**
@@ -247,6 +277,22 @@ class JWTService {
      */
     generateAuthToken(user) {
         try {
+            // Check if service is initialized
+            if (!this.isInitialized()) {
+                const error = this.getInitializationError();
+                const errorMessage = error 
+                    ? error.message 
+                    : 'JWT service is not initialized. Please set JWT_PRIVATE_KEY and JWT_PUBLIC_KEY in Azure Portal.';
+                
+                logger.error('JWT service not initialized - cannot generate token', {
+                    error: errorMessage,
+                    hasPrivateKey: !!this.privateKey,
+                    hasPublicKey: !!this.publicKey
+                });
+                
+                throw new Error(`JWT keys not configured. ${errorMessage} Please generate RSA keys using: node backend/scripts/generate-keys.js and set them in Azure Portal → Configuration → Application settings.`);
+            }
+            
             // Validate private key before signing
             if (!this.privateKey || typeof this.privateKey !== 'string') {
                 logger.error('JWT private key validation failed', {
