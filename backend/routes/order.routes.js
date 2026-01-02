@@ -13,6 +13,9 @@ const emailQueue = require('../services/emailQueue.service');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         // Use absolute path to ensure consistency with server.js static file serving
+        // On Azure: uploads/ is in the same directory as server.js (backend/uploads)
+        // Locally: uploads/ is one level up from backend/ (../uploads)
+        // Since routes are in backend/routes/, we always go up one level to backend/uploads
         const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, '../uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });

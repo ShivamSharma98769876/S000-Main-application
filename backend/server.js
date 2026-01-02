@@ -248,6 +248,8 @@ app.use(express.static(publicDir, {
 
 // Serve uploaded files
 // Use the same path as multer uploads to ensure consistency
+// server.js is in backend/, so uploads/ should be backend/uploads/
+// This works for both Azure and local (Azure deploys backend/ as root)
 const uploadDir = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 // Ensure upload directory exists
 if (!fs.existsSync(uploadDir)) {

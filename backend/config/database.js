@@ -25,7 +25,9 @@ if (process.env.DATABASE_URL) {
         } else {
             poolConfig = {
                 connectionString: process.env.DATABASE_URL,
-                ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+                ssl: (process.env.NODE_ENV === 'production' || process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME) 
+                    ? { rejectUnauthorized: false } 
+                    : false
             };
         }
     } catch (e) {
