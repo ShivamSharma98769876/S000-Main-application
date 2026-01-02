@@ -8,19 +8,43 @@ const logger = require('../config/logger');
 class JWTService {
     constructor() {
         try {
-            // Try to load keys from environment variables first (for cloud deployments)
-            // Log what we're getting from environment (without exposing full keys)
-            logger.info('Checking JWT keys from environment', {
-                hasJWT_PRIVATE_KEY: !!process.env.JWT_PRIVATE_KEY,
-                hasJWT_PUBLIC_KEY: !!process.env.JWT_PUBLIC_KEY,
-                privateKeyLength: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.length : 0,
-                publicKeyLength: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.length : 0,
-                privateKeyFirstChars: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.substring(0, 50) : 'NOT SET',
-                publicKeyFirstChars: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.substring(0, 50) : 'NOT SET',
-                isAzure: !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME)
-            });
+            const isAzure = !!(process.env.WEBSITE_SITE_NAME || process.env.WEBSITE_HOSTNAME);
             
-            if (process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
+            // On Azure, prefer file system keys over environment variables (more reliable)
+            // Check file system first if on Azure
+            let useFileSystem = false;
+            if (isAzure) {
+                const azureKeysPath = '/home/site/wwwroot/config/keys';
+                const azurePrivateKey = path.join(azureKeysPath, 'private.pem');
+                const azurePublicKey = path.join(azureKeysPath, 'public.pem');
+                
+                if (fs.existsSync(azurePrivateKey) && fs.existsSync(azurePublicKey)) {
+                    logger.info('Found JWT keys in Azure file system, using file system keys', {
+                        privateKeyPath: azurePrivateKey,
+                        publicKeyPath: azurePublicKey
+                    });
+                    useFileSystem = true;
+                    this.privateKey = fs.readFileSync(azurePrivateKey, 'utf8').trim();
+                    this.publicKey = fs.readFileSync(azurePublicKey, 'utf8').trim();
+                    
+                    // Validate file system keys
+                    this._validateKeys();
+                }
+            }
+            
+            // If file system keys not available, try environment variables
+            if (!useFileSystem && process.env.JWT_PRIVATE_KEY && process.env.JWT_PUBLIC_KEY) {
+                // Log what we're getting from environment (without exposing full keys)
+                logger.info('Checking JWT keys from environment variables', {
+                    hasJWT_PRIVATE_KEY: !!process.env.JWT_PRIVATE_KEY,
+                    hasJWT_PUBLIC_KEY: !!process.env.JWT_PUBLIC_KEY,
+                    privateKeyLength: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.length : 0,
+                    publicKeyLength: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.length : 0,
+                    privateKeyFirstChars: process.env.JWT_PRIVATE_KEY ? process.env.JWT_PRIVATE_KEY.substring(0, 50) : 'NOT SET',
+                    publicKeyFirstChars: process.env.JWT_PUBLIC_KEY ? process.env.JWT_PUBLIC_KEY.substring(0, 50) : 'NOT SET',
+                    isAzure
+                });
+                
                 this.privateKey = process.env.JWT_PRIVATE_KEY.trim();
                 this.publicKey = process.env.JWT_PUBLIC_KEY.trim();
                 
@@ -70,24 +94,8 @@ class JWTService {
                     throw new Error(`JWT_PRIVATE_KEY appears to be too short (${this.privateKey.length} chars). RSA private keys are typically 1600+ characters. You may have set a symmetric secret instead. Please generate RSA keys using: node backend/scripts/generate-keys.js`);
                 }
                 
-                // Try to actually parse the key to verify it's a valid RSA key
-                try {
-                    const keyObject = crypto.createPrivateKey(this.privateKey);
-                    if (keyObject.asymmetricKeyType !== 'rsa') {
-                        throw new Error(`Key is not an RSA key. Found: ${keyObject.asymmetricKeyType}`);
-                    }
-                    logger.info('JWT private key validated as RSA key', {
-                        keyType: keyObject.asymmetricKeyType,
-                        keySize: keyObject.asymmetricKeyDetails?.modulusLength
-                    });
-                } catch (parseError) {
-                    logger.error('Failed to parse JWT_PRIVATE_KEY as RSA key', {
-                        error: parseError.message,
-                        keyLength: this.privateKey.length,
-                        firstChars: this.privateKey.substring(0, 100)
-                    });
-                    throw new Error(`JWT_PRIVATE_KEY is not a valid RSA private key. Error: ${parseError.message}. Please generate RSA keys using: node backend/scripts/generate-keys.js and ensure you copy the ENTIRE key including all lines.`);
-                }
+                // Validate keys (includes RSA parsing)
+                this._validateKeys();
                 
                 logger.info('JWT Service initialized from environment variables', {
                     privateKeyLength: this.privateKey.length,
@@ -143,6 +151,9 @@ class JWTService {
                     privateKeyLength: this.privateKey.length,
                     publicKeyLength: this.publicKey.length
                 });
+                
+                // Validate file system keys
+                this._validateKeys();
             }
 
             this.issuer = process.env.JWT_ISSUER || 'tradingpro-main-app';
@@ -175,6 +186,76 @@ class JWTService {
             
             // Don't throw - let app start but JWT operations will fail gracefully
             // This allows the app to start and show proper error messages
+        }
+    }
+    
+    /**
+     * Validate keys format and parse as RSA keys
+     * @private
+     */
+    _validateKeys() {
+        // Validate private key format
+        const hasBeginPrivate = this.privateKey.includes('BEGIN') && this.privateKey.includes('PRIVATE KEY');
+        const hasEndPrivate = this.privateKey.includes('END PRIVATE KEY') || this.privateKey.includes('END RSA PRIVATE KEY');
+        
+        if (!hasBeginPrivate || !hasEndPrivate) {
+            logger.error('JWT_PRIVATE_KEY validation failed', {
+                hasBegin: this.privateKey.includes('BEGIN'),
+                hasPrivateKey: this.privateKey.includes('PRIVATE KEY'),
+                hasEnd: this.privateKey.includes('END'),
+                keyLength: this.privateKey.length,
+                firstChars: this.privateKey.substring(0, 50),
+                lastChars: this.privateKey.substring(this.privateKey.length - 50)
+            });
+            throw new Error('JWT_PRIVATE_KEY is not in valid PEM format. It must be an RSA private key in PEM format with -----BEGIN PRIVATE KEY----- and -----END PRIVATE KEY----- markers.');
+        }
+        
+        // Validate public key format
+        const hasBeginPublic = this.publicKey.includes('BEGIN') && this.publicKey.includes('PUBLIC KEY');
+        const hasEndPublic = this.publicKey.includes('END PUBLIC KEY');
+        
+        if (!hasBeginPublic || !hasEndPublic) {
+            logger.error('JWT_PUBLIC_KEY validation failed', {
+                hasBegin: this.publicKey.includes('BEGIN'),
+                hasPublicKey: this.publicKey.includes('PUBLIC KEY'),
+                hasEnd: this.publicKey.includes('END'),
+                keyLength: this.publicKey.length
+            });
+            throw new Error('JWT_PUBLIC_KEY is not in valid PEM format. It must include -----BEGIN PUBLIC KEY----- and -----END PUBLIC KEY----- markers.');
+        }
+        
+        // Check if key is too short (likely a symmetric secret)
+        if (this.privateKey.length < 1000) {
+            logger.error('JWT_PRIVATE_KEY appears too short', {
+                keyLength: this.privateKey.length,
+                expectedMinLength: 1000
+            });
+            throw new Error(`JWT_PRIVATE_KEY appears to be too short (${this.privateKey.length} chars). RSA private keys are typically 1600+ characters. You may have set a symmetric secret instead.`);
+        }
+        
+        // Try to actually parse the key to verify it's a valid RSA key
+        try {
+            const keyObject = crypto.createPrivateKey(this.privateKey);
+            if (keyObject.asymmetricKeyType !== 'rsa') {
+                throw new Error(`Key is not an RSA key. Found: ${keyObject.asymmetricKeyType}`);
+            }
+            logger.info('JWT private key validated as RSA key', {
+                keyType: keyObject.asymmetricKeyType,
+                keySize: keyObject.asymmetricKeyDetails?.modulusLength
+            });
+        } catch (parseError) {
+            logger.error('Failed to parse JWT_PRIVATE_KEY as RSA key', {
+                error: parseError.message,
+                errorCode: parseError.code,
+                keyLength: this.privateKey.length,
+                firstChars: this.privateKey.substring(0, 100),
+                lastChars: this.privateKey.substring(Math.max(0, this.privateKey.length - 100)),
+                hasBegin: this.privateKey.includes('BEGIN'),
+                hasEnd: this.privateKey.includes('END'),
+                hasPrivateKey: this.privateKey.includes('PRIVATE KEY'),
+                lineCount: this.privateKey.split('\n').length
+            });
+            throw new Error(`JWT_PRIVATE_KEY is not a valid RSA private key. Error: ${parseError.message} (Code: ${parseError.code}). The key appears to be corrupted or in wrong format. Please regenerate keys using: node backend/scripts/generate-keys.js and ensure you copy the ENTIRE key including all lines.`);
         }
     }
     
