@@ -13,7 +13,9 @@ const validateProduct = [
     body('price_per_month').isFloat({ min: 0 }).withMessage('Monthly price must be a positive number'),
     body('price_per_year').isFloat({ min: 0 }).withMessage('Yearly price must be a positive number'),
     body('features').optional().isJSON().withMessage('Features must be valid JSON'),
-    body('status').optional().isIn(['ACTIVE', 'INACTIVE']).withMessage('Status must be ACTIVE or INACTIVE')
+    body('status').optional().isIn(['ACTIVE', 'INACTIVE']).withMessage('Status must be ACTIVE or INACTIVE'),
+    body('child_app_url_local').optional().isURL().withMessage('Child app URL (Local) must be a valid URL').trim(),
+    body('child_app_url_cloud').optional().isURL().withMessage('Child app URL (Cloud) must be a valid URL').trim()
 ];
 
 // GET all products (admin view - includes inactive)
@@ -85,12 +87,14 @@ router.post('/', isAuthenticated, isAdmin, validateProduct, async (req, res) => 
             price_per_month,
             price_per_year,
             features,
-            status
+            status,
+            child_app_url_local,
+            child_app_url_cloud
         } = req.body;
         
         const result = await query(
-            `INSERT INTO products (name, description, category, price_per_month, price_per_year, features, status, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+            `INSERT INTO products (name, description, category, price_per_month, price_per_year, features, status, child_app_url_local, child_app_url_cloud, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
              RETURNING *`,
             [
                 name,
@@ -99,7 +103,9 @@ router.post('/', isAuthenticated, isAdmin, validateProduct, async (req, res) => 
                 price_per_month,
                 price_per_year,
                 features || null,
-                status || 'ACTIVE'
+                status || 'ACTIVE',
+                child_app_url_local || null,
+                child_app_url_cloud || null
             ]
         );
         
@@ -164,7 +170,9 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
             price_per_month,
             price_per_year,
             features,
-            status
+            status,
+            child_app_url_local,
+            child_app_url_cloud
         } = req.body;
         
         const result = await query(
@@ -176,8 +184,10 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
                  price_per_year = $5, 
                  features = $6, 
                  status = $7,
+                 child_app_url_local = $8,
+                 child_app_url_cloud = $9,
                  updated_at = NOW()
-             WHERE id = $8
+             WHERE id = $10
              RETURNING *`,
             [
                 name,
@@ -187,6 +197,8 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
                 price_per_year,
                 features || null,
                 status || 'ACTIVE',
+                child_app_url_local || null,
+                child_app_url_cloud || null,
                 id
             ]
         );

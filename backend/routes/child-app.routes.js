@@ -283,6 +283,7 @@ router.post('/verify-token', async (req, res) => {
  * GET /api/v1/child-app/get-url
  * Get child app URL with user's JWT token (for SSO)
  * Requires user to be authenticated with JWT token
+ * Optional query param: subscription_id - to get product-specific child app URL
  */
 router.get('/get-url', async (req, res) => {
     try {
@@ -302,13 +303,103 @@ router.get('/get-url', async (req, res) => {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
+        let childAppUrl;
+
+        // Detect environment (local vs cloud/Azure)
+        const isProduction = process.env.NODE_ENV === 'production' || 
+                            process.env.WEBSITE_SITE_NAME || 
+                            process.env.WEBSITE_HOSTNAME;
+
+        // If subscription_id is provided, get the child_app_url from the product
+        const subscriptionId = req.query.subscription_id;
+        if (subscriptionId) {
+            try {
+                // Get subscription and product details
+                const subscriptionResult = await query(
+                    `SELECT s.product_id, p.child_app_url_local, p.child_app_url_cloud, p.name as product_name
+                     FROM subscriptions s
+                     JOIN products p ON s.product_id = p.id
+                     WHERE s.id = $1 AND s.user_id = $2`,
+                    [subscriptionId, decoded.user_id]
+                );
+
+                if (subscriptionResult.rows.length === 0) {
+                    return res.status(404).json({ 
+                        error: 'Subscription not found or access denied' 
+                    });
+                }
+
+                const subscription = subscriptionResult.rows[0];
+                
+                // Use environment-appropriate URL from product
+                if (isProduction) {
+                    // Use cloud URL in production
+                    if (subscription.child_app_url_cloud) {
+                        childAppUrl = subscription.child_app_url_cloud.trim();
+                        logger.info('Using product-specific child app URL (cloud)', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name,
+                            environment: 'cloud',
+                            child_app_url: childAppUrl
+                        });
+                    } else if (subscription.child_app_url_local) {
+                        // Fallback to local URL if cloud URL not set
+                        childAppUrl = subscription.child_app_url_local.trim();
+                        logger.warn('Product does not have cloud URL, using local URL', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name
+                        });
+                    } else {
+                        // Fallback to environment variable
+                        childAppUrl = getChildAppUrl();
+                        logger.warn('Product does not have child_app_url configured, using environment variable', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name
+                        });
+                    }
+                } else {
+                    // Use local URL in development
+                    if (subscription.child_app_url_local) {
+                        childAppUrl = subscription.child_app_url_local.trim();
+                        logger.info('Using product-specific child app URL (local)', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name,
+                            environment: 'local',
+                            child_app_url: childAppUrl
+                        });
+                    } else if (subscription.child_app_url_cloud) {
+                        // Fallback to cloud URL if local URL not set
+                        childAppUrl = subscription.child_app_url_cloud.trim();
+                        logger.warn('Product does not have local URL, using cloud URL', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name
+                        });
+                    } else {
+                        // Fallback to environment variable
+                        childAppUrl = getChildAppUrl();
+                        logger.warn('Product does not have child_app_url configured, using environment variable', {
+                            product_id: subscription.product_id,
+                            product_name: subscription.product_name
+                        });
+                    }
+                }
+            } catch (error) {
+                logger.error('Error fetching subscription/product for child app URL', error);
+                // Fallback to environment variable on error
+                childAppUrl = getChildAppUrl();
+            }
+        } else {
+            // No subscription_id provided, use environment variable
+            childAppUrl = getChildAppUrl();
+        }
+
         // Build child app URL with token
-        const childAppUrl = getChildAppUrl();
         const url = new URL(childAppUrl);
         url.searchParams.append('sso_token', token);
 
         logger.info('Child app URL generated', {
             user_id: decoded.user_id,
+            subscription_id: subscriptionId || null,
             child_app: childAppUrl
         });
 

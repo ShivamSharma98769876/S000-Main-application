@@ -518,8 +518,8 @@
                 // Show loading indicator
                 showLoading('Launching strategy application...');
 
-                // Call child app launch endpoint with JWT token
-                const response = await fetch(`${API_BASE_URL}/child-app/get-url`, {
+                // Call child app launch endpoint with JWT token and subscription ID
+                const response = await fetch(`${API_BASE_URL}/child-app/get-url?subscription_id=${subscriptionId}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,

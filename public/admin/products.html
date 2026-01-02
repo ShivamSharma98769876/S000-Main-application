@@ -114,6 +114,20 @@
                         <option value="INACTIVE">Inactive</option>
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">Child App URL (Local)</label>
+                    <input type="url" id="product-child-app-url-local" class="form-input" placeholder="http://127.0.0.1:8080">
+                    <small style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                        Local development URL (e.g., http://127.0.0.1:8080)
+                    </small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Child App URL (Cloud/Azure)</label>
+                    <input type="url" id="product-child-app-url-cloud" class="form-input" placeholder="https://a001-strangle-ckb5h2a9cqcaamhb.southindia-01.azurewebsites.net">
+                    <small style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                        Cloud/Azure production URL (e.g., https://a001-strangle-ckb5h2a9cqcaamhb.southindia-01.azurewebsites.net)
+                    </small>
+                </div>
                 <button type="submit" class="btn btn--primary btn--full">Save Product</button>
             </form>
         </div>
@@ -238,6 +252,7 @@
                             <th>Category</th>
                             <th>Monthly Price</th>
                             <th>Yearly Price</th>
+                            <th>Child App URLs</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -250,6 +265,24 @@
                                 <td>${product.category || '-'}</td>
                                 <td>₹${product.price_per_month || product.monthly_price}</td>
                                 <td>₹${product.price_per_year || product.yearly_price}</td>
+                                <td style="max-width: 400px;">
+                                    ${product.child_app_url_local || product.child_app_url_cloud ? `
+                                        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem;">
+                                            ${product.child_app_url_local ? `
+                                                <div>
+                                                    <strong style="color: var(--text-secondary);">Local:</strong><br>
+                                                    <a href="${product.child_app_url_local}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline; word-break: break-all;">${product.child_app_url_local}</a>
+                                                </div>
+                                            ` : ''}
+                                            ${product.child_app_url_cloud ? `
+                                                <div>
+                                                    <strong style="color: var(--text-secondary);">Cloud:</strong><br>
+                                                    <a href="${product.child_app_url_cloud}" target="_blank" rel="noopener noreferrer" style="color: var(--primary-color); text-decoration: underline; word-break: break-all;">${product.child_app_url_cloud}</a>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    ` : '<span style="color: var(--text-secondary);">-</span>'}
+                                </td>
                                 <td><span class="status-badge ${product.status.toLowerCase()}">${product.status}</span></td>
                                 <td>
                                     <button class="btn btn--secondary btn-sm edit-product-btn" data-product='${JSON.stringify(product).replace(/'/g, "&#39;")}'>Edit</button>
@@ -274,6 +307,8 @@
                 document.getElementById('product-monthly-price').value = product.price_per_month || product.monthly_price;
                 document.getElementById('product-yearly-price').value = product.price_per_year || product.yearly_price;
                 document.getElementById('product-status').value = product.status;
+                document.getElementById('product-child-app-url-local').value = product.child_app_url_local || '';
+                document.getElementById('product-child-app-url-cloud').value = product.child_app_url_cloud || '';
             } else {
                 document.getElementById('product-form').reset();
                 document.getElementById('product-id').value = '';
@@ -298,7 +333,9 @@
                 category: document.getElementById('product-category').value,
                 price_per_month: parseFloat(document.getElementById('product-monthly-price').value),
                 price_per_year: parseFloat(document.getElementById('product-yearly-price').value),
-                status: document.getElementById('product-status').value
+                status: document.getElementById('product-status').value,
+                child_app_url_local: document.getElementById('product-child-app-url-local').value.trim() || null,
+                child_app_url_cloud: document.getElementById('product-child-app-url-cloud').value.trim() || null
             };
             
             try {

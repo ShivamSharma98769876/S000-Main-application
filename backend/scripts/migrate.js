@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS products (
     monthly_price NUMERIC(10,2) NOT NULL,
     yearly_price NUMERIC(10,2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    child_app_url_local TEXT,
+    child_app_url_cloud TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
