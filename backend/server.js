@@ -94,6 +94,8 @@ const corsOptions = {
         const allowedOrigins = [
             'http://127.0.0.1:3000',
             'http://localhost:3000',
+            'https://stocksage.trade',
+            'https://www.stocksage.trade',
             process.env.FRONTEND_URL,
             process.env.CHILD_APP_ALLOWED_ORIGINS,
             'https://*.southindia-01.azurewebsites.net' // Allow all Azure subdomains in this region

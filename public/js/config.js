@@ -17,12 +17,11 @@
     const origin = window.location.origin;
     
     // Set API base URL
-    // Production (Azure): Use current origin (https://your-app.azurewebsites.net)
-    // Development: Use the same origin as the page (handles both localhost and 127.0.0.1)
-    const API_BASE_URL = isProduction 
-        ? `${origin}/api/v1`
-        // : `${origin}/api/v1`; // Use same origin in development to avoid CSP issues
-        : `http://localhost:3000/api/v1`;
+    // Production: Use stocksage.trade as the canonical domain
+    // Development: Use local backend on port 3000
+    const API_BASE_URL = isProduction
+        ? 'https://stocksage.trade/api/v1'
+        : 'http://localhost:3000/api/v1';
     // Make it available globally
     window.API_BASE_URL = API_BASE_URL;
     
