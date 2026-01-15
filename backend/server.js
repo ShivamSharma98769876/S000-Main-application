@@ -176,6 +176,47 @@ const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
             }
         },
         (proxyRes) => {
+            const contentType = proxyRes.headers['content-type'] || '';
+            const basePath = req.baseUrl || '';
+            const baseHref = basePath.endsWith('/') ? basePath : `${basePath}/`;
+
+            // Rewrite redirect locations to keep custom domain + prefix
+            if (proxyRes.headers.location) {
+                try {
+                    const locationUrl = new URL(proxyRes.headers.location, normalizedBaseUrl);
+                    if (locationUrl.origin === new URL(normalizedBaseUrl).origin) {
+                        const proxyOrigin = `${req.protocol}://${req.get('host')}`;
+                        proxyRes.headers.location = `${proxyOrigin}${baseHref}${locationUrl.pathname.replace(/^\//, '')}${locationUrl.search}`;
+                    }
+                } catch (error) {
+                    logger.warn('Failed to rewrite proxy location header', {
+                        label,
+                        location: proxyRes.headers.location,
+                        error: error.message
+                    });
+                }
+            }
+
+            if (contentType.includes('text/html')) {
+                const chunks = [];
+                proxyRes.on('data', (chunk) => chunks.push(chunk));
+                proxyRes.on('end', () => {
+                    let body = Buffer.concat(chunks).toString('utf8');
+                    if (!/base href=/i.test(body)) {
+                        body = body.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
+                    }
+
+                    res.status(proxyRes.statusCode || 500);
+                    Object.entries(proxyRes.headers).forEach(([key, value]) => {
+                        if (value !== undefined && key.toLowerCase() !== 'content-length') {
+                            res.setHeader(key, value);
+                        }
+                    });
+                    res.send(body);
+                });
+                return;
+            }
+
             res.status(proxyRes.statusCode || 500);
             Object.entries(proxyRes.headers).forEach(([key, value]) => {
                 if (value !== undefined) {
