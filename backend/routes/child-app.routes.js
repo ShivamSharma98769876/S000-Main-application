@@ -9,6 +9,33 @@ const { query } = require('../config/database');
 const { childAppRateLimiter } = require('../middleware/rateLimiter');
 const { csrfProtection } = require('../middleware/csrf');
 
+const toHttpsOrigin = (urlValue) => {
+    if (!urlValue) return null;
+    try {
+        const parsed = new URL(urlValue);
+        if (parsed.protocol !== 'https:') {
+            parsed.protocol = 'https:';
+        }
+        return parsed.origin;
+    } catch {
+        return null;
+    }
+};
+
+const getFrontendOrigin = () => {
+    if (process.env.FRONTEND_URL) {
+        return toHttpsOrigin(process.env.FRONTEND_URL) || process.env.FRONTEND_URL;
+    }
+    if (process.env.WEBSITE_HOSTNAME) {
+        return `https://${process.env.WEBSITE_HOSTNAME}`;
+    }
+    if (process.env.WEBSITE_SITE_NAME) {
+        const region = process.env.WEBSITE_SITE_NAME.includes('southindia') ? 'southindia-01' : 'eastus';
+        return `https://${process.env.WEBSITE_SITE_NAME}.${region}.azurewebsites.net`;
+    }
+    return 'http://localhost:3000';
+};
+
 // Helper function to get CHILD_APP_URL
 // Priority: 1. process.env.CHILD_APP_URL (for Azure/cloud deployments)
 //          2. backend/.env file (for local development)
@@ -331,10 +358,32 @@ router.get('/get-url', async (req, res) => {
 
                 const subscription = subscriptionResult.rows[0];
                 
+                const productName = subscription.product_name || '';
+                const hasS001Proxy = !!process.env.PROXY_S001_URL;
+                const hasS002Proxy = !!process.env.PROXY_S002_URL;
+                const frontendOrigin = getFrontendOrigin();
+
+                let proxyPath = null;
+                if (hasS001Proxy && /s001/i.test(productName)) {
+                    proxyPath = '/s001';
+                } else if (hasS002Proxy && /s002/i.test(productName)) {
+                    proxyPath = '/s002';
+                }
+
+                if (proxyPath && frontendOrigin) {
+                    childAppUrl = `${frontendOrigin}${proxyPath}`;
+                    logger.info('Using reverse proxy child app URL', {
+                        product_id: subscription.product_id,
+                        product_name: productName,
+                        proxyPath,
+                        child_app_url: childAppUrl
+                    });
+                }
+
                 // Use environment-appropriate URL from product
                 if (isProduction) {
                     // Use cloud URL in production
-                    if (subscription.child_app_url_cloud) {
+                    if (!childAppUrl && subscription.child_app_url_cloud) {
                         childAppUrl = subscription.child_app_url_cloud.trim();
                         logger.info('Using product-specific child app URL (cloud)', {
                             product_id: subscription.product_id,
@@ -342,7 +391,7 @@ router.get('/get-url', async (req, res) => {
                             environment: 'cloud',
                             child_app_url: childAppUrl
                         });
-                    } else if (subscription.child_app_url_local) {
+                    } else if (!childAppUrl && subscription.child_app_url_local) {
                         // Fallback to local URL if cloud URL not set
                         childAppUrl = subscription.child_app_url_local.trim();
                         logger.warn('Product does not have cloud URL, using local URL', {
@@ -351,7 +400,9 @@ router.get('/get-url', async (req, res) => {
                         });
                     } else {
                         // Fallback to environment variable
-                        childAppUrl = getChildAppUrl();
+                        if (!childAppUrl) {
+                            childAppUrl = getChildAppUrl();
+                        }
                         logger.warn('Product does not have child_app_url configured, using environment variable', {
                             product_id: subscription.product_id,
                             product_name: subscription.product_name
@@ -359,7 +410,7 @@ router.get('/get-url', async (req, res) => {
                     }
                 } else {
                     // Use local URL in development
-                    if (subscription.child_app_url_local) {
+                    if (!childAppUrl && subscription.child_app_url_local) {
                         childAppUrl = subscription.child_app_url_local.trim();
                         logger.info('Using product-specific child app URL (local)', {
                             product_id: subscription.product_id,
@@ -367,7 +418,7 @@ router.get('/get-url', async (req, res) => {
                             environment: 'local',
                             child_app_url: childAppUrl
                         });
-                    } else if (subscription.child_app_url_cloud) {
+                    } else if (!childAppUrl && subscription.child_app_url_cloud) {
                         // Fallback to cloud URL if local URL not set
                         childAppUrl = subscription.child_app_url_cloud.trim();
                         logger.warn('Product does not have local URL, using cloud URL', {
@@ -376,7 +427,9 @@ router.get('/get-url', async (req, res) => {
                         });
                     } else {
                         // Fallback to environment variable
-                        childAppUrl = getChildAppUrl();
+                        if (!childAppUrl) {
+                            childAppUrl = getChildAppUrl();
+                        }
                         logger.warn('Product does not have child_app_url configured, using environment variable', {
                             product_id: subscription.product_id,
                             product_name: subscription.product_name
