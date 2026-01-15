@@ -76,8 +76,13 @@ process.on('uncaughtException', (error) => {
 // Trust proxy (important for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
 
-// Security middleware
-app.use(securityHeaders);
+// Security middleware (skip for reverse-proxy routes)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/s001') || req.path.startsWith('/s002')) {
+        return next();
+    }
+    return securityHeaders(req, res, next);
+});
 
 // Force HTTPS in production
 if (process.env.NODE_ENV === 'production') {
@@ -179,6 +184,35 @@ const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
             const contentType = proxyRes.headers['content-type'] || '';
             const basePath = req.baseUrl || '';
             const baseHref = basePath.endsWith('/') ? basePath : `${basePath}/`;
+            const basePathPrefix = basePath || '';
+
+            const rewriteAbsolutePaths = (html) => {
+                if (!basePathPrefix) return html;
+                const prefix = basePathPrefix.replace(/\/$/, '');
+
+                // Rewrite common absolute attributes
+                html = html.replace(
+                    /(href|src|action|data-src|poster)=("|\')\/(?!\/)/gi,
+                    `$1=$2${prefix}/`
+                );
+
+                // Rewrite srcset values that start with /
+                html = html.replace(/srcset=("|\')([^"\']*)\1/gi, (match, quote, value) => {
+                    const rewritten = value
+                        .split(',')
+                        .map(part => {
+                            const trimmed = part.trim();
+                            if (trimmed.startsWith('/')) {
+                                return `${prefix}${trimmed}`;
+                            }
+                            return trimmed;
+                        })
+                        .join(', ');
+                    return `srcset=${quote}${rewritten}${quote}`;
+                });
+
+                return html;
+            };
 
             // Rewrite redirect locations to keep custom domain + prefix
             if (proxyRes.headers.location) {
@@ -204,6 +238,28 @@ const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
                     let body = Buffer.concat(chunks).toString('utf8');
                     if (!/base href=/i.test(body)) {
                         body = body.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
+                    }
+                    body = rewriteAbsolutePaths(body);
+
+                    res.status(proxyRes.statusCode || 500);
+                    Object.entries(proxyRes.headers).forEach(([key, value]) => {
+                        if (value !== undefined && key.toLowerCase() !== 'content-length') {
+                            res.setHeader(key, value);
+                        }
+                    });
+                    res.send(body);
+                });
+                return;
+            }
+
+            if (contentType.includes('text/css')) {
+                const chunks = [];
+                proxyRes.on('data', (chunk) => chunks.push(chunk));
+                proxyRes.on('end', () => {
+                    let body = Buffer.concat(chunks).toString('utf8');
+                    if (basePathPrefix) {
+                        const prefix = basePathPrefix.replace(/\/$/, '');
+                        body = body.replace(/url\(\s*\/(?!\/)/gi, `url(${prefix}/`);
                     }
 
                     res.status(proxyRes.statusCode || 500);
