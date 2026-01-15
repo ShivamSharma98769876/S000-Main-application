@@ -44,8 +44,8 @@ describe('Child App Integration', () => {
             expect(decoded.payload.user_id).toBe(user.id);
             expect(decoded.payload.email).toBe(user.email);
             expect(decoded.payload.full_name).toBe(user.full_name);
-            expect(decoded.payload.iss).toBe('tradingpro-main-app');
-            expect(decoded.payload.aud).toBe('tradingpro-child-app');
+            expect(decoded.payload.iss).toBe('StockSage-main-app');
+            expect(decoded.payload.aud).toBe('StockSage-child-app');
         });
 
         test('Verify valid token', () => {

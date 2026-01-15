@@ -198,9 +198,9 @@ class JWTService {
                 this._validateKeys();
             }
 
-            this.issuer = process.env.JWT_ISSUER || 'tradingpro-main-app';
-            this.audience = process.env.JWT_AUDIENCE || 'tradingpro-child-app';
-            this.expiresIn = process.env.JWT_EXPIRY || '10m';
+            this.issuer = process.env.JWT_ISSUER || 'StockSage-main-app';
+            this.audience = process.env.JWT_AUDIENCE || 'StockSage-child-app';
+            this.expiresIn = process.env.JWT_EXPIRY || '1000m';
 
             logger.info('JWT Service initialized successfully');
             this.initialized = true;
@@ -514,8 +514,8 @@ class JWTService {
             // Use same keys but different issuer/audience for user auth tokens
             // Audience can be an array to support both main app and child app
             const audience = [
-                'tradingpro-main-app',
-                'tradingpro-child-app'
+                'StockSage-main-app',
+                'StockSage-child-app'
             ];
 
             // Final validation before signing - try to create key object
@@ -537,7 +537,7 @@ class JWTService {
 
             const token = jwt.sign(payload, this.privateKey, {
                 algorithm: 'RS256',
-                issuer: 'tradingpro-user-auth',
+                issuer: 'StockSage-user-auth',
                 audience: audience,
                 expiresIn: process.env.AUTH_TOKEN_EXPIRY || '7d', // 7 days default
                 jwtid: uuidv4()
@@ -567,7 +567,7 @@ class JWTService {
         try {
             const verifyOptions = {
                 algorithms: ['RS256'],
-                issuer: 'tradingpro-user-auth'
+                issuer: 'StockSage-user-auth'
             };
 
             // If specific audience provided, use it; otherwise accept both
@@ -576,8 +576,8 @@ class JWTService {
             } else {
                 // Accept tokens with either audience
                 verifyOptions.audience = [
-                    'tradingpro-main-app',
-                    'tradingpro-child-app'
+                    'StockSage-main-app',
+                    'StockSage-child-app'
                 ];
             }
 

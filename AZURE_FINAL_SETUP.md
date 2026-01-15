@@ -175,9 +175,9 @@ While you're in Azure Portal, make sure you have all these set:
 **JWT (Already Set):**
 - `JWT_PRIVATE_KEY` = (your private key)
 - `JWT_PUBLIC_KEY` = (your public key)
-- `JWT_ISSUER` = `tradingpro-main-app`
-- `JWT_AUDIENCE` = `tradingpro-child-app`
-- `JWT_EXPIRY` = `600m`
+- `JWT_ISSUER` = `stocksage-main-app`
+- `JWT_AUDIENCE` = `stocksage-child-app`
+- `JWT_EXPIRY` = `1000m`
 
 **Database:**
 - `SQLITE_DB_PATH` = `/home/site/data/tradingpro.db` (or let it use default)

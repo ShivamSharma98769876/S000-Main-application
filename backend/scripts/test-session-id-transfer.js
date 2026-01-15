@@ -96,8 +96,8 @@ function verifyToken(token) {
     try {
         return jwt.verify(token, publicKey, {
             algorithms: ['RS256'],
-            issuer: 'tradingpro-main-app',
-            audience: 'tradingpro-child-app'
+            issuer: 'StockSage-main-app',
+            audience: 'StockSage-child-app'
         });
     } catch (error) {
         return null;

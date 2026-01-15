@@ -330,7 +330,7 @@ if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'tru
         
         app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
             customCss: '.swagger-ui .topbar { display: none }',
-            customSiteTitle: 'TradingPro API Docs'
+            customSiteTitle: 'StockSage API Docs'
         }));
         
         // JSON spec endpoint

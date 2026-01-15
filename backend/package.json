@@ -1,5 +1,5 @@
 {
-  "name": "tradingpro-backend",
+  "name": "StockSage-backend",
   "version": "1.0.0",
   "description": "Trading Subscription Platform Backend API",
   "main": "server.js",
@@ -46,7 +46,7 @@
     "oauth",
     "api"
   ],
-  "author": "TradingPro",
+  "author": "StockSage",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.13.2",

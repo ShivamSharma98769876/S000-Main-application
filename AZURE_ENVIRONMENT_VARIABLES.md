@@ -37,9 +37,9 @@ These are required for the app to function:
 |--------------|-------------|---------------|----------|
 | `JWT_PRIVATE_KEY` | RSA private key for JWT signing | `-----BEGIN PRIVATE KEY-----\n...` | ✅ **YES** |
 | `JWT_PUBLIC_KEY` | RSA public key for JWT verification | `-----BEGIN PUBLIC KEY-----\n...` | ✅ **YES** |
-| `JWT_ISSUER` | JWT issuer identifier | `tradingpro-main-app` | ⚠️ Optional (has default) |
-| `JWT_AUDIENCE` | JWT audience identifier | `tradingpro-child-app` | ⚠️ Optional (has default) |
-| `JWT_EXPIRY` | JWT token expiration | `600m` | ⚠️ Optional (has default) |
+| `JWT_ISSUER` | JWT issuer identifier | `stocksage-main-app` | ⚠️ Optional (has default) |
+| `JWT_AUDIENCE` | JWT audience identifier | `stocksage-child-app` | ⚠️ Optional (has default) |
+| `JWT_EXPIRY` | JWT token expiration | `1000m` | ⚠️ Optional (has default) |
 
 **Note:** For JWT keys, you can either:
 - Set `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` as environment variables (recommended)

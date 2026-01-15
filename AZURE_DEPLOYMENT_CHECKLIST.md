@@ -103,7 +103,7 @@ NODE_ENV=production
 UPLOAD_DIR=/path/to/uploads  # If you want custom upload location
 MAX_FILE_SIZE=5242880  # 5MB in bytes
 FRONTEND_URL=https://your-app.azurewebsites.net
-ADMIN_EMAIL=admin@tradingpro.com
+ADMIN_EMAIL=info@stocksage.trade
 ```
 
 ## ✅ File Upload Configuration

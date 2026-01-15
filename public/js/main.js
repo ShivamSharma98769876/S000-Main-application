@@ -346,11 +346,11 @@ function throttle(func, limit) {
 
 // ==================== CONSOLE BRANDING ====================
 console.log(
-    '%c🚀 TradingPro ',
+    '%c🚀 StockSage ',
     'background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white; padding: 8px 16px; font-size: 16px; font-weight: bold; border-radius: 4px;'
 );
 console.log(
-    '%cWelcome to TradingPro! Looking for a career? Check out https://tradingpro.com/careers',
+    '%cWelcome to StockSage! Looking for a career? Check out https://traStockSage.trade/careers',
     'color: #3b82f6; font-size: 14px;'
 );
 

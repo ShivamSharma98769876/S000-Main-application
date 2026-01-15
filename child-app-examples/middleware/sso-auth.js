@@ -9,8 +9,8 @@ const publicKey = fs.readFileSync(
 );
 
 const SSO_CONFIG = {
-    issuer: 'tradingpro-main-app',
-    audience: 'tradingpro-child-app',
+    issuer: 'StockSage-main-app',
+    audience: 'StockSage-child-app',
     algorithms: ['RS256']
 };
 

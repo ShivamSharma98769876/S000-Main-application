@@ -1,10 +1,10 @@
-# TradingPro - Trading Subscription Web Platform
+# StockSage - Trading Subscription Web Platform
 
 A complete web-based platform for marketing and selling trading-related software products and services via subscriptions.
 
 ## 🎯 Project Overview
 
-TradingPro provides a public marketing site and an authenticated area where users can register, subscribe to products, manage their profile, and access subscribed offerings. The platform features OAuth authentication (Google & Apple), subscription management, and an admin workflow for payment approval.
+StockSage provides a public marketing site and an authenticated area where users can register, subscribe to products, manage their profile, and access subscribed offerings. The platform features OAuth authentication (Google & Apple), subscription management, and an admin workflow for payment approval.
 
 ## ✅ Completed Tasks
 
@@ -416,7 +416,7 @@ PORT=3001
 
 ## 📄 License
 
-Copyright © 2025 TradingPro. All rights reserved.
+Copyright © 2025 StockSage. All rights reserved.
 
 ## 👥 Team
 
@@ -427,9 +427,9 @@ Copyright © 2025 TradingPro. All rights reserved.
 ## 📞 Support
 
 For issues or questions:
-- Email: support@tradingpro.com
-- Phone: +91 88888 88888
-- Location: Mumbai, Maharashtra, India
+- Email: info@Stocksage.trade
+- Phone: +91 8904002365(WhatsApp Only)
+- Location: Bangalore, Karnataka, India
 
 ---
 

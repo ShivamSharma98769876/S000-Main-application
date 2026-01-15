@@ -40,7 +40,7 @@ const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: logFormat,
     defaultMeta: { 
-        service: 'tradingpro-api',
+        service: 'StockSage-api',
         environment: process.env.NODE_ENV || 'development'
     },
     transports: [

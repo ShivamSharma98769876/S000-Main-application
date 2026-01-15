@@ -154,7 +154,7 @@ router.post('/', isAuthenticated, isProfileComplete, upload.single('paymentProof
                     orderId: order.id,
                     amount: orderDetails.total_amount
                 }, 'HIGH'),
-                emailQueue.addToQueue('ADMIN_NEW_ORDER', process.env.ADMIN_EMAIL || 'admin@tradingpro.com', {
+                emailQueue.addToQueue('ADMIN_NEW_ORDER', process.env.ADMIN_EMAIL || 'info@StockSage.trade', {
                     orderId: order.id,
                     userName: user.full_name,
                     userEmail: user.email,
@@ -301,7 +301,7 @@ router.post('/:orderId/payment-proof', isAuthenticated, isProfileComplete, uploa
                     orderId: orderId,
                     amount: orderDetails.total_amount
                 }, 'HIGH'),
-                emailQueue.addToQueue('ADMIN_NEW_ORDER', process.env.ADMIN_EMAIL || 'admin@tradingpro.com', {
+                emailQueue.addToQueue('ADMIN_NEW_ORDER', process.env.ADMIN_EMAIL || 'info@StockSage.trade', {
                     orderId: orderId,
                     userName: user.full_name,
                     userEmail: user.email,

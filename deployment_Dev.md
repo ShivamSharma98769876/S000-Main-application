@@ -233,8 +233,8 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-gmail-app-password
-EMAIL_FROM=your-email@gmail.com
-ADMIN_EMAIL=admin@tradingpro.com
+EMAIL_FROM=info@smtp.gmail.com
+ADMIN_EMAIL=info@smtp.gmail.com
 
 # ==========================================
 # FILE UPLOAD CONFIGURATION
@@ -275,10 +275,10 @@ LOG_FILE=./logs/app.log
 # ==========================================
 QR_CODE_URL=https://example.com/qr-code.png
 UPI_ID=merchant@upi
-MERCHANT_NAME=TradingPro India
-COMPANY_NAME=TradingPro
-SUPPORT_EMAIL=support@tradingpro.com
-PHONE_NUMBER=+91 88888 88888
+MERCHANT_NAME=StockSage India
+COMPANY_NAME=StockSage
+SUPPORT_EMAIL=info@StockSage.trade
+PHONE_NUMBER=+91 8904002365
 ```
 
 ### ⚠️ CRITICAL: Update These Values
@@ -1243,5 +1243,5 @@ If you encounter issues:
 
 **Version:** 1.0  
 **Last Updated:** December 7, 2025  
-**Maintained By:** TradingPro Development Team
+**Maintained By:** StockSage Development Team
 

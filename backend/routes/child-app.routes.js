@@ -242,7 +242,7 @@ router.post('/verify-token', async (req, res) => {
 
         // Try to verify as user auth token first (from OAuth login)
         try {
-            decoded = jwtService.verifyAuthToken(token, 'tradingpro-child-app');
+            decoded = jwtService.verifyAuthToken(token, 'StockSage-child-app');
             tokenType = 'user-auth';
         } catch (authError) {
             // If that fails, try as inter-app token
@@ -298,7 +298,7 @@ router.get('/get-url', async (req, res) => {
         // Verify the token
         let decoded;
         try {
-            decoded = jwtService.verifyAuthToken(token, 'tradingpro-main-app');
+            decoded = jwtService.verifyAuthToken(token, 'StockSage-main-app');
         } catch (error) {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }

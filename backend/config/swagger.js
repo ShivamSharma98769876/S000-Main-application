@@ -4,12 +4,12 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'TradingPro API Documentation',
+            title: 'StockSage API Documentation',
             version: '1.0.0',
-            description: 'Complete API documentation for TradingPro - Trading Subscription Platform',
+            description: 'Complete API documentation for StockSage - Trading Subscription Platform',
             contact: {
-                name: 'TradingPro Support',
-                email: 'support@tradingpro.com'
+                name: 'StockSage Support',
+                email: 'info@StockSage.trade'
             },
             license: {
                 name: 'MIT',

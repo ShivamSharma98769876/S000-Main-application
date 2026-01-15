@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout | TradingPro</title>
+    <title>Checkout | StockSage</title>
     <link rel="stylesheet" href="css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -60,7 +60,7 @@
         <nav class="nav container">
             <a href="dashboard.html" class="nav__logo">
                 <span class="logo__icon">📈</span>
-                <span class="logo__text">TradingPro</span>
+                <span class="logo__text">StockSage</span>
             </a>
             <div class="nav__actions">
                 <a href="cart.html" class="btn btn--secondary">← Back to Cart</a>
@@ -458,7 +458,7 @@
                 if (config.merchant_name) {
                     merchantNameElement.textContent = config.merchant_name;
                 } else {
-                    merchantNameElement.textContent = 'TradingPro India';
+                    merchantNameElement.textContent = 'StockSage India';
                     merchantNameElement.style.color = 'var(--text-secondary)';
                 }
                 
@@ -466,7 +466,7 @@
                 console.error('Error loading payment config:', error);
                 // Show default/fallback values
                 document.getElementById('upi-id').textContent = 'Not available';
-                document.getElementById('merchant-name').textContent = 'TradingPro India';
+                document.getElementById('merchant-name').textContent = 'StockSage India';
                 document.getElementById('qr-loading').textContent = 'QR code not available';
             }
         }

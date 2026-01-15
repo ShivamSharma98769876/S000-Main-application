@@ -180,8 +180,8 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON subscription_order_items(ord
 INSERT INTO system_config (config_key, config_value, updated_at) 
 VALUES 
     ('qr_code_url', 'https://example.com/qr-code.png', NOW()),
-    ('support_email', 'support@tradingpro.com', NOW()),
-    ('admin_email', 'admin@tradingpro.com', NOW())
+    ('support_email', 'info@StockSage.trade', NOW()),
+    ('admin_email', 'info@StockSage.trade', NOW())
 ON CONFLICT (config_key) DO NOTHING;
 `;
 

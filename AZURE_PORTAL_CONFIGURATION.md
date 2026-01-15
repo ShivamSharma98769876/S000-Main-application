@@ -45,9 +45,9 @@ Go to **Configuration** → **Application settings** and ensure you have:
 **JWT:**
 - `JWT_PRIVATE_KEY_PATH` = `./config/keys/private.pem`
 - `JWT_PUBLIC_KEY_PATH` = `./config/keys/public.pem`
-- `JWT_ISSUER` = `tradingpro-main-app`
-- `JWT_AUDIENCE` = `tradingpro-child-app`
-- `JWT_EXPIRY` = `600m`
+- `JWT_ISSUER` = `stocksage-main-app`
+- `JWT_AUDIENCE` = `stocksage-child-app`
+- `JWT_EXPIRY` = `1000m`
 
 **Session:**
 - `SESSION_SECRET` = Your production secret key ⚠️ **REQUIRED - Generate a secure random string**

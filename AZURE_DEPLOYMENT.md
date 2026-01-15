@@ -65,9 +65,9 @@ SQLITE_DB_PATH=/home/data/tradingpro.db
 ```
 JWT_PRIVATE_KEY_PATH=./config/keys/private.pem
 JWT_PUBLIC_KEY_PATH=./config/keys/public.pem
-JWT_ISSUER=tradingpro-main-app
-JWT_AUDIENCE=tradingpro-child-app
-JWT_EXPIRY=600m
+JWT_ISSUER=stocksage-main-app
+JWT_AUDIENCE=stocksage-child-app
+JWT_EXPIRY=1000m
 ```
 
 **Session:**

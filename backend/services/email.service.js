@@ -54,7 +54,7 @@ async function sendEmail(to, subject, html) {
 
     try {
         const info = await transporter.sendMail({
-            from: `"TradingPro" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+            from: `"StockSage" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
             to,
             subject,
             html
@@ -111,8 +111,8 @@ async function sendPaymentReceivedEmail(userEmail, userName, orderId, totalAmoun
                     <p style="margin-top: 30px;">If you have any questions, please contact our support team.</p>
                 </div>
                 <div class="footer">
-                    <p>© 2025 TradingPro. All rights reserved.</p>
-                    <p>Mumbai, Maharashtra, India | support@tradingpro.com | +91 88888 88888</p>
+                    <p>© 2026 StockSage. All rights reserved.</p>
+                    <p>Bangalore, Karnataka, India | info@StockSage.trade | +91 8904002365(WhatsApp Only</p>
                 </div>
             </div>
         </body>
@@ -213,7 +213,7 @@ async function sendOrderApprovedEmail(userEmail, userName, orderId, subscription
                     
                     <a href="${process.env.FRONTEND_URL}/dashboard.html" class="button">Go to Dashboard</a>
                     
-                    <p style="margin-top: 30px;">Thank you for choosing TradingPro!</p>
+                    <p style="margin-top: 30px;">Thank you for choosing StockSage!</p>
                 </div>
             </div>
         </body>
@@ -262,8 +262,8 @@ async function sendOrderRejectedEmail(userEmail, userName, orderId, reason) {
                     
                     <p style="margin-top: 30px;">
                         <strong>Need Help?</strong><br>
-                        Email: support@tradingpro.com<br>
-                        Phone: +91 88888 88888
+                        Email: Info@StockSage.trade<br>
+                        Phone: +91 8904002365
                     </p>
                 </div>
             </div>
