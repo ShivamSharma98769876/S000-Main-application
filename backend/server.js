@@ -6,6 +6,8 @@ const session = require('express-session');
 // Session store - using PostgreSQL
 const pgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
+const http = require('http');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 
@@ -130,6 +132,78 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Reverse proxy for child apps (keeps custom domain on main app)
+const normalizeProxyBaseUrl = (value) => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        return trimmed;
+    }
+    return `https://${trimmed}`;
+};
+
+const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
+    const normalizedBaseUrl = normalizeProxyBaseUrl(targetBaseUrl);
+    if (!normalizedBaseUrl) {
+        logger.warn('Proxy target not configured', { label, path: req.originalUrl });
+        return res.status(502).json({
+            error: 'Bad Gateway',
+            message: `${label} proxy target is not configured`
+        });
+    }
+
+    let targetUrl;
+    try {
+        targetUrl = new URL(req.url, normalizedBaseUrl);
+    } catch (error) {
+        logger.error('Invalid proxy target URL', { label, targetBaseUrl: normalizedBaseUrl, error: error.message });
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Invalid proxy target URL'
+        });
+    }
+
+    const isHttps = targetUrl.protocol === 'https:';
+    const proxyRequest = (isHttps ? https : http).request(
+        targetUrl,
+        {
+            method: req.method,
+            headers: {
+                ...req.headers,
+                host: targetUrl.host
+            }
+        },
+        (proxyRes) => {
+            res.status(proxyRes.statusCode || 500);
+            Object.entries(proxyRes.headers).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    res.setHeader(key, value);
+                }
+            });
+            proxyRes.pipe(res);
+        }
+    );
+
+    proxyRequest.on('error', (error) => {
+        logger.error('Proxy request failed', {
+            label,
+            target: targetUrl.toString(),
+            error: error.message
+        });
+        res.status(502).json({
+            error: 'Bad Gateway',
+            message: 'Failed to reach upstream service'
+        });
+    });
+
+    req.pipe(proxyRequest);
+};
+
+// Register proxy routes BEFORE body parsing to allow streaming
+app.use('/s001', createProxyHandler(process.env.PROXY_S001_URL, 'S001'));
+app.use('/s002', createProxyHandler(process.env.PROXY_S002_URL, 'S002'));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
