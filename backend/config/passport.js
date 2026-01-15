@@ -31,9 +31,38 @@ passport.deserializeUser(async (id, done) => {
 // Google OAuth Strategy
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     // Auto-detect callback URL if not set
+    const toHttpsOrigin = (urlValue) => {
+        try {
+            const parsed = new URL(urlValue);
+            if (parsed.protocol !== 'https:') {
+                parsed.protocol = 'https:';
+            }
+            return parsed.origin;
+        } catch {
+            return null;
+        }
+    };
+
     const getGoogleCallbackUrl = () => {
         if (process.env.GOOGLE_CALLBACK_URL) {
             return process.env.GOOGLE_CALLBACK_URL;
+        }
+
+        // Prefer FRONTEND_URL for production custom domains
+        if (process.env.FRONTEND_URL && process.env.NODE_ENV === 'production') {
+            try {
+                const httpsOrigin = toHttpsOrigin(process.env.FRONTEND_URL);
+                if (httpsOrigin) {
+                    return `${httpsOrigin}/api/v1/auth/oauth/google/callback`;
+                }
+                const frontendUrl = new URL(process.env.FRONTEND_URL);
+                return `${frontendUrl.origin}/api/v1/auth/oauth/google/callback`;
+            } catch (error) {
+                logger.warn('Invalid FRONTEND_URL, falling back to Azure hostname', {
+                    value: process.env.FRONTEND_URL,
+                    error: error.message
+                });
+            }
         }
         
         // Auto-detect for Azure
