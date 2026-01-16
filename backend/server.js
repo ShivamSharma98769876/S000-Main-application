@@ -214,6 +214,40 @@ const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
                 return html;
             };
 
+            const injectProxyBaseScript = (html) => {
+                if (!basePathPrefix) return html;
+                const prefix = basePathPrefix.replace(/\/$/, '');
+                const script = `
+<script>
+  (function() {
+    var base = '${prefix}';
+    if (!base) return;
+    // Patch fetch to prefix /api calls with the proxy base
+    if (window.fetch) {
+      var originalFetch = window.fetch;
+      window.fetch = function(resource, init) {
+        if (typeof resource === 'string' && resource.startsWith('/api/')) {
+          resource = base + resource;
+        }
+        return originalFetch.call(this, resource, init);
+      };
+    }
+    // Patch XMLHttpRequest to prefix /api calls with the proxy base
+    var open = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url) {
+      if (typeof url === 'string' && url.startsWith('/api/')) {
+        url = base + url;
+      }
+      return open.apply(this, arguments.length > 2 ? [method, url, arguments[2], arguments[3], arguments[4]] : [method, url]);
+    };
+  })();
+</script>`;
+                if (/<head[^>]*>/i.test(html)) {
+                    return html.replace(/<head([^>]*)>/i, `<head$1>${script}`);
+                }
+                return script + html;
+            };
+
             // Rewrite redirect locations to keep custom domain + prefix
             if (proxyRes.headers.location) {
                 try {
@@ -240,6 +274,7 @@ const createProxyHandler = (targetBaseUrl, label) => (req, res) => {
                         body = body.replace(/<head([^>]*)>/i, `<head$1><base href="${baseHref}">`);
                     }
                     body = rewriteAbsolutePaths(body);
+                    body = injectProxyBaseScript(body);
 
                     res.status(proxyRes.statusCode || 500);
                     Object.entries(proxyRes.headers).forEach(([key, value]) => {
