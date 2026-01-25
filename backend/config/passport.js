@@ -116,7 +116,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             let user;
             
             if (result.rows.length > 0) {
-                // User exists
+                // User exists with this Google provider ID
                 user = result.rows[0];
                 
                 // Update last login
@@ -125,24 +125,63 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
                     [user.id]
                 );
             } else {
-                // Create new user
-                result = await query(
-                    `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, NOW(), NOW())
-                     RETURNING *`,
-                    ['GOOGLE', providerUserId, email || '', false]
-                );
-                user = result.rows[0];
-                
-                // Create empty user profile with required fields set to empty strings
-                // User will complete profile during registration
-                await query(
-                    `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
-                    [user.id, '', '', '', false]
-                );
-                
-                logger.info('New user created via Google OAuth', { userId: user.id, email });
+                // No user with this Google ID - check if email already exists
+                if (email) {
+                    const existingEmailUser = await query(
+                        'SELECT * FROM users WHERE email = $1',
+                        [email]
+                    );
+                    
+                    if (existingEmailUser.rows.length > 0) {
+                        // User exists with this email - link Google account to existing user
+                        user = existingEmailUser.rows[0];
+                        
+                        // Update user to link Google account
+                        await query(
+                            'UPDATE users SET provider_type = $1, provider_user_id = $2, updated_at = NOW() WHERE id = $3',
+                            ['GOOGLE', providerUserId, user.id]
+                        );
+                        
+                        logger.info('Existing user linked to Google OAuth', { userId: user.id, email });
+                    } else {
+                        // Create new user - email doesn't exist
+                        result = await query(
+                            `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
+                             VALUES ($1, $2, $3, $4, NOW(), NOW())
+                             RETURNING *`,
+                            ['GOOGLE', providerUserId, email, false]
+                        );
+                        user = result.rows[0];
+                        
+                        // Create empty user profile with required fields set to empty strings
+                        // User will complete profile during registration
+                        await query(
+                            `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                            [user.id, '', '', '', false]
+                        );
+                        
+                        logger.info('New user created via Google OAuth', { userId: user.id, email });
+                    }
+                } else {
+                    // No email from Google - create new user without email
+                    result = await query(
+                        `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, NOW(), NOW())
+                         RETURNING *`,
+                        ['GOOGLE', providerUserId, '', false]
+                    );
+                    user = result.rows[0];
+                    
+                    // Create empty user profile
+                    await query(
+                        `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                        [user.id, '', '', '', false]
+                    );
+                    
+                    logger.info('New user created via Google OAuth (no email)', { userId: user.id });
+                }
             }
             
             // Log login audit
@@ -242,7 +281,7 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID) {
             let user;
             
             if (result.rows.length > 0) {
-                // User exists
+                // User exists with this Apple provider ID
                 user = result.rows[0];
                 
                 // Update last login
@@ -251,24 +290,63 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID) {
                     [user.id]
                 );
             } else {
-                // Create new user
-                result = await query(
-                    `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, NOW(), NOW())
-                     RETURNING *`,
-                    ['APPLE', appleId, email, false]
-                );
-                user = result.rows[0];
-                
-                // Create empty user profile with required fields set to empty strings
-                // User will complete profile during registration
-                await query(
-                    `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
-                    [user.id, '', '', '', false]
-                );
-                
-                logger.info('New user created via Apple OAuth', { userId: user.id, email });
+                // No user with this Apple ID - check if email already exists
+                if (email) {
+                    const existingEmailUser = await query(
+                        'SELECT * FROM users WHERE email = $1',
+                        [email]
+                    );
+                    
+                    if (existingEmailUser.rows.length > 0) {
+                        // User exists with this email - link Apple account to existing user
+                        user = existingEmailUser.rows[0];
+                        
+                        // Update user to link Apple account
+                        await query(
+                            'UPDATE users SET provider_type = $1, provider_user_id = $2, updated_at = NOW() WHERE id = $3',
+                            ['APPLE', appleId, user.id]
+                        );
+                        
+                        logger.info('Existing user linked to Apple OAuth', { userId: user.id, email });
+                    } else {
+                        // Create new user - email doesn't exist
+                        result = await query(
+                            `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
+                             VALUES ($1, $2, $3, $4, NOW(), NOW())
+                             RETURNING *`,
+                            ['APPLE', appleId, email, false]
+                        );
+                        user = result.rows[0];
+                        
+                        // Create empty user profile with required fields set to empty strings
+                        // User will complete profile during registration
+                        await query(
+                            `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                            [user.id, '', '', '', false]
+                        );
+                        
+                        logger.info('New user created via Apple OAuth', { userId: user.id, email });
+                    }
+                } else {
+                    // No email from Apple - create new user without email
+                    result = await query(
+                        `INSERT INTO users (provider_type, provider_user_id, email, is_admin, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, NOW(), NOW())
+                         RETURNING *`,
+                        ['APPLE', appleId, null, false]
+                    );
+                    user = result.rows[0];
+                    
+                    // Create empty user profile
+                    await query(
+                        `INSERT INTO user_profiles (user_id, full_name, phone, address, profile_completed, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())`,
+                        [user.id, '', '', '', false]
+                    );
+                    
+                    logger.info('New user created via Apple OAuth (no email)', { userId: user.id });
+                }
             }
             
             // Log login audit
