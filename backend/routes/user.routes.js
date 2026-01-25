@@ -8,7 +8,8 @@ const logger = require('../config/logger');
 // Create or update user profile
 router.post('/me/profile', isAuthenticated, validateProfile, async (req, res) => {
     try {
-        const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId } = req.body;
+        const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId, broker } = req.body;
+        // broker: Kite API authAccountID (e.g., "UK9394", "UK9090")
         
         // Ensure capitalUsed is a number
         const capitalUsedNum = parseFloat(capitalUsed);
@@ -32,18 +33,18 @@ router.post('/me/profile', isAuthenticated, validateProfile, async (req, res) =>
             result = await query(
                 `UPDATE user_profiles 
                  SET full_name = $1, address = $2, phone = $3, capital_used = $4, 
-                     referral_code = $5, zerodha_client_id = $6, profile_completed = true, updated_at = NOW()
-                 WHERE user_id = $7
+                     referral_code = $5, zerodha_client_id = $6, broker = $7, profile_completed = true, updated_at = NOW()
+                 WHERE user_id = $8
                  RETURNING *`,
-                [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, req.user.id]
+                [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, broker || null, req.user.id]
             );
         } else {
             // Create new profile
             result = await query(
-                `INSERT INTO user_profiles (user_id, full_name, address, phone, capital_used, referral_code, zerodha_client_id, profile_completed, created_at, updated_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
+                `INSERT INTO user_profiles (user_id, full_name, address, phone, capital_used, referral_code, zerodha_client_id, broker, profile_completed, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), NOW())
                  RETURNING *`,
-                [req.user.id, fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null]
+                [req.user.id, fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, broker || null]
             );
         }
         
@@ -113,7 +114,8 @@ router.get('/me/profile', isAuthenticated, async (req, res) => {
 // Update user profile (PUT)
 router.put('/me/profile', isAuthenticated, validateProfile, async (req, res) => {
     try {
-        const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId } = req.body;
+        const { fullName, address, phone, capitalUsed, referralCode, zerodhaClientId, broker } = req.body;
+        // broker: Kite API authAccountID (e.g., "UK9394", "UK9090")
         
         // Ensure capitalUsed is a number
         const capitalUsedNum = parseFloat(capitalUsed);
@@ -127,10 +129,10 @@ router.put('/me/profile', isAuthenticated, validateProfile, async (req, res) => 
         const result = await query(
             `UPDATE user_profiles 
              SET full_name = $1, address = $2, phone = $3, capital_used = $4, 
-                 referral_code = $5, zerodha_client_id = $6, updated_at = NOW()
-             WHERE user_id = $7
+                 referral_code = $5, zerodha_client_id = $6, broker = $7, updated_at = NOW()
+             WHERE user_id = $8
              RETURNING *`,
-            [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, req.user.id]
+            [fullName, address, phone, capitalUsedNum, referralCode || null, zerodhaClientId || null, broker || null, req.user.id]
         );
         
         if (result.rows.length === 0) {

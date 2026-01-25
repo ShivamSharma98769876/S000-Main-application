@@ -58,19 +58,33 @@ class EmailQueue {
         try {
             while (true) {
                 // Get next pending email (ordered by priority and creation time)
-                const result = await query(
-                    `SELECT * FROM email_queue 
-                     WHERE status = 'PENDING' AND retry_count < $1
-                     ORDER BY 
-                        CASE priority 
-                            WHEN 'HIGH' THEN 1 
-                            WHEN 'NORMAL' THEN 2 
-                            WHEN 'LOW' THEN 3 
-                        END,
-                        created_at ASC
-                     LIMIT 1`,
-                    [this.maxRetries]
-                );
+                let result;
+                try {
+                    result = await query(
+                        `SELECT * FROM email_queue 
+                         WHERE status = 'PENDING' AND retry_count < $1
+                         ORDER BY 
+                            CASE priority 
+                                WHEN 'HIGH' THEN 1 
+                                WHEN 'NORMAL' THEN 2 
+                                WHEN 'LOW' THEN 3 
+                            END,
+                            created_at ASC
+                         LIMIT 1`,
+                        [this.maxRetries]
+                    );
+                } catch (dbError) {
+                    // Handle database connection errors gracefully
+                    if (dbError.message.includes('timeout') || 
+                        dbError.message.includes('ECONNRESET') ||
+                        dbError.message.includes('Connection terminated')) {
+                        logger.warn('Database connection timeout during email queue processing - will retry on next cycle', {
+                            error: dbError.message
+                        });
+                        break; // Exit gracefully, will retry on next interval
+                    }
+                    throw dbError; // Re-throw other errors
+                }
 
                 if (result.rows.length === 0) {
                     // No more emails to process
@@ -84,7 +98,12 @@ class EmailQueue {
                 await this.sleep(1000);
             }
         } catch (error) {
-            logger.error('Error processing email queue', error);
+            // Only log as error if it's not a connection timeout (already handled above)
+            if (!error.message.includes('timeout') && 
+                !error.message.includes('ECONNRESET') &&
+                !error.message.includes('Connection terminated')) {
+                logger.error('Error processing email queue', error);
+            }
         } finally {
             this.processing = false;
             logger.info('Email queue processing completed');

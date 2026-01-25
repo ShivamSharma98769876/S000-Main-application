@@ -40,6 +40,7 @@ const bulkRoutes = require('./routes/bulk.routes');
 const monitoringRoutes = require('./routes/monitoring.routes');
 const insightsRoutes = require('./routes/insights.routes');
 const childAppRoutes = require('./routes/child-app.routes');
+const visitorRoutes = require('./routes/visitor.routes');
 
 // Import middleware
 const { adminIPWhitelist } = require('./middleware/ipWhitelist');
@@ -516,6 +517,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', cacheMiddleware(300), productRoutes); // Cache for 5 minutes
 app.use('/api/v1/content', cacheMiddleware(600), contentRoutes); // Cache for 10 minutes
 app.use('/api/v1/insights', insightsRoutes); // Market insights
+app.use('/api/v1/visitor', visitorRoutes); // Visitor counter
 
 // User routes (no caching for personalized data)
 app.use('/api/v1/cart', cartRoutes);

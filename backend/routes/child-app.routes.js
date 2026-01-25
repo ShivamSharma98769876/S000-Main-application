@@ -447,13 +447,37 @@ router.get('/get-url', async (req, res) => {
         }
 
         // Build child app URL with token
+        // Ensure we preserve any existing query parameters and add the token
         const url = new URL(childAppUrl);
-        url.searchParams.append('sso_token', token);
+        
+        // Always set the sso_token (will overwrite if it already exists)
+        // This ensures both S001 and S002 get the token
+        url.searchParams.set('sso_token', token);
 
-        logger.info('Child app URL generated', {
+        // Get product name for logging if we have subscription_id
+        let productNameForLog = null;
+        if (subscriptionId) {
+            try {
+                const productResult = await query(
+                    `SELECT p.name FROM subscriptions s 
+                     JOIN products p ON s.product_id = p.id 
+                     WHERE s.id = $1 AND s.user_id = $2`,
+                    [subscriptionId, decoded.user_id]
+                );
+                productNameForLog = productResult.rows[0]?.name || null;
+            } catch (err) {
+                // Ignore error, just log without product name
+            }
+        }
+
+        logger.info('Child app URL generated with SSO token', {
             user_id: decoded.user_id,
             subscription_id: subscriptionId || null,
-            child_app: childAppUrl
+            product_name: productNameForLog,
+            child_app: childAppUrl,
+            final_url: url.toString(),
+            has_sso_token: url.searchParams.has('sso_token'),
+            token_length: token.length
         });
 
         res.json({

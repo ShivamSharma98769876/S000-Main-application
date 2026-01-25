@@ -199,10 +199,16 @@
                 if (!response.ok) throw new Error('Failed to load testimonials');
                 
                 const data = await response.json();
-                displayTestimonials(data.testimonials);
                 
-                const pendingCount = data.testimonials.filter(t => t.status === 'PENDING').length;
-                const totalCount = data.testimonials.length;
+                // Normalize response shape and guard against unexpected structures
+                const testimonials = Array.isArray(data?.testimonials)
+                    ? data.testimonials
+                    : (Array.isArray(data) ? data : []);
+
+                displayTestimonials(testimonials);
+                
+                const pendingCount = testimonials.filter(t => t.status === 'PENDING').length;
+                const totalCount = testimonials.length;
                 document.getElementById('testimonials-count').textContent = `${totalCount} testimonials${pendingCount > 0 ? ` (${pendingCount} pending)` : ''}`;
             } catch (error) {
                 console.error('Error loading testimonials:', error);

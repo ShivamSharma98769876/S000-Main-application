@@ -34,7 +34,7 @@ if (process.env.DATABASE_URL) {
                 password: String(process.env.DB_PASSWORD || url.password || ''),
                 max: 20,
                 idleTimeoutMillis: 30000,
-                connectionTimeoutMillis: 2000,
+                connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
             };
         } else {
             // Parse connection string to check if SSL is required
@@ -49,6 +49,7 @@ if (process.env.DATABASE_URL) {
             
             poolConfig = {
                 connectionString: process.env.DATABASE_URL,
+                connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
                 ssl: requiresSSL 
                     ? { 
                         rejectUnauthorized: false  // Allow self-signed certificates (common with cloud providers like CloudClusters)
@@ -73,7 +74,7 @@ if (process.env.DATABASE_URL) {
             password: String(process.env.DB_PASSWORD || ''),
             max: 20,
             idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
+            connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
         };
     }
 } else {
@@ -103,7 +104,7 @@ if (process.env.DATABASE_URL) {
         password: String(process.env.DB_PASSWORD || ''), // Use empty string if not set (for local dev without password)
         max: 20,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 10000, // Increased to 10 seconds for cloud databases
         // Add SSL for cloud providers (with certificate verification disabled for self-signed certs)
         ssl: requiresSSL 
             ? { 
