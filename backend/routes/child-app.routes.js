@@ -145,7 +145,7 @@ router.get('/generate-token', isAuthenticated, childAppRateLimiter, async (req, 
         res.json({
             success: true,
             token,
-            expiresIn: process.env.JWT_EXPIRY || '10m',
+            expiresIn: process.env.JWT_EXPIRY || '1000m',
             child_app_url: getChildAppUrl()
         });
 
@@ -242,7 +242,7 @@ router.post('/refresh-token', async (req, res) => {
         res.json({
             success: true,
             token: newToken,
-            expiresIn: process.env.JWT_EXPIRY || '10m'
+            expiresIn: process.env.JWT_EXPIRY || '1000m'
         });
 
     } catch (error) {
