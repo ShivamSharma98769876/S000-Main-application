@@ -196,34 +196,90 @@
             return headers;
         }
 
+        // Cache user data to reduce API calls
+        const CACHE_KEY = 'auth_me_cache';
+        const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
+        function getCachedUserData() {
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (!cached) return null;
+                
+                const { data, timestamp } = JSON.parse(cached);
+                const now = Date.now();
+                
+                // Check if cache is still valid (less than 2 minutes old)
+                if (now - timestamp < CACHE_DURATION) {
+                    return data;
+                }
+                
+                // Cache expired, remove it
+                localStorage.removeItem(CACHE_KEY);
+                return null;
+            } catch (error) {
+                console.error('Error reading cache:', error);
+                return null;
+            }
+        }
+
+        function setCachedUserData(data) {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    data: data,
+                    timestamp: Date.now()
+                }));
+            } catch (error) {
+                console.error('Error setting cache:', error);
+            }
+        }
+
+        function clearCachedUserData() {
+            localStorage.removeItem(CACHE_KEY);
+        }
+
         async function loadDashboard() {
             try {
                 const token = getAuthToken();
                 
                 if (!token) {
                     console.log('No auth token found, redirecting to login');
+                    clearCachedUserData();
                     window.location.href = 'login.html';
                     return;
                 }
                 
-                console.log('Loading dashboard with JWT token');
+                // Check cache first
+                let data = getCachedUserData();
+                let fromCache = true;
                 
-                const response = await fetch(`${API_BASE_URL}/auth/me`, {
-                    method: 'GET',
-                    headers: getAuthHeaders()
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        // Token expired or invalid, clear it and redirect to login
-                        localStorage.removeItem('authToken');
-                        window.location.href = 'login.html';
-                        return;
+                if (!data) {
+                    // Cache miss or expired, fetch from API
+                    console.log('Loading dashboard with JWT token (API call)');
+                    fromCache = false;
+                    
+                    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+                        method: 'GET',
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Token expired or invalid, clear cache and token, redirect to login
+                            clearCachedUserData();
+                            localStorage.removeItem('authToken');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        throw new Error('Failed to load dashboard');
                     }
-                    throw new Error('Failed to load dashboard');
+                    
+                    data = await response.json();
+                    // Cache the response
+                    setCachedUserData(data);
+                } else {
+                    console.log('Loading dashboard from cache');
                 }
                 
-                const data = await response.json();
                 console.log('Auth successful:', data);
                 console.log('Profile complete:', data.isProfileComplete);
                 console.log('Profile data:', data.profile);
@@ -249,6 +305,7 @@
                 initializeMarketInsights();
             } catch (error) {
                 console.error('Dashboard load error:', error);
+                clearCachedUserData();
                 localStorage.removeItem('authToken');
                 window.location.href = 'login.html';
             }
@@ -591,6 +648,7 @@
 
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            clearCachedUserData();
             window.location.href = 'index.html';
         });
 

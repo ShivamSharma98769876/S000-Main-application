@@ -495,13 +495,11 @@ app.use((req, res, next) => {
     if (req.path.includes('/auth/oauth/')) {
         return next();
     }
-    // Skip rate limiting for /auth/me when no Bearer token (bots/crawlers hit this;
-    // we return 401 anyway - no benefit to counting these toward limit)
+    // Skip rate limiting for /auth/me (both authenticated and unauthenticated)
+    // - Unauthenticated: bots/crawlers - we return 401 anyway, no benefit counting toward limit
+    // - Authenticated: users already authenticated, less security risk, called frequently on page loads
     if (req.path === '/api/v1/auth/me' || req.path.endsWith('/auth/me')) {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return next();
-        }
+        return next();
     }
     rateLimiter(req, res, next);
 });
