@@ -489,20 +489,20 @@ logger.info('Serving uploads from', {
 // Performance monitoring (track all requests)
 app.use(performanceMonitor);
 
-// Rate limiting (but not for OAuth or unauthenticated /auth/me)
+// Rate limiting: protect unauthenticated traffic; don't limit authenticated users
 app.use((req, res, next) => {
     // Skip rate limiting for OAuth routes
     if (req.path.includes('/auth/oauth/')) {
         return next();
     }
-    // Skip rate limiting for /auth/me (both authenticated and unauthenticated)
-    // - Unauthenticated: bots/crawlers - we return 401 anyway, no benefit counting toward limit
-    // - Authenticated: users already authenticated, less security risk, called frequently on page loads
-    if (req.path === '/api/v1/auth/me' || req.path.endsWith('/auth/me')) {
+    // Skip rate limiting for requests with Bearer token (authenticated users)
+    // Normal dashboard/profile/subscriptions usage won't hit the limit
+    const authHeader = req.headers.authorization;
+    if (authHeader && typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
         return next();
     }
-    // Skip rate limiting for child-app get-url (requires JWT; called when user clicks Execute Strategy)
-    if (req.path === '/api/v1/child-app/get-url') {
+    // Skip rate limiting for /auth/me without token (bots get 401 anyway)
+    if (req.path === '/api/v1/auth/me' || req.path.endsWith('/auth/me')) {
         return next();
     }
     rateLimiter(req, res, next);
