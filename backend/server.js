@@ -501,6 +501,10 @@ app.use((req, res, next) => {
     if (req.path === '/api/v1/auth/me' || req.path.endsWith('/auth/me')) {
         return next();
     }
+    // Skip rate limiting for child-app get-url (requires JWT; called when user clicks Execute Strategy)
+    if (req.path === '/api/v1/child-app/get-url') {
+        return next();
+    }
     rateLimiter(req, res, next);
 });
 

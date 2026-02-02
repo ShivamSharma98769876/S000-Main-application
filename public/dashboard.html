@@ -561,6 +561,10 @@
             window.location.href = 'profile.html';
         }
 
+        // Cache get-url result per subscription (avoids duplicate API calls on double-click)
+        const childAppUrlCache = {};
+        const CHILD_APP_URL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
         async function executeStrategy(subscriptionId, productName) {
             try {
                 // Get JWT token from localStorage
@@ -569,6 +573,14 @@
                 if (!token) {
                     alert('Authentication required. Please login again.');
                     window.location.href = 'login.html';
+                    return;
+                }
+
+                // Use cached URL if still valid (avoids 429 from rapid/double-clicks)
+                const cacheKey = String(subscriptionId);
+                const cached = childAppUrlCache[cacheKey];
+                if (cached && (Date.now() - cached.at) < CHILD_APP_URL_CACHE_TTL) {
+                    window.open(cached.url, '_blank', 'noopener,noreferrer');
                     return;
                 }
 
@@ -588,12 +600,14 @@
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Failed to launch child application');
+                    throw new Error(errorData.error || errorData.message || 'Failed to launch child application');
                 }
 
                 const data = await response.json();
                 
                 if (data.success && data.url) {
+                    // Cache for reuse
+                    childAppUrlCache[cacheKey] = { url: data.url, at: Date.now() };
                     // Open child app in new window with JWT token in URL
                     console.log('Opening child app in new window:', data.url);
                     window.open(data.url, '_blank', 'noopener,noreferrer');
