@@ -40,7 +40,6 @@ const bulkRoutes = require('./routes/bulk.routes');
 const monitoringRoutes = require('./routes/monitoring.routes');
 const insightsRoutes = require('./routes/insights.routes');
 const childAppRoutes = require('./routes/child-app.routes');
-const visitorRoutes = require('./routes/visitor.routes');
 
 // Import middleware
 const { adminIPWhitelist } = require('./middleware/ipWhitelist');
@@ -490,11 +489,19 @@ logger.info('Serving uploads from', {
 // Performance monitoring (track all requests)
 app.use(performanceMonitor);
 
-// Rate limiting (but not for OAuth)
+// Rate limiting (but not for OAuth or unauthenticated /auth/me)
 app.use((req, res, next) => {
     // Skip rate limiting for OAuth routes
     if (req.path.includes('/auth/oauth/')) {
         return next();
+    }
+    // Skip rate limiting for /auth/me when no Bearer token (bots/crawlers hit this;
+    // we return 401 anyway - no benefit to counting these toward limit)
+    if (req.path === '/api/v1/auth/me' || req.path.endsWith('/auth/me')) {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return next();
+        }
     }
     rateLimiter(req, res, next);
 });
@@ -517,7 +524,6 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/products', cacheMiddleware(300), productRoutes); // Cache for 5 minutes
 app.use('/api/v1/content', cacheMiddleware(600), contentRoutes); // Cache for 10 minutes
 app.use('/api/v1/insights', insightsRoutes); // Market insights
-app.use('/api/v1/visitor', visitorRoutes); // Visitor counter
 
 // User routes (no caching for personalized data)
 app.use('/api/v1/cart', cartRoutes);

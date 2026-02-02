@@ -454,20 +454,13 @@ router.get('/oauth/apple/callback',
 // Get current user (requires JWT token)
 router.get('/me', async (req, res) => {
     try {
-        console.log('=== /auth/me ENDPOINT CALLED ===');
-        console.log('Headers:', {
-            authorization: req.headers.authorization ? 'Bearer ***' : 'missing',
-            'user-agent': req.headers['user-agent']
-        });
-        
         // JWT token authentication (REQUIRED)
         const authHeader = req.headers.authorization;
         
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            console.log('❌ No authorization header or invalid format');
-            logger.warn('Missing or invalid authorization header in /me', {
-                hasHeader: !!authHeader,
-                startsWithBearer: authHeader?.startsWith('Bearer ')
+            // Bots/crawlers (e.g. SkypeUriPreview) hit this without token - log at debug only
+            logger.debug('Missing or invalid authorization header in /me', {
+                userAgent: req.headers['user-agent']
             });
             return res.status(401).json({
                 error: 'Unauthorized',
@@ -476,32 +469,18 @@ router.get('/me', async (req, res) => {
         }
         
         const jwtToken = authHeader.substring(7);
-        console.log('JWT Token extracted, length:', jwtToken.length);
         let authenticatedUser = null;
         
         try {
-            console.log('Verifying JWT token...');
             const decoded = jwtService.verifyAuthToken(jwtToken);
-            console.log('Token verified successfully:', {
-                user_id: decoded.user_id,
-                email: decoded.email,
-                profile_completed: decoded.profile_completed
-            });
             
-            // Fetch user from database
-            console.log('Fetching user from database, user_id:', decoded.user_id);
             const userResult = await query(
                 'SELECT id, provider_type, provider_user_id, email, is_admin FROM users WHERE id = $1',
                 [decoded.user_id]
             );
             
-            console.log('User query result:', {
-                rowCount: userResult.rows.length,
-                userFound: userResult.rows.length > 0
-            });
-            
             if (userResult.rows.length === 0) {
-                console.log('❌ User not found in database');
+                logger.warn('User not found in database for /me', { userId: decoded.user_id });
                 return res.status(401).json({
                     error: 'Unauthorized',
                     message: 'User not found'
@@ -510,16 +489,9 @@ router.get('/me', async (req, res) => {
             
             authenticatedUser = userResult.rows[0];
             req.user = authenticatedUser; // Set for compatibility
-            console.log('User authenticated:', {
-                id: authenticatedUser.id,
-                email: authenticatedUser.email
-            });
         } catch (tokenError) {
-            console.error('❌ Token verification failed:', tokenError.message);
-            console.error('Token error stack:', tokenError.stack);
             logger.warn('JWT token verification failed in /me', { 
-                error: tokenError.message,
-                stack: tokenError.stack
+                error: tokenError.message
             });
             
             if (tokenError.message === 'Token expired') {
@@ -547,7 +519,7 @@ router.get('/me', async (req, res) => {
         const profile = profileResult.rows.length > 0 ? profileResult.rows[0] : null;
         const profileCompleted = profile ? (profile.profile_completed === true) : false;
         
-        logger.info('User profile fetched for /me endpoint', {
+        logger.debug('User profile fetched for /me endpoint', {
             userId: authenticatedUser.id,
             hasProfile: !!profile,
             profileCompleted: profileCompleted
