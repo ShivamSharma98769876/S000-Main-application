@@ -7,6 +7,38 @@ const logger = require('../config/logger');
 const emailQueue = require('../services/emailQueue.service');
 const dailyPnlKite = require('../services/dailyPnlKite.service');
 
+// Dashboard stats: pending orders, approved today, total users, total revenue
+router.get('/stats', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const [pendingResult, approvedTodayResult, usersResult, revenueResult] = await Promise.all([
+            query('SELECT COUNT(*) AS count FROM subscription_orders WHERE status = $1', ['PENDING']),
+            query(
+                `SELECT COUNT(*) AS count FROM subscription_orders 
+                 WHERE status = $1 AND DATE(updated_at) = CURRENT_DATE`,
+                ['APPROVED']
+            ),
+            query('SELECT COUNT(*) AS count FROM users'),
+            query(
+                `SELECT COALESCE(SUM(total_amount), 0) AS total FROM subscription_orders WHERE status = $1`,
+                ['APPROVED']
+            )
+        ]);
+
+        res.json({
+            pendingOrders: parseInt(pendingResult.rows[0].count, 10),
+            approvedToday: parseInt(approvedTodayResult.rows[0].count, 10),
+            totalUsers: parseInt(usersResult.rows[0].count, 10),
+            totalRevenue: parseFloat(revenueResult.rows[0].total || 0)
+        });
+    } catch (error) {
+        logger.error('Error fetching dashboard stats', error);
+        res.status(500).json({
+            error: 'Internal Server Error',
+            message: 'Failed to fetch dashboard stats'
+        });
+    }
+});
+
 // Get pending orders
 router.get('/orders', isAuthenticated, isAdmin, validatePagination, async (req, res) => {
     try {

@@ -207,25 +207,32 @@
 
         async function loadDashboardStats() {
             try {
-                // Load pending orders
+                // Load dashboard stats (pending, approved today, users, revenue)
+                const statsResponse = await fetch(`${API_BASE_URL}/admin/stats`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('pending-orders').textContent = stats.pendingOrders ?? 0;
+                    document.getElementById('pending-count').textContent = stats.pendingOrders ?? 0;
+                    document.getElementById('approved-orders').textContent = stats.approvedToday ?? 0;
+                    document.getElementById('total-users').textContent = stats.totalUsers ?? 0;
+                    const revenue = Number(stats.totalRevenue) || 0;
+                    document.getElementById('total-revenue').textContent = '₹' + revenue.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                }
+
+                // Load recent pending orders for the table
                 const ordersResponse = await fetch(`${API_BASE_URL}/admin/orders?status=PENDING&pageSize=5`, {
                     method: 'GET',
                     headers: getAuthHeaders()
                 });
-                
+
                 if (ordersResponse.ok) {
                     const ordersData = await ordersResponse.json();
-                    document.getElementById('pending-orders').textContent = ordersData.pagination.totalCount;
-                    document.getElementById('pending-count').textContent = ordersData.pagination.totalCount;
                     displayRecentOrders(ordersData.orders);
                 }
-
-                // Note: Additional stats would require new endpoints or aggregation
-                // For now, showing placeholder values
-                document.getElementById('approved-orders').textContent = '-';
-                document.getElementById('total-users').textContent = '-';
-                document.getElementById('total-revenue').textContent = '₹-';
-                
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
