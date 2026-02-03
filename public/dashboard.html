@@ -99,7 +99,7 @@
                     </div>
                 </div>
 
-                <!-- Subscriptions Section -->
+                <!-- Subscriptions Section (active only as strategy cards) -->
                 <div style="grid-column: 1 / -1;">
                     <div class="dashboard-card">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -116,6 +116,14 @@
                         <div id="subscriptions-list">
                             <div class="loading">Loading subscriptions...</div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Expired Subscriptions (list below, like Recent Orders) -->
+                <div id="expired-subscriptions-wrap" style="grid-column: 1 / -1; display: none;">
+                    <div class="dashboard-card">
+                        <h2 style="margin-bottom: 1.5rem;">Expired Subscriptions</h2>
+                        <div id="expired-subscriptions-list"></div>
                     </div>
                 </div>
                 
@@ -394,11 +402,50 @@
             displaySubscriptions(subscriptions);
         }
 
+        function isSubscriptionExpired(sub) {
+            const status = (sub.status || '').toUpperCase();
+            if (status === 'EXPIRED') return true;
+            const daysRemaining = calculateDaysRemaining(sub.end_date);
+            return daysRemaining < 0;
+        }
+
+        function displayExpiredSubscriptions(expiredList) {
+            const wrap = document.getElementById('expired-subscriptions-wrap');
+            const container = document.getElementById('expired-subscriptions-list');
+            if (!expiredList || expiredList.length === 0) {
+                wrap.style.display = 'none';
+                return;
+            }
+            wrap.style.display = 'block';
+            container.innerHTML = expiredList.map(sub => {
+                const strategyCode = extractStrategyCode(sub.product_name);
+                const startStr = new Date(sub.start_date).toLocaleDateString();
+                const endStr = new Date(sub.end_date).toLocaleDateString();
+                return `
+                    <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div>
+                            ${strategyCode ? `<span class="strategy-code">${strategyCode}</span> · ` : ''}
+                            <strong>${sub.product_name}</strong><br>
+                            <small style="color: var(--text-secondary);">
+                                Valid: ${startStr} – ${endStr}
+                            </small>
+                        </div>
+                        <span class="status-badge status-expired">EXPIRED</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function displaySubscriptions(subscriptions) {
             const container = document.getElementById('subscriptions-list');
-            window.currentSubscriptions = subscriptions; // Store for view toggle
-            
-            if (!subscriptions || subscriptions.length === 0) {
+            window.currentSubscriptions = subscriptions || [];
+
+            const activeSubscriptions = (subscriptions || []).filter(sub => !isSubscriptionExpired(sub));
+            const expiredSubscriptions = (subscriptions || []).filter(sub => isSubscriptionExpired(sub));
+
+            displayExpiredSubscriptions(expiredSubscriptions);
+
+            if (!activeSubscriptions || activeSubscriptions.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No active subscriptions. <a href="products.html">Browse products</a> to get started.</p>';
                 return;
             }
@@ -406,7 +453,7 @@
             if (currentView === 'grid') {
                 container.innerHTML = `
                     <div class="subscriptions-grid">
-                        ${subscriptions.map(sub => {
+                        ${activeSubscriptions.map(sub => {
                             const strategyCode = extractStrategyCode(sub.product_name);
                             const daysRemaining = calculateDaysRemaining(sub.end_date);
                             
@@ -453,7 +500,7 @@
                     </div>
                 `;
             } else {
-                // Table view
+                // Table view (active only)
                 container.innerHTML = `
                     <div style="overflow-x: auto;">
                         <table class="subscriptions-table">
@@ -469,7 +516,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                ${subscriptions.map(sub => {
+                                ${activeSubscriptions.map(sub => {
                                     const strategyCode = extractStrategyCode(sub.product_name);
                                     const daysRemaining = calculateDaysRemaining(sub.end_date);
                                     

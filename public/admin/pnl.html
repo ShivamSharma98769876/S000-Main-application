@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily P&L | StockSage Admin</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="../js/config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Header controls (date + buttons) inside card header */
+        .pnl-header-controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .pnl-header-controls .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .pnl-header-controls label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .pnl-header-controls input[type="date"] {
+            padding: 0.55rem 0.75rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-width: 150px;
+            font-size: 0.95rem;
+        }
+        .pnl-header-controls input[type="date"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .btn-process {
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            color: #fff;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-process:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-load {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.1rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-download {
+            background: var(--card-bg);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.55rem 1rem;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .pnl-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .pnl-summary span {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .pnl-table-wrap {
+            overflow-x: auto;
+            max-height: 420px;
+            overflow-y: auto;
+            margin-top: var(--spacing-md);
+        }
+        .pnl-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pnl-table th {
+            background: var(--bg-tertiary);
+            padding: 0.9rem 1.25rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .pnl-table td {
+            padding: 0.9rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.95rem;
+        }
+        .pnl-table tbody tr:hover { background: var(--bg-tertiary); }
+        .pnl-positive { color: #059669; font-weight: 600; }
+        .pnl-negative { color: #dc2626; font-weight: 600; }
+        .pnl-zero { color: var(--text-secondary); }
+        .pnl-empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+        .pnl-empty-state-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.6; }
+        .pnl-empty-state p { margin: 0 0 0.5rem 0; font-size: 1rem; }
+        .pnl-empty-state small { font-size: 0.85rem; }
+        .pnl-loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+        .pnl-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: pnl-spin 0.8s linear infinite;
+        }
+        @keyframes pnl-spin { to { transform: rotate(360deg); } }
+        .pnl-loading-box {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .pnl-chart-wrap {
+            width: 100%;
+        }
+        .pnl-chart-wrap canvas {
+            max-height: 240px;
+            width: 100% !important;
+        }
+        .toast { position: fixed; top: 24px; right: 24px; padding: 1rem 1.5rem; border-radius: var(--radius-md); z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,0.2); font-weight: 500; font-size: 0.95rem; }
+        .toast.success { background: #059669; color: white; }
+        .toast.error { background: #dc2626; color: white; }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <a href="../dashboard.html" class="admin-logo">
+                    <span class="logo__icon">📈</span>
+                    <span class="logo__text">StockSage Admin</span>
+                </a>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="orders.html" class="nav-item">📦 Orders</a>
+                <a href="products.html" class="nav-item">🎯 Products</a>
+                <a href="insights.html" class="nav-item">📊 Market Insights</a>
+                <a href="offers.html" class="nav-item">🎁 Offers</a>
+                <a href="testimonials.html" class="nav-item">⭐ Testimonials</a>
+                <a href="config.html" class="nav-item">⚙️ Config</a>
+                <a href="audit.html" class="nav-item">📝 Audit Logs</a>
+                <a href="monitoring.html" class="nav-item">📡 Monitoring</a>
+                <a href="pnl.html" class="nav-item active">💰 Daily P&L</a>
+                <div class="nav-divider"></div>
+                <a href="../dashboard.html" class="nav-item">← Back to Site</a>
+                <button id="logout-btn" class="nav-item logout-btn">🚪 Logout</button>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <header class="admin-header">
+                <h1>Daily P&L</h1>
+                <div class="admin-user"><span id="admin-name">Admin</span></div>
+            </header>
+
+            <div class="admin-content">
+                <div class="admin-card">
+                    <div class="card-header">
+                        <div>
+                            <h2>Daily P&L by Kite</h2>
+                            <p class="text-secondary" style="margin-top: 0.25rem; font-size: 0.9rem;">
+                                Select a date, process trades from Kite, then review totals and export as CSV.
+                            </p>
+                        </div>
+                        <div class="pnl-header-controls">
+                            <div class="field">
+                                <label for="trade-date">Trade date</label>
+                                <input type="date" id="trade-date" />
+                            </div>
+                            <button type="button" class="btn-process" id="btn-process" aria-label="Process P&L for selected date">
+                                <span aria-hidden="true">▶</span> Process
+                            </button>
+                            <button type="button" class="btn-load" id="btn-load-results" aria-label="Load results for selected date">
+                                📋 Load
+                            </button>
+                            <button type="button" class="btn-download" id="btn-download-csv" disabled title="Download current results as CSV">
+                                📥 CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="pnl-summary" id="pnl-summary" style="display: none; margin-bottom: 0.75rem;"></div>
+                        <div id="results-message" class="pnl-empty-state">
+                            <div class="pnl-empty-state-icon">📊</div>
+                            <p>No results yet</p>
+                            <small>Select a date above and click <strong>Process</strong> to fetch Kite trades and update P&L, or <strong>Load</strong> to view existing data.</small>
+                        </div>
+                        <div class="pnl-table-wrap" id="table-wrap" style="display: none;">
+                            <table class="pnl-table" id="pnl-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Zerodha Client ID</th>
+                                        <th>P&L (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pnl-tbody"></tbody>
+                            </table>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem;">P&L chart (by user)</h3>
+                            <small class="text-secondary" style="display: block; margin-bottom: 0.75rem;">Shows total P&L for each user over the loaded date(s).</small>
+                            <div class="pnl-chart-wrap" style="max-height: 240px; height: 240px; position: relative;">
+                                <canvas id="pnl-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading-overlay" class="pnl-loading-overlay" style="display: none;" aria-live="polite">
+                <div class="pnl-loading-box">
+                    <div class="pnl-spinner" style="margin: 0 auto 1rem;"></div>
+                    <p style="margin: 0; font-weight: 600;">Processing…</p>
+                    <small class="text-secondary">Fetching trades from Kite and updating P&L</small>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let pnlData = [];
+        let pnlChart = null;
+
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            return {
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+        }
+
+        async function checkAdminAuth() {
+            const token = getAuthToken();
+            if (!token) {
+                window.location.href = '../login.html';
+                return false;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/me`, { method: 'GET', headers: getAuthHeaders() });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('authToken');
+                        window.location.href = '../login.html';
+                        return false;
+                    }
+                    throw new Error('Not authenticated');
+                }
+                const data = await response.json();
+                if (!data.user || !data.user.is_admin) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                if (document.getElementById('admin-name')) {
+                    document.getElementById('admin-name').textContent = data.profile?.full_name || data.user.email;
+                }
+                return true;
+            } catch (e) {
+                console.error('Admin auth check error', e);
+                localStorage.removeItem('authToken');
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+
+        function showToast(message, type) {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        function formatPnl(val) {
+            const n = Number(val);
+            if (n > 0) return { text: '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2 }), cls: 'pnl-positive' };
+            if (n < 0) return { text: '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2 }), cls: 'pnl-negative' };
+            return { text: '₹ 0.00', cls: 'pnl-zero' };
+        }
+
+        function showLoading(show) {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+
+        async function runProcess() {
+            const dateInput = document.getElementById('trade-date');
+            const date = dateInput.value;
+            if (!date) {
+                showToast('Please select a date.', 'error');
+                return;
+            }
+            const btn = document.getElementById('btn-process');
+            btn.disabled = true;
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/daily-pnl/process`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ date })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    showToast(data.message || data.error || 'Process failed', 'error');
+                    return;
+                }
+                showToast(data.message || 'Process completed.', 'success');
+                await loadResults(date);
+            } catch (e) {
+                showToast(e.message || 'Request failed', 'error');
+            } finally {
+                btn.disabled = false;
+                showLoading(false);
+            }
+        }
+
+        function updateChart() {
+            const canvas = document.getElementById('pnl-chart');
+            if (!canvas) return;
+
+            if (!pnlData || !pnlData.length) {
+                if (pnlChart) {
+                    pnlChart.destroy();
+                    pnlChart = null;
+                }
+                return;
+            }
+
+            const byUser = {};
+            pnlData.forEach(row => {
+                const name = row.name || 'Unknown';
+                const val = Number(row.pnl) || 0;
+                byUser[name] = (byUser[name] || 0) + val;
+            });
+
+            const labels = Object.keys(byUser);
+            const values = labels.map(l => byUser[l]);
+
+            const ctx = canvas.getContext('2d');
+            const data = {
+                labels,
+                datasets: [{
+                    label: 'Total P&L (₹)',
+                    data: values,
+                    backgroundColor: values.map(v => v >= 0 ? 'rgba(34,197,94,0.7)' : 'rgba(248,113,113,0.7)'),
+                    borderColor: values.map(v => v >= 0 ? 'rgb(34,197,94)' : 'rgb(248,113,113)'),
+                    borderWidth: 1,
+                    borderRadius: 6,
+                }]
+            };
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: '#e5e7eb' }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(55,65,81,0.4)' }
+                    },
+                    y: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(55,65,81,0.4)' }
+                    }
+                }
+            };
+
+            if (pnlChart) {
+                pnlChart.data = data;
+                pnlChart.options = options;
+                pnlChart.update();
+            } else {
+                pnlChart = new Chart(ctx, {
+                    type: 'bar',
+                    data,
+                    options
+                });
+            }
+        }
+
+        async function loadResults(date) {
+            const msgEl = document.getElementById('results-message');
+            const tableWrap = document.getElementById('table-wrap');
+            const downloadBtn = document.getElementById('btn-download-csv');
+            const summaryEl = document.getElementById('pnl-summary');
+
+            function showEmptyState(text, subtext) {
+                msgEl.className = 'pnl-empty-state';
+                msgEl.style.display = 'block';
+                msgEl.innerHTML = `
+                    <div class="pnl-empty-state-icon">📊</div>
+                    <p>${escapeHtml(text)}</p>
+                    ${subtext ? `<small>${escapeHtml(subtext)}</small>` : ''}
+                `;
+                tableWrap.style.display = 'none';
+                downloadBtn.disabled = true;
+                summaryEl.style.display = 'none';
+            }
+
+            if (!date) {
+                showEmptyState('No date selected', 'Select a date and click Process or Load results.');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/daily-pnl?date=${encodeURIComponent(date)}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    showEmptyState(data.message || data.error || 'Failed to load results.', '');
+                    return;
+                }
+                pnlData = data.data || [];
+                const tbody = document.getElementById('pnl-tbody');
+                if (!pnlData.length) {
+                    showEmptyState(`No records for ${date}`, 'Add rows in daily_pnl for this date and run Process.');
+                    return;
+                }
+                msgEl.style.display = 'none';
+                tableWrap.style.display = 'block';
+                downloadBtn.disabled = false;
+                const totalPnl = pnlData.reduce((s, r) => s + (Number(r.pnl) || 0), 0);
+                const totalStr = '₹ ' + totalPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                const totalCls = totalPnl > 0 ? 'pnl-positive' : totalPnl < 0 ? 'pnl-negative' : 'pnl-zero';
+                summaryEl.style.display = 'flex';
+                summaryEl.innerHTML = `<span>${pnlData.length} record${pnlData.length !== 1 ? 's' : ''}</span> · <span>Total P&L: <strong class="${totalCls}">${totalStr}</strong></span>`;
+                tbody.innerHTML = pnlData.map((row, i) => {
+                    const pnlInfo = formatPnl(row.pnl);
+                    return `
+                        <tr>
+                            <td>${i + 1}</td>
+                            <td>${escapeHtml(row.name || '-')}</td>
+                            <td>${escapeHtml(row.zerodha_client_id || '-')}</td>
+                            <td class="${pnlInfo.cls}">${pnlInfo.text}</td>
+                        </tr>
+                    `;
+                }).join('');
+                updateChart();
+            } catch (e) {
+                showEmptyState(e.message || 'Failed to load results.', '');
+                updateChart();
+            }
+        }
+
+        function escapeHtml(s) {
+            const div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function downloadCsv() {
+            if (!pnlData.length) return;
+            const date = document.getElementById('trade-date').value || 'data';
+            const headers = ['Name', 'Zerodha Client ID', 'P&L (₹)'];
+            const rows = pnlData.map(r => [
+                r.name || '',
+                r.zerodha_client_id || '',
+                r.pnl != null ? r.pnl : ''
+            ]);
+            const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `daily-pnl-${date}.csv`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        document.getElementById('btn-process').addEventListener('click', runProcess);
+        document.getElementById('btn-load-results').addEventListener('click', () => {
+            const date = document.getElementById('trade-date').value;
+            if (!date) {
+                showToast('Please select a date first.', 'error');
+                return;
+            }
+            loadResults(date);
+        });
+        document.getElementById('btn-download-csv').addEventListener('click', downloadCsv);
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+            localStorage.removeItem('authToken');
+            window.location.href = '../login.html';
+        });
+
+        (async () => {
+            const ok = await checkAdminAuth();
+            if (!ok) return;
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('trade-date').value = today;
+        })();
+    </script>
+</body>
+</html>

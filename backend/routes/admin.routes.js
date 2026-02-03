@@ -5,6 +5,7 @@ const { isAuthenticated, isAdmin } = require('../middleware/auth');
 const { validatePagination } = require('../middleware/validator');
 const logger = require('../config/logger');
 const emailQueue = require('../services/emailQueue.service');
+const dailyPnlKite = require('../services/dailyPnlKite.service');
 
 // Get pending orders
 router.get('/orders', isAuthenticated, isAdmin, validatePagination, async (req, res) => {
@@ -426,6 +427,97 @@ router.get('/audit/cross-app', isAuthenticated, isAdmin, async (req, res) => {
         res.status(500).json({ 
             error: 'Failed to fetch audit logs',
             message: error.message 
+        });
+    }
+});
+
+// ----- Daily P&L (Admin only) -----
+// Expected daily_pnl columns: id, user_id (-> user_profiles.id), date, api_key, api_secret, access_token, pnl
+
+// Process: fetch Kite trades for date and update pnl for each record
+router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const date = req.body.date || req.query.date;
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Invalid date', message: 'Provide date as YYYY-MM-DD' });
+        }
+
+        const rows = await query(
+            `SELECT id, user_id, date, api_key, api_secret, access_token, pnl
+             FROM daily_pnl WHERE date = $1`,
+            [date]
+        );
+
+        if (!rows.rows.length) {
+            return res.json({
+                success: true,
+                message: 'No daily_pnl records found for this date',
+                processed: 0,
+                date
+            });
+        }
+
+        let processed = 0;
+        const errors = [];
+
+        for (const row of rows.rows) {
+            const result = await dailyPnlKite.fetchTradesAndCalculatePnl(
+                { api_key: row.api_key, access_token: row.access_token },
+                date
+            );
+            await query(
+                `UPDATE daily_pnl SET pnl = $1, updated_at = NOW() WHERE id = $2`,
+                [result.pnl, row.id]
+            );
+            processed++;
+            if (result.error) {
+                errors.push({ user_id: row.user_id, error: result.error });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Processed ${processed} record(s) for ${date}`,
+            processed,
+            date,
+            errors: errors.length ? errors : undefined
+        });
+    } catch (error) {
+        logger.error('Daily PnL process failed', error);
+        res.status(500).json({
+            error: 'Processing failed',
+            message: error.message
+        });
+    }
+});
+
+// List: get daily_pnl for date with name and zerodha_client_id from user_profiles
+router.get('/daily-pnl', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const date = req.query.date;
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Invalid date', message: 'Provide date as YYYY-MM-DD' });
+        }
+
+        const result = await query(
+            `SELECT d.id, d.user_id, d.date, d.pnl, up.full_name AS name, up.zerodha_client_id
+             FROM daily_pnl d
+             JOIN user_profiles up ON up.id = d.user_id
+             WHERE d.date = $1
+             ORDER BY up.full_name`,
+            [date]
+        );
+
+        res.json({
+            success: true,
+            date,
+            data: result.rows
+        });
+    } catch (error) {
+        logger.error('Failed to fetch daily PnL list', error);
+        res.status(500).json({
+            error: 'Failed to fetch data',
+            message: error.message
         });
     }
 });
