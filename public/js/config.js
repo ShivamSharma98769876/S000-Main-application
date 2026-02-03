@@ -16,6 +16,7 @@
     // Get the current origin (protocol + hostname + port)
     const origin = window.location.origin;
     
+    
     // Set API base URL
     // Production: Use stocksage.trade as the canonical domain
     // Development: Use local backend on port 3000
