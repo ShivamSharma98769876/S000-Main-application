@@ -15,7 +15,7 @@ const securityHeaders = helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://appleid.cdn-apple.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://appleid.cdn-apple.com", "https://cdn.jsdelivr.net"],
             scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://r2cdn.perplexity.ai"],

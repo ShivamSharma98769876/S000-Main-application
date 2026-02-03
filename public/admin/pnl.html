@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="../js/config.js"></script>
+    <script>
+        // Suppress AbortError from media play()/pause() (often caused by extensions or browser autoplay)
+        window.addEventListener('unhandledrejection', function (e) {
+            if (e.reason && e.reason.name === 'AbortError' && /play|pause/.test(String(e.reason.message || ''))) {
+                e.preventDefault();
+            }
+        });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <style>
         /* Header controls (date + buttons) inside card header */
@@ -231,6 +239,19 @@
                                 📥 CSV
                             </button>
                         </div>
+                        <div class="pnl-header-controls" style="margin-top: 1rem;">
+                            <div class="field">
+                                <label for="from-date">From</label>
+                                <input type="date" id="from-date" />
+                            </div>
+                            <div class="field">
+                                <label for="to-date">To</label>
+                                <input type="date" id="to-date" />
+                            </div>
+                            <button type="button" class="btn-load" id="btn-search-range" aria-label="Search by date range">
+                                🔍 Search
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="pnl-summary" id="pnl-summary" style="display: none; margin-bottom: 0.75rem;"></div>
@@ -244,6 +265,7 @@
                                 <thead>
                                     <tr>
                                         <th>#</th>
+                                        <th id="th-date" style="display: none;">Date</th>
                                         <th>Name</th>
                                         <th>Zerodha Client ID</th>
                                         <th>P&L (₹)</th>
@@ -409,7 +431,35 @@
                 }]
             };
 
+            const ChartConstructor = typeof Chart !== 'undefined' ? Chart : (typeof window !== 'undefined' ? window.Chart : null);
+            var pnlBarValuePlugin = {
+                id: 'pnlBarValue',
+                afterDatasetsDraw: function(chart) {
+                    var ctx = chart.ctx;
+                    var padding = 8;
+                    chart.data.datasets.forEach(function(dataset, i) {
+                        var meta = chart.getDatasetMeta(i);
+                        if (!meta.hidden) {
+                            meta.data.forEach(function(bar, j) {
+                                var value = dataset.data[j];
+                                if (value == null) return;
+                                var label = '₹' + Number(value).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                                var endX = value >= 0 ? bar.x + bar.width / 2 + padding : bar.x - bar.width / 2 - padding;
+                                var y = bar.y;
+                                ctx.save();
+                                ctx.font = '600 12px Inter, sans-serif';
+                                ctx.fillStyle = value >= 0 ? '#059669' : '#dc2626';
+                                ctx.textAlign = value >= 0 ? 'left' : 'right';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(label, endX, y);
+                                ctx.restore();
+                            });
+                        }
+                    });
+                }
+            };
             const options = {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
@@ -420,7 +470,8 @@
                 scales: {
                     x: {
                         ticks: { color: '#9ca3af' },
-                        grid: { color: 'rgba(55,65,81,0.4)' }
+                        grid: { color: 'rgba(55,65,81,0.4)' },
+                        title: { display: true, text: 'P&L (₹)', color: '#9ca3af' }
                     },
                     y: {
                         ticks: { color: '#9ca3af' },
@@ -429,7 +480,6 @@
                 }
             };
 
-            const ChartConstructor = typeof Chart !== 'undefined' ? Chart : (typeof window !== 'undefined' ? window.Chart : null);
             if (!ChartConstructor) {
                 console.error('Chart.js not loaded');
                 return;
@@ -439,10 +489,16 @@
                 pnlChart.options = options;
                 pnlChart.update();
             } else {
+                try {
+                    if (ChartConstructor.register && !ChartConstructor.registry.getPlugin('pnlBarValue')) {
+                        ChartConstructor.register(pnlBarValuePlugin);
+                    }
+                } catch (e) {}
                 pnlChart = new ChartConstructor(ctx, {
                     type: 'bar',
                     data,
-                    options
+                    options,
+                    plugins: [pnlBarValuePlugin]
                 });
             }
         }
@@ -481,35 +537,102 @@
                     return;
                 }
                 pnlData = data.data || [];
-                const tbody = document.getElementById('pnl-tbody');
                 if (!pnlData.length) {
                     showEmptyState(`No records for ${date}`, 'Add rows in daily_pnl for this date and run Process.');
                     return;
                 }
-                msgEl.style.display = 'none';
-                tableWrap.style.display = 'block';
-                downloadBtn.disabled = false;
-                const totalPnl = pnlData.reduce((s, r) => s + (Number(r.pnl) || 0), 0);
-                const totalStr = '₹ ' + totalPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-                const totalCls = totalPnl > 0 ? 'pnl-positive' : totalPnl < 0 ? 'pnl-negative' : 'pnl-zero';
-                summaryEl.style.display = 'flex';
-                summaryEl.innerHTML = `<span>${pnlData.length} record${pnlData.length !== 1 ? 's' : ''}</span> · <span>Total P&L: <strong class="${totalCls}">${totalStr}</strong></span>`;
-                tbody.innerHTML = pnlData.map((row, i) => {
-                    const pnlInfo = formatPnl(row.pnl);
-                    return `
-                        <tr>
-                            <td>${i + 1}</td>
-                            <td>${escapeHtml(row.name || '-')}</td>
-                            <td>${escapeHtml(row.zerodha_client_id || '-')}</td>
-                            <td class="${pnlInfo.cls}">${pnlInfo.text}</td>
-                        </tr>
-                    `;
-                }).join('');
-                updateChart();
+                renderPnlTableAndChart(pnlData, false);
             } catch (e) {
                 showEmptyState(e.message || 'Failed to load results.', '');
                 updateChart();
             }
+        }
+
+        async function searchByRange() {
+            const from = document.getElementById('from-date').value;
+            const to = document.getElementById('to-date').value;
+            const msgEl = document.getElementById('results-message');
+            const tableWrap = document.getElementById('table-wrap');
+            const downloadBtn = document.getElementById('btn-download-csv');
+            const summaryEl = document.getElementById('pnl-summary');
+
+            function showEmptyState(text, subtext) {
+                msgEl.className = 'pnl-empty-state';
+                msgEl.style.display = 'block';
+                msgEl.innerHTML = `
+                    <div class="pnl-empty-state-icon">📊</div>
+                    <p>${escapeHtml(text)}</p>
+                    ${subtext ? `<small>${escapeHtml(subtext)}</small>` : ''}
+                `;
+                tableWrap.style.display = 'none';
+                downloadBtn.disabled = true;
+                summaryEl.style.display = 'none';
+            }
+
+            if (!from || !to) {
+                showToast('Please select From and To dates.', 'error');
+                return;
+            }
+            if (from > to) {
+                showToast('From date must be before or equal to To date.', 'error');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/daily-pnl?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    showEmptyState(data.message || data.error || 'Failed to load results.', '');
+                    return;
+                }
+                pnlData = data.data || [];
+                if (!pnlData.length) {
+                    showEmptyState(`No records between ${from} and ${to}`, '');
+                    return;
+                }
+                renderPnlTableAndChart(pnlData, true);
+            } catch (e) {
+                showEmptyState(e.message || 'Failed to load results.', '');
+                updateChart();
+            }
+        }
+
+        function renderPnlTableAndChart(rows, showDateColumn) {
+            pnlData = rows;
+            const msgEl = document.getElementById('results-message');
+            const tableWrap = document.getElementById('table-wrap');
+            const downloadBtn = document.getElementById('btn-download-csv');
+            const summaryEl = document.getElementById('pnl-summary');
+            const thDate = document.getElementById('th-date');
+            const tbody = document.getElementById('pnl-tbody');
+
+            thDate.style.display = showDateColumn ? '' : 'none';
+            msgEl.style.display = 'none';
+            tableWrap.style.display = 'block';
+            downloadBtn.disabled = false;
+            const totalPnl = rows.reduce((s, r) => s + (Number(r.pnl) || 0), 0);
+            const totalStr = '₹ ' + totalPnl.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            const totalCls = totalPnl > 0 ? 'pnl-positive' : totalPnl < 0 ? 'pnl-negative' : 'pnl-zero';
+            summaryEl.style.display = 'flex';
+            summaryEl.innerHTML = `<span>${rows.length} record${rows.length !== 1 ? 's' : ''}</span> · <span>Total P&L: <strong class="${totalCls}">${totalStr}</strong></span>`;
+            tbody.innerHTML = rows.map((row, i) => {
+                const pnlInfo = formatPnl(row.pnl);
+                const dateCell = showDateColumn && row.date
+                    ? `<td>${escapeHtml(String(row.date).slice(0, 10))}</td>`
+                    : '';
+                return `
+                    <tr>
+                        <td>${i + 1}</td>
+                        ${dateCell}
+                        <td>${escapeHtml(row.name || '-')}</td>
+                        <td>${escapeHtml(row.zerodha_client_id || '-')}</td>
+                        <td class="${pnlInfo.cls}">${pnlInfo.text}</td>
+                    </tr>
+                `;
+            }).join('');
+            updateChart();
         }
 
         function escapeHtml(s) {
@@ -521,12 +644,12 @@
         function downloadCsv() {
             if (!pnlData.length) return;
             const date = document.getElementById('trade-date').value || 'data';
-            const headers = ['Name', 'Zerodha Client ID', 'P&L (₹)'];
-            const rows = pnlData.map(r => [
-                r.name || '',
-                r.zerodha_client_id || '',
-                r.pnl != null ? r.pnl : ''
-            ]);
+            const showDate = pnlData.some(r => r.date);
+            const headers = showDate ? ['Date', 'Name', 'Zerodha Client ID', 'P&L (₹)'] : ['Name', 'Zerodha Client ID', 'P&L (₹)'];
+            const rows = pnlData.map(r => {
+                const base = [r.name || '', r.zerodha_client_id || '', r.pnl != null ? r.pnl : ''];
+                return showDate ? [(r.date || '').toString().slice(0, 10), ...base] : base;
+            });
             const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const a = document.createElement('a');
@@ -546,6 +669,7 @@
             loadResults(date);
         });
         document.getElementById('btn-download-csv').addEventListener('click', downloadCsv);
+        document.getElementById('btn-search-range').addEventListener('click', searchByRange);
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
             localStorage.removeItem('authToken');
@@ -557,6 +681,10 @@
             if (!ok) return;
             const today = new Date().toISOString().slice(0, 10);
             document.getElementById('trade-date').value = today;
+            const d = new Date();
+            const firstDay = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
+            document.getElementById('from-date').value = firstDay;
+            document.getElementById('to-date').value = today;
         })();
     </script>
 </body>

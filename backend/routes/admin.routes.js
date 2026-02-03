@@ -466,7 +466,7 @@ router.get('/audit/cross-app', isAuthenticated, isAdmin, async (req, res) => {
 // ----- Daily P&L (Admin only) -----
 // Expected daily_pnl columns: id, user_id (-> user_profiles.id), date, api_key, api_secret, access_token, pnl
 
-// Process: fetch Kite trades for date and update pnl for each record
+// Process: fetch Kite trades only for rows where pnl is blank and date is today; others use table data
 router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const date = req.body.date || req.query.date;
@@ -485,14 +485,26 @@ router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => 
                 success: true,
                 message: 'No daily_pnl records found for this date',
                 processed: 0,
+                skipped: 0,
                 date
             });
         }
 
+        const today = new Date().toISOString().slice(0, 10);
+        const isCurrentDate = date === today;
         let processed = 0;
+        let skipped = 0;
         const errors = [];
 
         for (const row of rows.rows) {
+            const pnlBlank = row.pnl == null || row.pnl === '' || (typeof row.pnl === 'number' && isNaN(row.pnl));
+            const shouldCallApi = isCurrentDate && pnlBlank && row.api_key && row.access_token;
+
+            if (!shouldCallApi) {
+                skipped++;
+                continue;
+            }
+
             const result = await dailyPnlKite.fetchTradesAndCalculatePnl(
                 { api_key: row.api_key, access_token: row.access_token },
                 date
@@ -509,8 +521,9 @@ router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => 
 
         res.json({
             success: true,
-            message: `Processed ${processed} record(s) for ${date}`,
+            message: `Processed ${processed} record(s) for ${date}${skipped ? `, ${skipped} skipped (use existing data)` : ''}`,
             processed,
+            skipped,
             date,
             errors: errors.length ? errors : undefined
         });
@@ -523,12 +536,36 @@ router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => 
     }
 });
 
-// List: get daily_pnl for date with name and zerodha_client_id from user_profiles
+// List: get daily_pnl by single date or by from/to range (from table only)
 router.get('/daily-pnl', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const date = req.query.date;
+        const from = req.query.from;
+        const to = req.query.to;
+        const useRange = from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to);
+
+        if (useRange) {
+            if (from > to) {
+                return res.status(400).json({ error: 'Invalid range', message: 'From date must be before or equal to To date' });
+            }
+            const result = await query(
+                `SELECT d.id, d.user_id, d.date, d.pnl, up.full_name AS name, up.zerodha_client_id
+                 FROM daily_pnl d
+                 JOIN user_profiles up ON up.id = d.user_id
+                 WHERE d.date >= $1 AND d.date <= $2
+                 ORDER BY d.date, up.full_name`,
+                [from, to]
+            );
+            return res.json({
+                success: true,
+                from,
+                to,
+                data: result.rows
+            });
+        }
+
         if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return res.status(400).json({ error: 'Invalid date', message: 'Provide date as YYYY-MM-DD' });
+            return res.status(400).json({ error: 'Invalid date', message: 'Provide date as YYYY-MM-DD or from and to for range' });
         }
 
         const result = await query(
