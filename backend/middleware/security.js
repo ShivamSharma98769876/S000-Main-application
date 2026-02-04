@@ -8,15 +8,15 @@ const logger = require('../config/logger');
 // Configure Helmet for security headers
 // In development, allow localhost connections (127.0.0.1 and localhost are different origins)
 const connectSrc = process.env.NODE_ENV === 'production'
-    ? ["'self'", "https://accounts.google.com", "https://appleid.apple.com"]
-    : ["'self'", "http://localhost:3000", "http://127.0.0.1:3000", "https://accounts.google.com", "https://appleid.apple.com"];
+    ? ["'self'", "https://accounts.google.com", "https://appleid.apple.com", "https://cdn.jsdelivr.net"]
+    : ["'self'", "http://localhost:3000", "http://127.0.0.1:3000", "https://accounts.google.com", "https://appleid.apple.com", "https://cdn.jsdelivr.net"];
 
 const securityHeaders = helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://appleid.cdn-apple.com", "https://cdn.jsdelivr.net"],
-            scriptSrcElem: ["'self'", "https://accounts.google.com", "https://appleid.cdn-apple.com", "https://cdn.jsdelivr.net"],
+            scriptSrcElem: ["'self'", "'unsafe-inline'", "https://accounts.google.com", "https://appleid.cdn-apple.com", "https://cdn.jsdelivr.net"],
             scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://r2cdn.perplexity.ai"],
