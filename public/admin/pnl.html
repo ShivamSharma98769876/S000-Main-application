@@ -178,9 +178,193 @@
             max-height: 240px;
             width: 100% !important;
         }
+        .pnl-group-toggle {
+            display: inline-flex;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .pnl-group-btn {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .pnl-group-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        .pnl-group-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
         .toast { position: fixed; top: 24px; right: 24px; padding: 1rem 1.5rem; border-radius: var(--radius-md); z-index: 9999; box-shadow: 0 4px 20px rgba(0,0,0,0.2); font-weight: 500; font-size: 0.95rem; }
         .toast.success { background: #059669; color: white; }
         .toast.error { background: #dc2626; color: white; }
+        .btn-view-trades {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.85rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .btn-view-trades:hover {
+            background: var(--accent-color);
+        }
+        .btn-view-trades:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .trades-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .trades-modal.active {
+            display: flex;
+        }
+        .trades-modal-content {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            max-width: 90vw;
+            max-height: 90vh;
+            width: 1000px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .trades-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .trades-modal-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+        .trades-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+        }
+        .trades-modal-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        .trades-modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .trades-group {
+            margin-bottom: 2rem;
+        }
+        .trades-group-header {
+            background: var(--bg-tertiary);
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .trades-table th {
+            background: var(--bg-secondary);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+        .trades-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .trades-table tbody tr:hover {
+            background: var(--bg-tertiary);
+        }
+        .trade-buy { color: #059669; font-weight: 600; }
+        .trade-sell { color: #dc2626; font-weight: 600; }
+        .trades-loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+        .trades-empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+        .trades-search {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .trades-search input {
+            flex: 1;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+        .trades-search input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        .trades-search label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .trades-search .clear-search {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .trades-search .clear-search:hover {
+            background: var(--bg-secondary);
+        }
+        .trades-group.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -219,9 +403,9 @@
                 <div class="admin-card">
                     <div class="card-header">
                         <div>
-                            <h2>Daily P&L by Kite</h2>
+                            <h2>P&L Statement by StockSage</h2>
                             <p class="text-secondary" style="margin-top: 0.25rem; font-size: 0.9rem;">
-                                Select a date, process trades from Kite, then review totals and export as CSV.
+                                View P&L by strategy (product). Select a date, Process or Load, then review strategy-wise totals and export as CSV.
                             </p>
                         </div>
                         <div class="pnl-header-controls">
@@ -258,25 +442,28 @@
                         <div id="results-message" class="pnl-empty-state">
                             <div class="pnl-empty-state-icon">📊</div>
                             <p>No results yet</p>
-                            <small>Select a date above and click <strong>Process</strong> to fetch Kite trades and update P&L, or <strong>Load</strong> to view existing data.</small>
+                            <small>Select a date and click <strong>Process</strong> or <strong>Load</strong> to see P&L by strategy. Use <strong>Group by</strong> to switch between Strategy and User view.</small>
                         </div>
                         <div class="pnl-table-wrap" id="table-wrap" style="display: none;">
                             <table class="pnl-table" id="pnl-table">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
-                                        <th id="th-date" style="display: none;">Date</th>
                                         <th>Name</th>
                                         <th>Zerodha Client ID</th>
+                                        <th>Strategy</th>
+                                        <th id="th-date">Date</th>
                                         <th>P&L (₹)</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="pnl-tbody"></tbody>
                             </table>
                         </div>
                         <div style="margin-top: 1.5rem;">
-                            <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem;">P&L chart (by user)</h3>
-                            <small class="text-secondary" style="display: block; margin-bottom: 0.75rem;">Shows total P&L for each user over the loaded date(s).</small>
+                            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                <h3 id="chart-title" style="margin: 0; font-size: 1rem;">P&L Chart (User and Strategy)</h3>
+                            </div>
+                            <small id="chart-description" class="text-secondary" style="display: block; margin-bottom: 0.75rem;">Shows P&L per user and strategy combination over the loaded date(s).</small>
                             <div class="pnl-chart-wrap" style="max-height: 240px; height: 240px; position: relative;">
                                 <canvas id="pnl-chart"></canvas>
                             </div>
@@ -295,9 +482,28 @@
         </main>
     </div>
 
+    <!-- Trades Modal -->
+    <div id="trades-modal" class="trades-modal">
+        <div class="trades-modal-content">
+            <div class="trades-modal-header">
+                <h3 id="trades-modal-title">Trades</h3>
+                <button class="trades-modal-close" onclick="closeTradesModal()" aria-label="Close">×</button>
+            </div>
+            <div class="trades-search" id="trades-search" style="display: none;">
+                <label for="tag-search-input">Search by Tag:</label>
+                <input type="text" id="tag-search-input" placeholder="e.g., S001, S002..." autocomplete="off">
+                <button class="clear-search" onclick="clearTagSearch()">Clear</button>
+            </div>
+            <div class="trades-modal-body" id="trades-modal-body">
+                <div class="trades-loading">Loading trades...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let pnlData = [];
         let pnlChart = null;
+        let allTradesData = []; // Store all trades for filtering
 
         function getAuthToken() {
             return localStorage.getItem('authToken');
@@ -353,6 +559,13 @@
             setTimeout(() => el.remove(), 4000);
         }
 
+        // Extract normalized strategy code from strategy name (e.g. "S001" from "S001-Zero Touch Strangle")
+        function extractStrategyCodeFromName(strategyName) {
+            if (!strategyName) return '';
+            const match = String(strategyName).match(/S(\d+)/i);
+            return match ? `S${match[1].padStart(3, '0')}` : '';
+        }
+
         function formatPnl(val) {
             const n = Number(val);
             if (n > 0) return { text: '₹ ' + n.toLocaleString('en-IN', { minimumFractionDigits: 2 }), cls: 'pnl-positive' };
@@ -396,6 +609,13 @@
             }
         }
 
+        function updateChartTitleAndDescription() {
+            const titleEl = document.getElementById('chart-title');
+            const descEl = document.getElementById('chart-description');
+            if (titleEl) titleEl.textContent = 'P&L Chart (User and Strategy)';
+            if (descEl) descEl.textContent = 'Shows P&L per user and strategy combination over the loaded date(s).';
+        }
+
         function updateChart() {
             const canvas = document.getElementById('pnl-chart');
             if (!canvas) return;
@@ -408,15 +628,19 @@
                 return;
             }
 
-            const byUser = {};
+            const aggregated = {};
             pnlData.forEach(row => {
-                const name = row.name || 'Unknown';
+                const userName = row.name || 'Unknown';
+                const strategyName = row.strategy_name || 'No strategy';
+                // Shorten strategy name to just code (S001, S002, etc.)
+                const strategyCode = extractStrategyCodeFromName(strategyName) || strategyName;
+                const key = `${userName} – ${strategyCode}`;
                 const val = Number(row.pnl) || 0;
-                byUser[name] = (byUser[name] || 0) + val;
+                aggregated[key] = (aggregated[key] || 0) + val;
             });
 
-            const labels = Object.keys(byUser);
-            const values = labels.map(l => byUser[l]);
+            const labels = Object.keys(aggregated);
+            const values = labels.map(l => aggregated[l]);
 
             const ctx = canvas.getContext('2d');
             const data = {
@@ -436,22 +660,56 @@
                 id: 'pnlBarValue',
                 afterDatasetsDraw: function(chart) {
                     var ctx = chart.ctx;
-                    var padding = 8;
+                    var padding = 12;
                     chart.data.datasets.forEach(function(dataset, i) {
                         var meta = chart.getDatasetMeta(i);
                         if (!meta.hidden) {
                             meta.data.forEach(function(bar, j) {
                                 var value = dataset.data[j];
-                                if (value == null) return;
-                                var label = '₹' + Number(value).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-                                var endX = value >= 0 ? bar.x + bar.width / 2 + padding : bar.x - bar.width / 2 - padding;
+                                if (value == null || value === 0) return;
+                                
+                                var label = '₹' + Math.abs(Number(value)).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
                                 var y = bar.y;
+                                
+                                // Calculate text position - for horizontal bars, bar.x is center, bar.width is the width
+                                var textX;
+                                var textAlign;
+                                var barEndX;
+                                
+                                if (value >= 0) {
+                                    // Positive: bar extends from center to the right
+                                    barEndX = bar.x + Math.abs(bar.width) / 2;
+                                    textX = barEndX + padding;
+                                    textAlign = 'left';
+                                } else {
+                                    // Negative: bar extends from center to the left (width is negative)
+                                    barEndX = bar.x - Math.abs(bar.width) / 2;
+                                    textX = barEndX - padding;
+                                    textAlign = 'right';
+                                }
+                                
+                                // Ensure text is within chart bounds
+                                var chartArea = chart.chartArea;
+                                if (textX < chartArea.left) {
+                                    textX = chartArea.left + padding;
+                                    textAlign = 'left';
+                                }
+                                if (textX > chartArea.right) {
+                                    textX = chartArea.right - padding;
+                                    textAlign = 'right';
+                                }
+                                
                                 ctx.save();
-                                ctx.font = '600 12px Inter, sans-serif';
-                                ctx.fillStyle = value >= 0 ? '#059669' : '#dc2626';
-                                ctx.textAlign = value >= 0 ? 'left' : 'right';
+                                // Sharp, bold white font for visibility on colored bars
+                                ctx.font = 'bold 14px Inter, sans-serif';
+                                ctx.fillStyle = '#ffffff';
+                                ctx.strokeStyle = '#000000';
+                                ctx.lineWidth = 3;
+                                ctx.textAlign = textAlign;
                                 ctx.textBaseline = 'middle';
-                                ctx.fillText(label, endX, y);
+                                // Add black stroke for sharp contrast on colored bars
+                                ctx.strokeText(label, textX, y);
+                                ctx.fillText(label, textX, y);
                                 ctx.restore();
                             });
                         }
@@ -464,7 +722,30 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        labels: { color: '#e5e7eb' }
+                        display: true,
+                        labels: { 
+                            color: '#ffffff',
+                            font: {
+                                size: 13,
+                                weight: 'bold',
+                                family: 'Inter, sans-serif'
+                            },
+                            padding: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            generateLabels: function(chart) {
+                                // Return custom legend with neutral gray color for the box
+                                return [{
+                                    text: 'Total P&L (₹)',
+                                    fillStyle: '#6b7280',
+                                    strokeStyle: '#6b7280',
+                                    lineWidth: 2,
+                                    hidden: false,
+                                    index: 0,
+                                    fontColor: '#ffffff'
+                                }];
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -480,6 +761,7 @@
                 }
             };
 
+            updateChartTitleAndDescription();
             if (!ChartConstructor) {
                 console.error('Chart.js not loaded');
                 return;
@@ -600,7 +882,12 @@
         }
 
         function renderPnlTableAndChart(rows, showDateColumn) {
-            pnlData = rows;
+            const sortedRows = [...rows].sort((a, b) => {
+                const nameA = (a.name || '').localeCompare(b.name || '');
+                if (nameA !== 0) return nameA;
+                return (a.strategy_name || a.strategy_code || '').localeCompare(b.strategy_name || b.strategy_code || '');
+            });
+            pnlData = sortedRows;
             const msgEl = document.getElementById('results-message');
             const tableWrap = document.getElementById('table-wrap');
             const downloadBtn = document.getElementById('btn-download-csv');
@@ -617,18 +904,27 @@
             const totalCls = totalPnl > 0 ? 'pnl-positive' : totalPnl < 0 ? 'pnl-negative' : 'pnl-zero';
             summaryEl.style.display = 'flex';
             summaryEl.innerHTML = `<span>${rows.length} record${rows.length !== 1 ? 's' : ''}</span> · <span>Total P&L: <strong class="${totalCls}">${totalStr}</strong></span>`;
-            tbody.innerHTML = rows.map((row, i) => {
+            tbody.innerHTML = sortedRows.map((row, i) => {
                 const pnlInfo = formatPnl(row.pnl);
                 const dateCell = showDateColumn && row.date
                     ? `<td>${escapeHtml(String(row.date).slice(0, 10))}</td>`
                     : '';
+                const clientId = row.Z_client_id != null && row.Z_client_id !== '' ? row.Z_client_id : (row.zerodha_client_id || '-');
+                const strategyName = row.strategy_name || 'No strategy';
+                const strategyCode = row.strategy_code || extractStrategyCodeFromName(strategyName);
+                // Always use today's date for fetching trades (Kite API only supports current day)
+                const todayDate = new Date().toISOString().split('T')[0];
+                const tradesButton = `<button class="btn-view-trades" onclick="viewTrades(${row.id}, '${row.date || todayDate}', '${escapeHtml(row.name || 'User')}', '${escapeHtml(strategyName)}')" title="View today's trades with tags">
+                    📋 Trades
+                </button>`;
                 return `
                     <tr>
-                        <td>${i + 1}</td>
-                        ${dateCell}
                         <td>${escapeHtml(row.name || '-')}</td>
-                        <td>${escapeHtml(row.zerodha_client_id || '-')}</td>
+                        <td>${escapeHtml(clientId)}</td>
+                        <td>${escapeHtml(strategyCode || strategyName)}</td>
+                        ${dateCell}
                         <td class="${pnlInfo.cls}">${pnlInfo.text}</td>
+                        <td>${tradesButton}</td>
                     </tr>
                 `;
             }).join('');
@@ -641,14 +937,48 @@
             return div.innerHTML;
         }
 
+        function formatDateForApi(dateValue) {
+            if (!dateValue) return null;
+            // If it's already YYYY-MM-DD format, return as-is
+            if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+                return dateValue;
+            }
+            // If it's a Date object or ISO string, extract YYYY-MM-DD
+            try {
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+            } catch (e) {
+                // If parsing fails, try to extract YYYY-MM-DD from string
+                const match = String(dateValue).match(/(\d{4}-\d{2}-\d{2})/);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        function isToday(dateValue) {
+            const today = new Date().toISOString().split('T')[0];
+            const checkDate = formatDateForApi(dateValue);
+            return checkDate === today;
+        }
+
         function downloadCsv() {
             if (!pnlData.length) return;
             const date = document.getElementById('trade-date').value || 'data';
-            const showDate = pnlData.some(r => r.date);
-            const headers = showDate ? ['Date', 'Name', 'Zerodha Client ID', 'P&L (₹)'] : ['Name', 'Zerodha Client ID', 'P&L (₹)'];
+            const headers = ['Name', 'Zerodha Client ID', 'Strategy Code', 'Date', 'P&L (₹)'];
             const rows = pnlData.map(r => {
-                const base = [r.name || '', r.zerodha_client_id || '', r.pnl != null ? r.pnl : ''];
-                return showDate ? [(r.date || '').toString().slice(0, 10), ...base] : base;
+                const clientId = r.Z_client_id != null && r.Z_client_id !== '' ? r.Z_client_id : (r.zerodha_client_id || '');
+                const strategyName = r.strategy_name || 'No strategy';
+                const strategyCode = r.strategy_code || extractStrategyCodeFromName(strategyName);
+                const rowDate = (r.date || '').toString().slice(0, 10);
+                return [
+                    r.name || '',
+                    clientId,
+                    strategyCode || strategyName,
+                    rowDate,
+                    r.pnl != null ? r.pnl : ''
+                ];
             });
             const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -670,6 +1000,194 @@
         });
         document.getElementById('btn-download-csv').addEventListener('click', downloadCsv);
         document.getElementById('btn-search-range').addEventListener('click', searchByRange);
+
+        // Trades modal functions - Always fetches today's trades (current trading day only)
+        async function viewTrades(userId, date, userName, strategyName) {
+            const modal = document.getElementById('trades-modal');
+            const modalTitle = document.getElementById('trades-modal-title');
+            const modalBody = document.getElementById('trades-modal-body');
+            
+            // Always use today's date (Kite API only supports current trading day)
+            const todayDate = new Date().toISOString().split('T')[0];
+            const formattedDate = formatDateForApi(date) || todayDate;
+            
+            // Use today's date for fetching (even if different date was passed)
+            const fetchDate = isToday(formattedDate) ? formattedDate : todayDate;
+            
+            modalTitle.textContent = `Today's Trades - ${userName} (${strategyName}) - ${fetchDate}`;
+            modalBody.innerHTML = '<div class="trades-loading">Loading today\'s trades...</div>';
+            modal.classList.add('active');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/daily-pnl/trades/${userId}/${fetchDate}`, {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json().catch(() => ({}));
+                
+                if (!response.ok) {
+                    const errorMsg = data.message || data.error || `HTTP ${response.status}: Failed to load trades`;
+                    console.error('Trades API error:', { userId, date: formattedDate, status: response.status, data });
+                    modalBody.innerHTML = `<div class="trades-empty">
+                        <p><strong>Error loading trades:</strong></p>
+                        <p>${escapeHtml(errorMsg)}</p>
+                        <small style="display: block; margin-top: 0.5rem; color: var(--text-secondary);">
+                            User ID: ${userId}, Date: ${formattedDate}
+                        </small>
+                    </div>`;
+                    return;
+                }
+
+                const trades = data.trades || [];
+                if (!trades.length) {
+                    modalBody.innerHTML = '<div class="trades-empty">No trades found for this date. Trades are only available for the current trading day.</div>';
+                    document.getElementById('trades-search').style.display = 'none';
+                    return;
+                }
+
+                // Store all trades for filtering
+                allTradesData = trades;
+                
+                // Show search box
+                document.getElementById('trades-search').style.display = 'flex';
+                
+                // Render trades
+                renderTrades(trades);
+            } catch (e) {
+                modalBody.innerHTML = `<div class="trades-empty">Error: ${escapeHtml(e.message || 'Failed to fetch trades')}</div>`;
+            }
+        }
+
+        function renderTrades(trades, filterTag = '') {
+            const modalBody = document.getElementById('trades-modal-body');
+            
+            // Filter trades by tag if search term provided
+            let filteredTrades = trades;
+            if (filterTag && filterTag.trim()) {
+                const searchTerm = filterTag.trim().toUpperCase();
+                filteredTrades = trades.filter(t => {
+                    const tag = (t.tag || '').toUpperCase();
+                    return tag.includes(searchTerm);
+                });
+            }
+
+            if (!filteredTrades.length) {
+                modalBody.innerHTML = `<div class="trades-empty">
+                    ${filterTag ? `No trades found with tag matching "${escapeHtml(filterTag)}"` : 'No trades found'}
+                </div>`;
+                return;
+            }
+
+            // Group filtered trades by tag (strategy tag like S001, S002, etc.)
+            const tradesByTag = {};
+            filteredTrades.forEach(trade => {
+                const tag = trade.tag || 'No tag';
+                if (!tradesByTag[tag]) {
+                    tradesByTag[tag] = [];
+                }
+                tradesByTag[tag].push(trade);
+            });
+
+            // Render trades grouped by tag
+            // Sort tags alphabetically (No tag will appear first, then S001, S002, etc.)
+            let html = '';
+            const tags = Object.keys(tradesByTag).sort();
+            
+            tags.forEach(tag => {
+                // Sort trades within each tag group by timestamp (most recent first)
+                const tagTrades = tradesByTag[tag].sort((a, b) => {
+                    const timeA = a.fill_timestamp ? new Date(a.fill_timestamp).getTime() : 0;
+                    const timeB = b.fill_timestamp ? new Date(b.fill_timestamp).getTime() : 0;
+                    return timeB - timeA; // Descending (most recent first)
+                });
+                const isHighlighted = filterTag && tag.toUpperCase().includes(filterTag.trim().toUpperCase());
+                html += `
+                    <div class="trades-group ${isHighlighted ? '' : ''}" data-tag="${escapeHtml(tag)}">
+                        <div class="trades-group-header" ${isHighlighted ? 'style="background: var(--primary-color); color: white;"' : ''}>
+                            📌 Strategy Tag: <strong>${escapeHtml(tag)}</strong> (${tagTrades.length} trade${tagTrades.length !== 1 ? 's' : ''})
+                        </div>
+                        <table class="trades-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Tag</th>
+                                    <th>Symbol</th>
+                                    <th>Type</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Value</th>
+                                    <th>Product</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tagTrades.map(t => {
+                                    const time = t.fill_timestamp 
+                                        ? new Date(t.fill_timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                                        : '-';
+                                    const typeClass = t.transaction_type === 'BUY' ? 'trade-buy' : 'trade-sell';
+                                    const value = (t.quantity * t.price).toFixed(2);
+                                    const tradeTag = t.tag || '—';
+                                    return `
+                                        <tr>
+                                            <td>${escapeHtml(time)}</td>
+                                            <td><strong style="color: var(--primary-color);">${escapeHtml(tradeTag)}</strong></td>
+                                            <td><strong>${escapeHtml(t.tradingsymbol)}</strong></td>
+                                            <td class="${typeClass}">${escapeHtml(t.transaction_type)}</td>
+                                            <td>${t.quantity}</td>
+                                            <td>₹ ${t.price.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td>₹ ${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                            <td>${escapeHtml(t.product || 'MIS')}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            modalBody.innerHTML = html || '<div class="trades-empty">No trades found</div>';
+        }
+
+        function clearTagSearch() {
+            const searchInput = document.getElementById('tag-search-input');
+            searchInput.value = '';
+            if (allTradesData.length) {
+                renderTrades(allTradesData);
+            }
+        }
+
+        function closeTradesModal() {
+            document.getElementById('trades-modal').classList.remove('active');
+            // Clear search when closing
+            document.getElementById('tag-search-input').value = '';
+        }
+
+        // Close modal on outside click
+        document.getElementById('trades-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'trades-modal') {
+                closeTradesModal();
+            }
+        });
+
+        // Tag search functionality
+        document.getElementById('tag-search-input')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            if (allTradesData.length) {
+                renderTrades(allTradesData, searchTerm);
+            }
+        });
+
+        // Allow Enter key to search
+        document.getElementById('tag-search-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const searchTerm = e.target.value;
+                if (allTradesData.length) {
+                    renderTrades(allTradesData, searchTerm);
+                }
+            }
+        });
         document.getElementById('logout-btn').addEventListener('click', async () => {
             await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
             localStorage.removeItem('authToken');

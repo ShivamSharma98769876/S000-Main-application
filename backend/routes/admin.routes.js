@@ -464,9 +464,10 @@ router.get('/audit/cross-app', isAuthenticated, isAdmin, async (req, res) => {
 });
 
 // ----- Daily P&L (Admin only) -----
-// Expected daily_pnl columns: id, user_id (-> user_profiles.id), date, api_key, api_secret, access_token, pnl
+// Expected daily_pnl columns: id, user_id (-> user_profiles.id), date, Z_client_id (-> user_profiles.zerodha_client_id), Streatgy (-> products.id), api_key, api_secret, access_token, pnl
 
-// Process: fetch Kite trades only for rows where pnl is blank and date is today; others use table data
+// Process: for each unique set of Kite credentials (api_key, api_secret, access_token) on the given date,
+// fetch trades from Kite and store realised P&L per strategy (tag) in daily_strategy_pnl.
 router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => {
     try {
         const date = req.body.date || req.query.date;
@@ -475,8 +476,9 @@ router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => 
         }
 
         const rows = await query(
-            `SELECT id, user_id, date, api_key, api_secret, access_token, pnl
-             FROM daily_pnl WHERE date = $1`,
+            `SELECT id, date, api_key, api_secret, access_token
+             FROM daily_pnl
+             WHERE date = $1`,
             [date]
         );
 
@@ -492,38 +494,102 @@ router.post('/daily-pnl/process', isAuthenticated, isAdmin, async (req, res) => 
 
         const today = new Date().toISOString().slice(0, 10);
         const isCurrentDate = date === today;
-        let processed = 0;
-        let skipped = 0;
+        let processedAccounts = 0;
+        let skippedRows = 0;
         const errors = [];
 
-        for (const row of rows.rows) {
-            const pnlBlank = row.pnl == null || row.pnl === '' || (typeof row.pnl === 'number' && isNaN(row.pnl));
-            const shouldCallApi = isCurrentDate && pnlBlank && row.api_key && row.access_token;
+        // Only process current trading date (Kite trades API limitation)
+        if (!isCurrentDate) {
+            return res.status(400).json({
+                error: 'Invalid date',
+                message: 'Processing is only supported for the current trading day (Kite getTrades limitation).'
+            });
+        }
 
-            if (!shouldCallApi) {
-                skipped++;
+        // Build unique accounts map based on credentials
+        const accountMap = new Map();
+        for (const row of rows.rows) {
+            const hasCredentials = row.api_key && row.access_token;
+            if (!hasCredentials) {
+                skippedRows++;
                 continue;
             }
+            const key = [
+                row.api_key || '',
+                row.api_secret || '',
+                row.access_token || ''
+            ].join('::');
 
-            const result = await dailyPnlKite.fetchTradesAndCalculatePnl(
-                { api_key: row.api_key, access_token: row.access_token },
-                date
-            );
-            await query(
-                `UPDATE daily_pnl SET pnl = $1, updated_at = NOW() WHERE id = $2`,
-                [result.pnl, row.id]
-            );
-            processed++;
-            if (result.error) {
-                errors.push({ user_id: row.user_id, error: result.error });
+            if (accountMap.has(key)) {
+                // Duplicate credentials for the same day; ignore as per requirement
+                skippedRows++;
+                continue;
+            }
+            accountMap.set(key, row);
+        }
+
+        // Clear existing strategy P&L rows for this date before re-inserting
+        await query(
+            `DELETE FROM daily_strategy_pnl WHERE date = $1`,
+            [date]
+        );
+
+        for (const row of accountMap.values()) {
+            try {
+                const breakdown = await dailyPnlKite.calculateAccountStrategyBreakdown(
+                    { api_key: row.api_key, api_secret: row.api_secret, access_token: row.access_token },
+                    date
+                );
+
+                const accountName = breakdown.account?.name || null;
+                const kiteId = breakdown.account?.kiteId || null;
+
+                for (const strat of breakdown.strategies) {
+                    // Skip NO_TAG strategies - these are untagged trades that couldn't be inferred
+                    // They will still appear in the trades modal but won't show in P&L reports
+                    if (strat.strategyCode === 'NO_TAG') {
+                        logger.debug('Skipping NO_TAG strategy from P&L storage', {
+                            date,
+                            accountName,
+                            kiteId,
+                            tradeCount: strat.tradeCount
+                        });
+                        continue;
+                    }
+
+                    await query(
+                        `INSERT INTO daily_strategy_pnl
+                            (date, account_name, kite_client_id, strategy_code, pnl, trade_count,
+                             api_key, api_secret, access_token, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
+                        [
+                            date,
+                            accountName,
+                            kiteId,
+                            strat.strategyCode,
+                            strat.pnl,
+                            strat.tradeCount,
+                            row.api_key,
+                            row.api_secret,
+                            row.access_token
+                        ]
+                    );
+                }
+
+                processedAccounts++;
+                if (breakdown.error) {
+                    errors.push({ account_key: '***', error: breakdown.error });
+                }
+            } catch (accErr) {
+                errors.push({ account_key: '***', error: accErr.message });
             }
         }
 
         res.json({
             success: true,
-            message: `Processed ${processed} record(s) for ${date}${skipped ? `, ${skipped} skipped (use existing data)` : ''}`,
-            processed,
-            skipped,
+            message: `Processed ${processedAccounts} account(s) for ${date}${skippedRows ? `, ${skippedRows} source rows skipped` : ''}`,
+            processedAccounts,
+            skippedRows,
             date,
             errors: errors.length ? errors : undefined
         });
@@ -549,11 +615,18 @@ router.get('/daily-pnl', isAuthenticated, isAdmin, async (req, res) => {
                 return res.status(400).json({ error: 'Invalid range', message: 'From date must be before or equal to To date' });
             }
             const result = await query(
-                `SELECT d.id, d.user_id, d.date, d.pnl, up.full_name AS name, up.zerodha_client_id
-                 FROM daily_pnl d
-                 JOIN user_profiles up ON up.id = d.user_id
-                 WHERE d.date >= $1 AND d.date <= $2
-                 ORDER BY d.date, up.full_name`,
+                `SELECT s.id,
+                        s.date,
+                        s.pnl,
+                        s.kite_client_id AS zerodha_client_id,
+                        s.strategy_code,
+                        s.account_name AS name,
+                        p.name AS strategy_name
+                 FROM daily_strategy_pnl s
+                 LEFT JOIN products p
+                   ON LOWER(p.name) LIKE LOWER(s.strategy_code || '%')
+                 WHERE s.date >= $1 AND s.date <= $2
+                 ORDER BY s.date, s.account_name, s.strategy_code`,
                 [from, to]
             );
             return res.json({
@@ -569,11 +642,18 @@ router.get('/daily-pnl', isAuthenticated, isAdmin, async (req, res) => {
         }
 
         const result = await query(
-            `SELECT d.id, d.user_id, d.date, d.pnl, up.full_name AS name, up.zerodha_client_id
-             FROM daily_pnl d
-             JOIN user_profiles up ON up.id = d.user_id
-             WHERE d.date = $1
-             ORDER BY up.full_name`,
+            `SELECT s.id,
+                    s.date,
+                    s.pnl,
+                    s.kite_client_id AS zerodha_client_id,
+                    s.strategy_code,
+                    s.account_name AS name,
+                    p.name AS strategy_name
+             FROM daily_strategy_pnl s
+             LEFT JOIN products p
+               ON LOWER(p.name) LIKE LOWER(s.strategy_code || '%')
+             WHERE s.date = $1
+             ORDER BY s.account_name, s.strategy_code`,
             [date]
         );
 
@@ -586,6 +666,83 @@ router.get('/daily-pnl', isAuthenticated, isAdmin, async (req, res) => {
         logger.error('Failed to fetch daily PnL list', error);
         res.status(500).json({
             error: 'Failed to fetch data',
+            message: error.message
+        });
+    }
+});
+
+// Get trades with tags for a specific account/strategy row and date
+router.get('/daily-pnl/trades/:pnlId/:date', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+        const pnlId = parseInt(req.params.pnlId);
+        const date = req.params.date;
+
+        if (!pnlId || isNaN(pnlId)) {
+            return res.status(400).json({ error: 'Invalid pnlId' });
+        }
+
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ error: 'Invalid date', message: 'Provide date as YYYY-MM-DD' });
+        }
+
+        // Get daily_strategy_pnl row with credentials and strategy code
+        const stratRowRes = await query(
+            `SELECT id, date, api_key, access_token, strategy_code
+             FROM daily_strategy_pnl
+             WHERE id = $1`,
+            [pnlId]
+        );
+
+        if (!stratRowRes.rows.length) {
+            return res.status(404).json({ 
+                error: 'Not found', 
+                message: `No daily_strategy_pnl record found for id ${pnlId}` 
+            });
+        }
+
+        const stratRow = stratRowRes.rows[0];
+        if (!stratRow.api_key || !stratRow.access_token) {
+            return res.status(400).json({ 
+                error: 'Missing credentials', 
+                message: 'API credentials not available for this record' 
+            });
+        }
+
+        const fetchDate = date;
+
+        // Fetch trades from Kite
+        const tradesResult = await dailyPnlKite.fetchTradesWithDetails(
+            { api_key: stratRow.api_key, access_token: stratRow.access_token },
+            fetchDate
+        );
+
+        if (tradesResult.error) {
+            return res.status(500).json({
+                error: 'Failed to fetch trades',
+                message: tradesResult.error
+            });
+        }
+
+        const targetCode = dailyPnlKite.normalizeStrategyCode(stratRow.strategy_code);
+        const filteredTrades = targetCode
+            ? tradesResult.trades.filter(t => {
+                const tradeCode = dailyPnlKite.normalizeStrategyCode(t.tag);
+                return tradeCode && tradeCode.toUpperCase() === targetCode.toUpperCase();
+            })
+            : tradesResult.trades;
+
+        res.json({
+            success: true,
+            id: stratRow.id,
+            date: fetchDate,
+            strategyCode: targetCode,
+            tradeCount: filteredTrades.length,
+            trades: filteredTrades
+        });
+    } catch (error) {
+        logger.error('Failed to fetch trades', error);
+        res.status(500).json({
+            error: 'Failed to fetch trades',
             message: error.message
         });
     }
