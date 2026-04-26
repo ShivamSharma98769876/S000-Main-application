@@ -49,14 +49,18 @@
                     <div class="form-group">
                         <label>Duration Type:</label>
                         <select id="duration-type" class="form-input" required>
-                            <option value="MONTH">Monthly</option>
+                            <option value="WEEK">Weekly (One-time offer)</option>
+                            <option value="MONTH" selected>Monthly</option>
                             <option value="YEAR">Yearly</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="duration-units-group">
                         <label>Duration (1-12):</label>
                         <input type="number" id="duration-units" class="form-input" min="1" max="12" value="1" required>
                     </div>
+                    <p id="weekly-note" style="color:#f7a; font-size:0.9rem; display:none;">
+                        ⚠️ The Weekly plan can be availed only ONCE per user (matched by Email or Zerodha/Kite ID). Duration is fixed at 1 week.
+                    </p>
                     <div class="form-group">
                         <p><strong>Price:</strong> ₹<span id="modal-price">0</span></p>
                         <p><strong>Total:</strong> ₹<span id="modal-total">0</span></p>
@@ -203,6 +207,9 @@
                 const productName = (product.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 const monthlyPrice = product.price_per_month || product.monthly_price || 0;
                 const yearlyPrice = product.price_per_year || product.yearly_price || 0;
+                const weeklyPrice = (product.price_per_week !== undefined && product.price_per_week !== null)
+                    ? product.price_per_week
+                    : 100;
                 
                 return `
                 <div class="product-card">
@@ -210,6 +217,10 @@
                     <h3 class="product-card__title">${product.name || 'Product'}</h3>
                     <p class="product-card__description">${product.description || ''}</p>
                     <div class="product-card__pricing">
+                        <div class="pricing">
+                            <span class="pricing__amount">₹${weeklyPrice}</span>
+                            <span class="pricing__period">/week (one-time)</span>
+                        </div>
                         <div class="pricing">
                             <span class="pricing__amount">₹${monthlyPrice}</span>
                             <span class="pricing__period">/month</span>
@@ -223,7 +234,8 @@
                             data-product-id="${productId}"
                             data-product-name="${productName}"
                             data-monthly-price="${monthlyPrice}"
-                            data-yearly-price="${yearlyPrice}">
+                            data-yearly-price="${yearlyPrice}"
+                            data-weekly-price="${weeklyPrice}">
                         Add to Cart
                     </button>
                 </div>
@@ -237,13 +249,14 @@
                     const productName = this.getAttribute('data-product-name');
                     const monthlyPrice = parseFloat(this.getAttribute('data-monthly-price'));
                     const yearlyPrice = parseFloat(this.getAttribute('data-yearly-price'));
-                    openCartModal(productId, productName, monthlyPrice, yearlyPrice);
+                    const weeklyPrice = parseFloat(this.getAttribute('data-weekly-price'));
+                    openCartModal(productId, productName, monthlyPrice, yearlyPrice, weeklyPrice);
                 });
             });
         }
 
-        function openCartModal(id, name, monthlyPrice, yearlyPrice) {
-            console.log('Opening cart modal:', { id, name, monthlyPrice, yearlyPrice });
+        function openCartModal(id, name, monthlyPrice, yearlyPrice, weeklyPrice) {
+            console.log('Opening cart modal:', { id, name, monthlyPrice, yearlyPrice, weeklyPrice });
             
             if (!id || !name) {
                 console.error('Invalid product data:', { id, name });
@@ -251,7 +264,7 @@
                 return;
             }
             
-            currentProduct = { id, name, monthlyPrice, yearlyPrice };
+            currentProduct = { id, name, monthlyPrice, yearlyPrice, weeklyPrice };
             
             const modalNameEl = document.getElementById('modal-product-name');
             const modalEl = document.getElementById('cart-modal');
@@ -270,8 +283,35 @@
 
         function updateModalPrice() {
             const type = document.getElementById('duration-type').value;
-            const units = parseInt(document.getElementById('duration-units').value);
-            const price = type === 'MONTH' ? currentProduct.monthlyPrice : currentProduct.yearlyPrice;
+            const unitsEl = document.getElementById('duration-units');
+            const unitsGroup = document.getElementById('duration-units-group');
+            const weeklyNote = document.getElementById('weekly-note');
+
+            // Weekly = strictly 1 week, lock the input.
+            if (type === 'WEEK') {
+                unitsEl.value = 1;
+                unitsEl.min = 1;
+                unitsEl.max = 1;
+                unitsEl.disabled = true;
+                if (unitsGroup) unitsGroup.style.display = 'none';
+                if (weeklyNote) weeklyNote.style.display = 'block';
+            } else {
+                unitsEl.disabled = false;
+                unitsEl.min = 1;
+                unitsEl.max = 12;
+                if (unitsGroup) unitsGroup.style.display = '';
+                if (weeklyNote) weeklyNote.style.display = 'none';
+            }
+
+            const units = parseInt(unitsEl.value) || 1;
+            let price;
+            if (type === 'WEEK') {
+                price = currentProduct.weeklyPrice;
+            } else if (type === 'MONTH') {
+                price = currentProduct.monthlyPrice;
+            } else {
+                price = currentProduct.yearlyPrice;
+            }
             const total = price * units;
             document.getElementById('modal-price').textContent = price;
             document.getElementById('modal-total').textContent = total;
@@ -324,12 +364,17 @@
                     return;
                 }
 
-                if (!durationType || (durationType !== 'MONTH' && durationType !== 'YEAR')) {
+                if (!durationType || (durationType !== 'WEEK' && durationType !== 'MONTH' && durationType !== 'YEAR')) {
                     alert('Error: Please select a valid duration type');
                     return;
                 }
 
-                if (isNaN(durationUnits) || durationUnits < 1 || durationUnits > 12) {
+                if (durationType === 'WEEK') {
+                    if (durationUnits !== 1) {
+                        alert('Error: Weekly plan must be exactly 1 week');
+                        return;
+                    }
+                } else if (isNaN(durationUnits) || durationUnits < 1 || durationUnits > 12) {
                     alert('Error: Duration must be between 1 and 12');
                     return;
                 }
@@ -383,6 +428,12 @@
                             ? responseData.details.map(d => d.msg).join(', ')
                             : responseData.message || 'Invalid input data';
                         alert('Validation Error: ' + errorMsg);
+                        return;
+                    }
+
+                    if (response.status === 409) {
+                        // Weekly plan already used
+                        alert(responseData.message || 'You are already availed this Offer once. Please Subscribe Monthly or Yearly plan');
                         return;
                     }
                     

@@ -158,8 +158,8 @@
                                 <div class="item-info">
                                     <h3>${item.product_name}</h3>
                                     <div class="item-details">
-                                        <span>📅 ${item.duration_unit === 'MONTH' ? 'Monthly' : 'Yearly'}</span>
-                                        <span>⏱️ ${item.duration_value} ${item.duration_unit === 'MONTH' ? 'Month(s)' : 'Year(s)'}</span>
+                                        <span>📅 ${item.duration_unit === 'WEEK' ? 'Weekly (One-time)' : item.duration_unit === 'MONTH' ? 'Monthly' : 'Yearly'}</span>
+                                        <span>⏱️ ${item.duration_value} ${item.duration_unit === 'WEEK' ? 'Week(s)' : item.duration_unit === 'MONTH' ? 'Month(s)' : 'Year(s)'}</span>
                                         <span>💰 ₹${(item.price / item.duration_value).toFixed(2)}/unit</span>
                                     </div>
                                     <div class="item-dates">
@@ -294,6 +294,7 @@
                     <div style="margin-bottom:15px">
                         <label style="display:block;margin-bottom:5px">Duration Type:</label>
                         <select id="edit-duration-type" style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary)">
+                            <option value="WEEK" ${item.duration_unit === 'WEEK' ? 'selected' : ''}>Weekly (One-time, 1 week)</option>
                             <option value="MONTH" ${item.duration_unit === 'MONTH' ? 'selected' : ''}>Monthly</option>
                             <option value="YEAR" ${item.duration_unit === 'YEAR' ? 'selected' : ''}>Yearly</option>
                         </select>
@@ -335,9 +336,12 @@
 
         async function updateCartItem(itemId) {
             const durationType = document.getElementById('edit-duration-type').value;
-            const durationValue = parseInt(document.getElementById('edit-duration-value').value);
+            let durationValue = parseInt(document.getElementById('edit-duration-value').value);
 
-            if (isNaN(durationValue) || durationValue < 1 || durationValue > 12) {
+            if (durationType === 'WEEK') {
+                // Weekly is strictly 1 week.
+                durationValue = 1;
+            } else if (isNaN(durationValue) || durationValue < 1 || durationValue > 12) {
                 alert('Please enter a valid duration between 1 and 12');
                 return;
             }
@@ -348,7 +352,9 @@
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
                         duration_value: durationValue,
-                        duration_unit: durationType
+                        duration_unit: durationType,
+                        durationType: durationType,
+                        durationUnits: durationValue
                     })
                 });
                 
@@ -358,8 +364,12 @@
                         window.location.href = 'login.html';
                         return;
                     }
-                    const error = await response.json();
-                    throw new Error(error.message || 'Failed to update item');
+                    const errBody = await response.json().catch(() => ({}));
+                    if (response.status === 409) {
+                        alert(errBody.message || 'You are already availed this Offer once. Please Subscribe Monthly or Yearly plan');
+                        return;
+                    }
+                    throw new Error(errBody.message || 'Failed to update item');
                 }
                 
                 closeEditModal();

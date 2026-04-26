@@ -102,6 +102,11 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
+                        <label class="form-label">Weekly Price (₹)</label>
+                        <input type="number" id="product-weekly-price" class="form-input" min="0" step="0.01" value="100">
+                        <small style="color: var(--text-secondary); font-size: 0.8rem;">One-time per user (matched by Email or Zerodha/Kite ID)</small>
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Monthly Price (₹)*</label>
                         <input type="number" id="product-monthly-price" class="form-input" min="0" step="0.01" required>
                     </div>
@@ -253,6 +258,7 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Category</th>
+                            <th>Weekly Price</th>
                             <th>Monthly Price</th>
                             <th>Yearly Price</th>
                             <th>Child App URLs</th>
@@ -266,6 +272,7 @@
                                 <td>${product.id}</td>
                                 <td><strong>${product.name}</strong></td>
                                 <td>${product.category || '-'}</td>
+                                <td>₹${product.price_per_week !== undefined && product.price_per_week !== null ? product.price_per_week : 100}</td>
                                 <td>₹${product.price_per_month || product.monthly_price}</td>
                                 <td>₹${product.price_per_year || product.yearly_price}</td>
                                 <td style="max-width: 400px;">
@@ -309,6 +316,7 @@
                 document.getElementById('product-category').value = product.category || '';
                 document.getElementById('product-monthly-price').value = product.price_per_month || product.monthly_price;
                 document.getElementById('product-yearly-price').value = product.price_per_year || product.yearly_price;
+                document.getElementById('product-weekly-price').value = (product.price_per_week !== undefined && product.price_per_week !== null) ? product.price_per_week : 100;
                 document.getElementById('product-status').value = product.status;
                 document.getElementById('product-child-app-url-local').value = product.child_app_url_local || '';
                 document.getElementById('product-child-app-url-cloud').value = product.child_app_url_cloud || '';
@@ -339,6 +347,7 @@
                 category: document.getElementById('product-category').value,
                 price_per_month: parseFloat(document.getElementById('product-monthly-price').value),
                 price_per_year: parseFloat(document.getElementById('product-yearly-price').value),
+                price_per_week: parseFloat(document.getElementById('product-weekly-price').value || 100),
                 status: document.getElementById('product-status').value,
                 child_app_url_local: localUrl === '' ? null : localUrl,
                 child_app_url_cloud: cloudUrl === '' ? null : cloudUrl

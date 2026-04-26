@@ -12,6 +12,7 @@ const validateProduct = [
     body('category').optional().trim(),
     body('price_per_month').isFloat({ min: 0 }).withMessage('Monthly price must be a positive number'),
     body('price_per_year').isFloat({ min: 0 }).withMessage('Yearly price must be a positive number'),
+    body('price_per_week').optional().isFloat({ min: 0 }).withMessage('Weekly price must be a positive number'),
     body('features').optional().isJSON().withMessage('Features must be valid JSON'),
     body('status').optional().isIn(['ACTIVE', 'INACTIVE']).withMessage('Status must be ACTIVE or INACTIVE'),
     body('child_app_url_local')
@@ -108,15 +109,20 @@ router.post('/', isAuthenticated, isAdmin, validateProduct, async (req, res) => 
             category,
             price_per_month,
             price_per_year,
+            price_per_week,
             features,
             status,
             child_app_url_local,
             child_app_url_cloud
         } = req.body;
         
+        const weeklyPrice = (price_per_week === undefined || price_per_week === null || price_per_week === '')
+            ? 100
+            : price_per_week;
+
         const result = await query(
-            `INSERT INTO products (name, description, category, price_per_month, price_per_year, features, status, child_app_url_local, child_app_url_cloud, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            `INSERT INTO products (name, description, category, price_per_month, price_per_year, price_per_week, features, status, child_app_url_local, child_app_url_cloud, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
              RETURNING *`,
             [
                 name,
@@ -124,6 +130,7 @@ router.post('/', isAuthenticated, isAdmin, validateProduct, async (req, res) => 
                 category,
                 price_per_month,
                 price_per_year,
+                weeklyPrice,
                 features || null,
                 status || 'ACTIVE',
                 child_app_url_local || null,
@@ -191,12 +198,17 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
             category,
             price_per_month,
             price_per_year,
+            price_per_week,
             features,
             status,
             child_app_url_local,
             child_app_url_cloud
         } = req.body;
         
+        const weeklyPrice = (price_per_week === undefined || price_per_week === null || price_per_week === '')
+            ? 100
+            : price_per_week;
+
         const result = await query(
             `UPDATE products 
              SET name = $1, 
@@ -204,12 +216,13 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
                  category = $3, 
                  price_per_month = $4, 
                  price_per_year = $5, 
-                 features = $6, 
-                 status = $7,
-                 child_app_url_local = $8,
-                 child_app_url_cloud = $9,
+                 price_per_week = $6,
+                 features = $7, 
+                 status = $8,
+                 child_app_url_local = $9,
+                 child_app_url_cloud = $10,
                  updated_at = NOW()
-             WHERE id = $10
+             WHERE id = $11
              RETURNING *`,
             [
                 name,
@@ -217,6 +230,7 @@ router.put('/:id', isAuthenticated, isAdmin, validateProduct, async (req, res) =
                 category,
                 price_per_month,
                 price_per_year,
+                weeklyPrice,
                 features || null,
                 status || 'ACTIVE',
                 child_app_url_local || null,

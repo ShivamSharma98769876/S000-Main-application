@@ -68,6 +68,9 @@ const validateProduct = [
     body('yearlyPrice')
         .notEmpty().withMessage('Yearly price is required')
         .isFloat({ min: 0 }).withMessage('Yearly price must be a positive number'),
+    body('weeklyPrice')
+        .optional()
+        .isFloat({ min: 0 }).withMessage('Weekly price must be a positive number'),
     body('status')
         .optional()
         .isIn(['ACTIVE', 'INACTIVE']).withMessage('Status must be ACTIVE or INACTIVE'),
@@ -81,10 +84,26 @@ const validateCartItem = [
         .isInt({ min: 1 }).withMessage('Product ID must be a positive integer'),
     body('durationType')
         .notEmpty().withMessage('Duration type is required')
-        .isIn(['MONTH', 'YEAR']).withMessage('Duration type must be MONTH or YEAR'),
+        .isIn(['WEEK', 'MONTH', 'YEAR']).withMessage('Duration type must be WEEK, MONTH or YEAR'),
     body('durationUnits')
         .notEmpty().withMessage('Duration units is required')
-        .isInt({ min: 1, max: 12 }).withMessage('Duration units must be between 1 and 12'),
+        .custom((value, { req }) => {
+            const units = parseInt(value, 10);
+            if (isNaN(units)) {
+                throw new Error('Duration units must be a number');
+            }
+            const type = req.body.durationType || req.body.duration_unit;
+            if (type === 'WEEK') {
+                if (units !== 1) {
+                    throw new Error('Weekly plan must be exactly 1 week');
+                }
+                return true;
+            }
+            if (units < 1 || units > 12) {
+                throw new Error('Duration units must be between 1 and 12');
+            }
+            return true;
+        }),
     validate
 ];
 
